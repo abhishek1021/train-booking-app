@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:train_booking_app/screens/splash_screen.dart';
 import 'package:train_booking_app/screens/auth/login_screen.dart';
 import 'package:train_booking_app/screens/home/home_screen.dart';
-import 'package:train_booking_app/theme/app_theme.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: TrainBookingApp(),
-    ),
-  );
+  runApp(const TrainBookingApp());
 }
 
 class TrainBookingApp extends StatelessWidget {
@@ -18,10 +13,18 @@ class TrainBookingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return NeumorphicApp(
       title: 'Train Booking App',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: const NeumorphicThemeData(
+        baseColor: Color(0xFFE0E5EC),
+        lightSource: LightSource.topLeft,
+        depth: 10,
+      ),
+      darkTheme: const NeumorphicThemeData(
+        baseColor: Color(0xFF222831),
+        lightSource: LightSource.topLeft,
+        depth: 6,
+      ),
       themeMode: ThemeMode.system,
       home: const SplashScreen(),
       routes: {

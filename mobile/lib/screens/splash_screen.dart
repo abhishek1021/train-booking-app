@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -24,27 +25,41 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/logo.png',
-              width: 120,
-              height: 120,
+    return NeumorphicBackground(
+      child: Center(
+        child: Neumorphic(
+          style: NeumorphicStyle(
+            depth: 12,
+            boxShape: NeumorphicBoxShape.circle(),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(36.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Replace with your logo asset if available
+                Icon(Icons.train, size: 80, color: Colors.blue[300]),
+                const SizedBox(height: 24),
+                NeumorphicProgressIndeterminate(
+                  style: ProgressStyle(accent: Colors.blue[300]!),
+                ),
+                const SizedBox(height: 16),
+                NeumorphicText(
+                  'Train Booking App',
+                  style: const NeumorphicStyle(
+                    depth: 4,
+                    color: Color(0xFF222831),
+                  ),
+                  textStyle: NeumorphicTextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            const Text(
-              'Train Booking App',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
