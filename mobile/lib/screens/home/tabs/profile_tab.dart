@@ -8,123 +8,126 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return NeumorphicBackground(
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Neumorphic(
-            style: NeumorphicStyle(
-              depth: 8,
-              boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: ListView(
-                children: [
-                  Center(
-                    child: Neumorphic(
-                      style: NeumorphicStyle(
-                        depth: 8,
-                        boxShape: NeumorphicBoxShape.circle(),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 50,
-                        child: Icon(Icons.person, size: 50),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: NeumorphicText(
-                      'John Doe',
-                      style: const NeumorphicStyle(
-                        depth: 4,
-                        color: Color(0xFF222831),
-                      ),
-                      textStyle: NeumorphicTextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildSection(
-                    title: 'Personal Information',
-                    children: [
-                      _buildListTile('Email', 'john@example.com'),
-                      _buildListTile('Phone', '+91 9876543210'),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSection(
-                    title: 'IRCTC Account',
-                    children: [
-                      _buildListTile('Username', 'john123'),
-                      NeumorphicButton(
-                        onPressed: () {
-                          // TODO: Implement IRCTC account linking
-                        },
+        child: Material(
+          color: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Neumorphic(
+              style: NeumorphicStyle(
+                depth: 8,
+                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ListView(
+                  children: [
+                    Center(
+                      child: Neumorphic(
                         style: NeumorphicStyle(
+                          depth: 8,
+                          boxShape: NeumorphicBoxShape.circle(),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 50,
+                          child: Icon(Icons.person, size: 50),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: NeumorphicText(
+                        'John Doe',
+                        style: const NeumorphicStyle(
                           depth: 4,
-                          color: Colors.blue[100],
-                          boxShape: NeumorphicBoxShape.stadium(),
+                          color: Color(0xFF222831),
                         ),
-                        child: const Center(
-                          child: Text('Link IRCTC Account', style: TextStyle(color: Colors.blue)),
+                        textStyle: NeumorphicTextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSection(
-                    title: 'Preferences',
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Dark Mode'),
-                          NeumorphicSwitch(
-                            value: false,
-                            style: const NeumorphicSwitchStyle(
-                              activeTrackColor: Colors.blue,
-                            ),
-                            onChanged: (value) {
-                              // TODO: Implement theme switching
-                            },
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Notifications'),
-                          NeumorphicSwitch(
-                            value: true,
-                            style: const NeumorphicSwitchStyle(
-                              activeTrackColor: Colors.blue,
-                            ),
-                            onChanged: (value) {
-                              // TODO: Implement notification toggle
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  NeumorphicButton(
-                    onPressed: () {
-                      // TODO: Implement logout
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    style: NeumorphicStyle(
-                      depth: 4,
-                      color: Colors.red[200],
-                      boxShape: NeumorphicBoxShape.stadium(),
                     ),
-                    child: const Center(
-                      child: Text('Logout', style: TextStyle(color: Colors.red)),
+                    const SizedBox(height: 32),
+                    _buildSection(
+                      title: 'Personal Information',
+                      children: [
+                        _buildListTile('Email', 'john@example.com'),
+                        _buildListTile('Phone', '+91 9876543210'),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    _buildSection(
+                      title: 'IRCTC Account',
+                      children: [
+                        _buildListTile('Username', 'john123'),
+                        NeumorphicButton(
+                          onPressed: () {
+                            // TODO: Implement IRCTC account linking
+                          },
+                          style: NeumorphicStyle(
+                            depth: 4,
+                            color: Colors.blue[100],
+                            boxShape: NeumorphicBoxShape.stadium(),
+                          ),
+                          child: const Center(
+                            child: Text('Link IRCTC Account', style: TextStyle(color: Colors.blue)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSection(
+                      title: 'Preferences',
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Dark Mode'),
+                            NeumorphicSwitch(
+                              value: false,
+                              style: const NeumorphicSwitchStyle(
+                                activeTrackColor: Colors.blue,
+                              ),
+                              onChanged: (value) {
+                                // TODO: Implement theme switching
+                              },
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Notifications'),
+                            NeumorphicSwitch(
+                              value: true,
+                              style: const NeumorphicSwitchStyle(
+                                activeTrackColor: Colors.blue,
+                              ),
+                              onChanged: (value) {
+                                // TODO: Implement notification toggle
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    NeumorphicButton(
+                      onPressed: () {
+                        // TODO: Implement logout
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      style: NeumorphicStyle(
+                        depth: 4,
+                        color: Colors.red[200],
+                        boxShape: NeumorphicBoxShape.stadium(),
+                      ),
+                      child: const Center(
+                        child: Text('Logout', style: TextStyle(color: Colors.red)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

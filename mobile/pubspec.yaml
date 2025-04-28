@@ -8,6 +8,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   dio: ^5.0.0
+  flutter_svg: ^2.0.0
   # riverpod: ^2.0.0
   flutter_secure_storage: ^8.0.0
   # firebase_core: ^2.0.0
@@ -20,6 +21,18 @@ dependencies:
   url_launcher: ^6.0.0
   shared_preferences: ^2.0.0
   flutter_neumorphic_plus: 3.4.0
+  # lato: ^3.0.0
   # Add other dependencies as needed
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/fonts/
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-Regular.ttf
+        - asset: assets/fonts/Lato-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Lato-Italic.ttf
+          style: italic

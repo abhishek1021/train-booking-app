@@ -8,51 +8,54 @@ class BookingsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return NeumorphicBackground(
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Neumorphic(
-            style: NeumorphicStyle(
-              depth: 8,
-              boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  NeumorphicText(
-                    'My Bookings',
-                    style: const NeumorphicStyle(
-                      depth: 4,
-                      color: Color(0xFF222831),
+        child: Material(
+          color: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Neumorphic(
+              style: NeumorphicStyle(
+                depth: 8,
+                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    NeumorphicText(
+                      'My Bookings',
+                      style: const NeumorphicStyle(
+                        depth: 4,
+                        color: Color(0xFF222831),
+                      ),
+                      textStyle: NeumorphicTextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    textStyle: NeumorphicTextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 16),
+                    Neumorphic(
+                      style: NeumorphicStyle(depth: -4),
+                      child: TabBar(
+                        labelColor: Colors.blue,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: Colors.transparent,
+                        tabs: const [
+                          Tab(text: 'Upcoming'),
+                          Tab(text: 'Past'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Neumorphic(
-                    style: NeumorphicStyle(depth: -4),
-                    child: TabBar(
-                      labelColor: Colors.blue,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: Colors.transparent,
-                      tabs: const [
-                        Tab(text: 'Upcoming'),
-                        Tab(text: 'Past'),
-                      ],
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildBookingsList(upcoming: true),
+                          _buildBookingsList(upcoming: false),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _buildBookingsList(upcoming: true),
-                        _buildBookingsList(upcoming: false),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
