@@ -32,143 +32,179 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     final fullName = userProfile?['OtherAttributes']?['FullName'] ?? userProfile?['fullName'] ?? userProfile?['name'] ?? 'User';
     final email = userProfile?['Email'] ?? userProfile?['email'] ?? '';
-    final username = userProfile?['Username'] ?? userProfile?['username'] ?? '';
-    final phone = userProfile?['phone'] ?? '';
+    final avatarUrl = userProfile?['avatarUrl'];
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListView(
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[300],
-                  child: Icon(Icons.person, size: 50, color: Colors.grey[700]),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  fullName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF222831),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              _buildSection(
-                title: 'Personal Information',
-                children: [
-                  _buildListTile('Email', email),
-                  if (phone.isNotEmpty) _buildListTile('Phone', phone),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildSection(
-                title: 'IRCTC Account',
-                children: [
-                  _buildListTile('Username', username),
-                  ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement IRCTC account linking
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[100],
-                      foregroundColor: Colors.blue,
-                      shape: StadiumBorder(),
-                    ),
-                    child: const Text('Link IRCTC Account'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildSection(
-                title: 'Preferences',
-                children: [
-                  SwitchListTile(
-                    title: const Text('Dark Mode'),
-                    value: false,
-                    onChanged: (value) {
-                      // TODO: Implement theme switching
-                    },
-                  ),
-                  SwitchListTile(
-                    title: const Text('Notifications'),
-                    value: true,
-                    onChanged: (value) {
-                      // TODO: Implement notification toggle
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.remove('user_profile');
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[200],
-                  foregroundColor: Colors.red[900],
-                  shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF222831),
+      body: Column(
+        children: [
+          // Purple gradient app bar
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 48, bottom: 24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildListTile(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.grey),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.account_circle, color: Colors.white, size: 32),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Account',
+                      style: const TextStyle(
+                        fontFamily: 'Lato',
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+              children: [
+                // Profile header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                        child: avatarUrl == null ? Icon(Icons.person, size: 38, color: Colors.grey[700]) : null,
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName,
+                              style: const TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              email,
+                              style: const TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.normal,
+                                fontSize: 15,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_2, color: Colors.black54),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1, indent: 24, endIndent: 24),
+                const SizedBox(height: 12),
+                _sectionHeader('General'),
+                _menuItem(Icons.person, 'Personal Info', onTap: () {}),
+                _menuItem(Icons.groups, 'Passengers List', onTap: () {}),
+                _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {}),
+                _menuItem(Icons.notifications, 'Notification', onTap: () {}),
+                _menuItem(Icons.security, 'Security', onTap: () {}),
+                _menuItem(Icons.language, 'Language', trailing: Text('English (US)', style: _trailingStyle)),
+                _menuItem(Icons.remove_red_eye, 'Dark Mode', trailing: Switch(value: false, onChanged: (_) {})),
+                const SizedBox(height: 12),
+                _sectionHeader('About'),
+                _menuItem(Icons.help_outline, 'Help Center', onTap: () {}),
+                _menuItem(Icons.privacy_tip, 'Privacy Policy', onTap: () {}),
+                _menuItem(Icons.info_outline, 'About TatkalPro', onTap: () {}),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('user_profile');
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                    style: TextButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _sectionHeader(String title) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontFamily: 'Lato',
+            color: Colors.black54,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            letterSpacing: 0.1,
+          ),
+        ),
+      );
+
+  Widget _menuItem(IconData icon, String label, {Widget? trailing, VoidCallback? onTap}) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.black87, size: 22),
+              const SizedBox(width: 22),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Lato',
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing,
+              if (trailing == null)
+                const Icon(Icons.chevron_right, color: Colors.black26, size: 22),
+            ],
+          ),
+        ),
+      );
+
+  TextStyle get _trailingStyle => const TextStyle(
+        fontFamily: 'Lato',
+        color: Colors.black54,
+        fontWeight: FontWeight.normal,
+        fontSize: 15,
+      );
 }

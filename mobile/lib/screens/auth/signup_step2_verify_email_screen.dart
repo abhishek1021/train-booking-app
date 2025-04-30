@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:train_booking_app/utils/validators.dart';
+import '../../api_constants.dart';
 
 class SignupStep2VerifyEmailScreen extends StatefulWidget {
   const SignupStep2VerifyEmailScreen({Key? key}) : super(key: key);
@@ -40,7 +41,7 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
-      final url = Uri.parse('http://localhost:8000/api/v1/ses/verify-otp');
+      final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/ses/verify-otp');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

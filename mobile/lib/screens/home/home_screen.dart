@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:train_booking_app/screens/home/tabs/search_tab.dart';
 import 'package:train_booking_app/screens/home/tabs/bookings_tab.dart';
 import 'package:train_booking_app/screens/home/tabs/profile_tab.dart';
@@ -12,65 +11,60 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _selectedIndex = 0;
 
-  final List<Widget> _tabs = const [
+  final List<Widget> _pages = const [
     SearchTab(),
     BookingsTab(),
+    Placeholder(), // My Wallet (to be implemented)
     ProfileTab(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return NeumorphicBackground(
-      child: Material(
-        color: Colors.transparent,
-        child: Neumorphic(
-          style: NeumorphicStyle(
-            depth: 8,
-            boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(0)),
-          ),
-          child: Column(
-            children: [
-              Expanded(child: _tabs[_currentIndex]),
-              Neumorphic(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                style: NeumorphicStyle(
-                  depth: 6,
-                  boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(32)),
-                  color: const Color(0xFFE0E5EC),
-                ),
-                child: NeumorphicToggle(
-                  height: 60,
-                  selectedIndex: _currentIndex,
-                  displayForegroundOnlyIfSelected: true,
-                  children: [
-                    ToggleElement(
-                      background: Center(child: Icon(Icons.search)),
-                      foreground: Center(child: Icon(Icons.search, color: Colors.blue)),
-                    ),
-                    ToggleElement(
-                      background: Center(child: Icon(Icons.confirmation_number)),
-                      foreground: Center(child: Icon(Icons.confirmation_number, color: Colors.blue)),
-                    ),
-                    ToggleElement(
-                      background: Center(child: Icon(Icons.person)),
-                      foreground: Center(child: Icon(Icons.person, color: Colors.blue)),
-                    ),
-                  ],
-                  thumb: Neumorphic(
-                    style: NeumorphicStyle(
-                      color: Colors.blue[200],
-                      depth: 4,
-                    ),
-                  ),
-                  onChanged: (index) {
-                    setState(() => _currentIndex = index);
-                  },
-                ),
-              ),
-            ],
-          ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: const Color(0xFF7C3AED),
+          unselectedItemColor: Colors.black45,
+          selectedLabelStyle: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontFamily: 'Lato'),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.confirmation_number_outlined),
+              label: 'My Ticket',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              label: 'My Wallet',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              label: 'Account',
+            ),
+          ],
         ),
       ),
     );

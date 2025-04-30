@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../api_constants.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
   const LoginWithEmailScreen({Key? key}) : super(key: key);
@@ -31,7 +32,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
-      final url = Uri.parse('http://localhost:8000/api/v1/dynamodb/users/login');
+      final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/login');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

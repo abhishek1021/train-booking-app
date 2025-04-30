@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../api_constants.dart';
 
 class SignupStep3PasswordScreen extends StatefulWidget {
   const SignupStep3PasswordScreen({Key? key}) : super(key: key);
@@ -56,7 +57,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
     );
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/api/v1/dynamodb/users/create'),
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/create'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'PK': 'USER#$email',

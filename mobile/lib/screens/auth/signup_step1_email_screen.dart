@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:train_booking_app/utils/validators.dart';
+import '../../api_constants.dart';
 
 class SignupStep1EmailScreen extends StatefulWidget {
   const SignupStep1EmailScreen({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
   }
 
   Future<bool> _checkUserExists(String email) async {
-    final url = Uri.parse('http://localhost:8000/api/v1/dynamodb/users/exists/$email');
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -50,7 +51,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
       );
       return;
     }
-    final url = Uri.parse('http://localhost:8000/api/v1/ses/send-otp');
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/ses/send-otp');
     showDialog(
       context: context,
       barrierDismissible: false,
