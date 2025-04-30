@@ -1,13 +1,14 @@
 import httpx
 from typing import List, Optional
 from datetime import datetime
-from app.core.config import settings
+# from app.core.config import settings
 from app.schemas.train import TrainResponse, SeatAvailability
 
 class IRCTCClient:
     def __init__(self):
-        self.base_url = settings.IRCTC_BASE_URL
-        self.api_key = settings.IRCTC_API_KEY
+        self.base_url = "https://api.irctc.co.in/v1"  # Hardcoded fallback, since settings is not available
+        # self.api_key = settings.IRCTC_API_KEY
+        self.api_key = "your_api_key_here"  # You should replace this with your actual API key
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"

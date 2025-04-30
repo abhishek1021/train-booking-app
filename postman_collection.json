@@ -1,0 +1,82 @@
+{
+  "info": {
+    "_postman_id": "train-booking-app-apis",
+    "name": "Train Booking App API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Send OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ses/send-otp",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ses", "send-otp"]
+        }
+      }
+    },
+    {
+      "name": "Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ses/verify-otp",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ses", "verify-otp"]
+        }
+      }
+    },
+    {
+      "name": "Check User Exists",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/v1/dynamodb/users/exists/user@example.com",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "dynamodb", "users", "exists", "user@example.com"]
+        }
+      }
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PK\": \"USER#user@example.com\",\n  \"SK\": \"PROFILE\",\n  \"UserID\": \"uuid-here\",\n  \"Email\": \"user@example.com\",\n  \"Username\": \"user\",\n  \"PasswordHash\": \"plaintext-or-hash\",\n  \"CreatedAt\": \"2025-04-30T00:00:00\",\n  \"LastLoginAt\": null,\n  \"IsActive\": true,\n  \"OtherAttributes\": {\n    \"FullName\": \"User Name\",\n    \"Role\": \"user\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/dynamodb/users/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "dynamodb", "users", "create"]
+        }
+      }
+    }
+  ]
+}

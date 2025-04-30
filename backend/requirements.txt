@@ -8,3 +8,4 @@ PyJWT
 requests
 httpx
 psycopg2-binary
+pydantic<2.0

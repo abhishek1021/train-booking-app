@@ -92,7 +92,7 @@ class _CreateNewAccountEmailScreenState extends State<CreateNewAccountEmailScree
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,
                             onTap: () {
-                              Navigator.pushNamed(context, '/signup_email');
+                              Navigator.pushNamed(context, '/signup_step1');
                             },
                             child: const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),

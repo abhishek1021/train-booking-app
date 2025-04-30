@@ -6,6 +6,9 @@ import 'package:train_booking_app/screens/home/home_screen.dart';
 import 'package:train_booking_app/screens/welcome_screen.dart';
 import 'package:train_booking_app/screens/auth/login_with_email_screen.dart';
 import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
+import 'package:train_booking_app/screens/auth/signup_step1_email_screen.dart';
+import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.dart';
+import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
 
 void main() {
   runApp(const TrainBookingApp());
@@ -41,7 +44,9 @@ class TrainBookingApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/login_email': (context) => const LoginWithEmailScreen(),
         '/create_new_account': (context) => const CreateNewAccountEmailScreen(),
-        // '/signup': (context) => const SignupScreen(), // Placeholder for future
+        '/signup_step1': (context) => const SignupStep1EmailScreen(),
+        '/signup_step2': (context) => const SignupStep2VerifyEmailScreen(),
+        '/signup_step3': (context) => const SignupStep3PasswordScreen(),
       },
     );
   }
