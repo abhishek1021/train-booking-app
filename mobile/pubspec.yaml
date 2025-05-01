@@ -37,3 +37,6 @@ flutter:
           weight: 700
         - asset: assets/fonts/Lato-Italic.ttf
           style: italic
+    - family: NotoColorEmoji
+      fonts:
+        - asset: assets/fonts/NotoColorEmoji-Regular.ttf
