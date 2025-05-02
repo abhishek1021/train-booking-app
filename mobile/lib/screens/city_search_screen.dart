@@ -58,58 +58,89 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isOrigin ? 'Select Origin' : 'Select Destination', style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF7C3AED)),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: TextField(
-                onChanged: _filterCities,
-                decoration: InputDecoration(
-                  hintText: 'Search by city, code or name',
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                ),
-                style: const TextStyle(fontFamily: 'Lato', fontSize: 16),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // Purple gradient header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 48, bottom: 24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            if (_loading)
-              const Expanded(child: Center(child: CircularProgressIndicator())),
-            if (!_loading && _filteredCities.isEmpty)
-              const Expanded(child: Center(child: Text('No cities found', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600)))),
-            if (!_loading && _filteredCities.isNotEmpty)
-              Expanded(
-                child: ListView.separated(
-                  itemCount: _filteredCities.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final city = _filteredCities[index];
-                    return ListTile(
-                      title: Text(
-                        '${city['station_name']} (${city['station_code']})',
-                        style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.isOrigin ? 'Select Origin' : 'Select Destination',
+                      style: TextStyle(
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: Colors.white,
                       ),
-                      subtitle: Text(
-                        '${city['city']}, ${city['state']}',
-                        style: const TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black54),
-                      ),
-                      onTap: () {
-                        widget.onCitySelected(city);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              onChanged: _filterCities,
+              decoration: InputDecoration(
+                hintText: 'Search by city, code or name',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              ),
+              style: const TextStyle(fontFamily: 'Lato', fontSize: 16),
+            ),
+          ),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator())),
+          if (!_loading && _filteredCities.isEmpty)
+            const Expanded(child: Center(child: Text('No cities found', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600)))),
+          if (!_loading && _filteredCities.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredCities.length,
+                padding: const EdgeInsets.only(top: 8),
+                itemBuilder: (context, index) {
+                  final city = _filteredCities[index];
+                  return ListTile(
+                    title: Text(
+                      '${city['station_name']} (${city['station_code']})',
+                      style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      '${city['city']}, ${city['state']}',
+                      style: const TextStyle(fontFamily: 'Lato', color: Colors.black54),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context, city); // Pop and return city to previous screen
+                    },
+                    tileColor: Colors.transparent,
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  );
+                },
+              ),
+            ),
+        ],
       ),
     );
   }
