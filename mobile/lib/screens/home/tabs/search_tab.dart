@@ -4,7 +4,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:train_booking_app/api_constants.dart';
 import 'package:train_booking_app/screens/city_search_screen.dart';
-import 'package:train_booking_app/screens/train_search_results_screen.dart'; // Add this line
+import 'package:train_booking_app/screens/train_search_results_screen.dart';
+import 'search_tab/search_header.dart';
+import 'search_tab/search_card.dart';
+import 'search_tab/quick_actions.dart';
 
 class SearchTab extends StatefulWidget {
   const SearchTab({Key? key}) : super(key: key);
@@ -27,6 +30,9 @@ class _SearchTabState extends State<SearchTab> {
   int _selectedTabIndex = 0; // 0: One-Way, 1: Round Trip
   final GlobalKey _searchCardKey = GlobalKey();
   double _searchCardHeight = 0;
+  int passengers = 1;
+  String trainClass = 'SL';
+  List<String> trainClasses = ['SL', '1A', '2A', '3A', 'CC', '2S', '3E'];
 
   final String citiesEndpoint = "${ApiConstants.baseUrl}/api/v1/cities";
 
@@ -84,7 +90,6 @@ class _SearchTabState extends State<SearchTab> {
         cities = response.data;
       });
     } catch (e) {
-      // Handle error, maybe show a snackbar
       setState(() {
         cities = [];
       });
@@ -93,7 +98,6 @@ class _SearchTabState extends State<SearchTab> {
 
   Future<void> _loadUsername() async {
     final prefs = await SharedPreferences.getInstance();
-    // Try user_profile (JSON) first, then signup_username, then username
     String? name;
     final userProfileStr = prefs.getString('user_profile');
     if (userProfileStr != null) {
@@ -106,6 +110,12 @@ class _SearchTabState extends State<SearchTab> {
     setState(() {
       username = name;
     });
+  }
+
+  // Helper to format date as dd/MM/yyyy
+  String formatDate(DateTime? date) {
+    if (date == null) return '';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   @override
@@ -132,600 +142,212 @@ class _SearchTabState extends State<SearchTab> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Gradient header (now scrolls with content)
-            Container(
-              width: double.infinity,
-              height: 330,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 56, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _getGreeting() + _getGreetingEmoji(),
-                            style: TextStyle(
-                              fontFamily: 'Lato',
-                              fontFamilyFallback: ['NotoColorEmoji', 'Segoe UI Emoji', 'Apple Color Emoji'],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1.4),
-                              color: Colors.white.withOpacity(0.10),
-                            ),
-                            child: Icon(Icons.notifications_none_outlined, color: Colors.white, size: 24),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(_toCamelCase(username), style: TextStyle(fontFamily: 'Lato', fontFamilyFallback: ['NotoColorEmoji'], fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white.withOpacity(0.95))),
-                  ],
-                ),
-              ),
+            SearchHeader(
+              greeting: _getGreeting() + _getGreetingEmoji(),
+              username: _toCamelCase(username),
+              onNotificationTap: () {},
             ),
             // Overlapping search card
             Transform.translate(
-              offset: Offset(0, -160), // Overlap header visually
+              offset: Offset(0, -160),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  color: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(22.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Tabs for One-Way and Round Trip
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTabIndex = 0;
-                                  });
-                                },
-                                child: Column(
-                                  children: [
-                                    Text('One-Way',
-                                      style: TextStyle(
-                                        fontFamily: 'Lato',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                        color: _selectedTabIndex == 0 ? Color(0xFF7C3AED) : Colors.black26,
-                                      )),
-                                    AnimatedContainer(
-                                      duration: Duration(milliseconds: 200),
-                                      height: 3, width: 56, margin: const EdgeInsets.only(top: 6),
-                                      decoration: BoxDecoration(
-                                        color: _selectedTabIndex == 0 ? Color(0xFF7C3AED) : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(2)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTabIndex = 1;
-                                  });
-                                },
-                                child: Column(
-                                  children: [
-                                    Text('Round Trip',
-                                      style: TextStyle(
-                                        fontFamily: 'Lato',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                        color: _selectedTabIndex == 1 ? Color(0xFF7C3AED) : Colors.black26,
-                                      )),
-                                    AnimatedContainer(
-                                      duration: Duration(milliseconds: 200),
-                                      height: 3, width: 56, margin: const EdgeInsets.only(top: 6),
-                                      decoration: BoxDecoration(
-                                        color: _selectedTabIndex == 1 ? Color(0xFF7C3AED) : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(2)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                child: SearchCard(
+                  selectedTabIndex: _selectedTabIndex,
+                  onTabChange: (index) {
+                    setState(() {
+                      _selectedTabIndex = index;
+                    });
+                  },
+                  originController: originController,
+                  destinationController: destinationController,
+                  onOriginTap: () async {
+                    final selectedCity = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CitySearchScreen(
+                          isOrigin: true,
+                          onCitySelected: (city) {
+                            Navigator.pop(context, city);
+                          },
                         ),
-                        const SizedBox(height: 20),
-                        if (_selectedTabIndex == 0)
-                          // One-Way UI
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextFormField(
-                                readOnly: true,
-                                controller: originController,
-                                decoration: InputDecoration(
-                                  labelText: 'Origin',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
-                                onTap: () async {
-                                  final city = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CitySearchScreen(
-                                        isOrigin: true,
-                                        onCitySelected: (selectedCity) {
-                                          Navigator.pop(context, selectedCity);
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                  if (city != null) {
-                                    setState(() {
-                                      selectedOrigin = city['station_code'];
-                                      selectedOriginName = city['station_name'];
-                                      originController.text = '${selectedOriginName ?? ''} (${selectedOrigin})';
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                readOnly: true,
-                                controller: destinationController,
-                                decoration: InputDecoration(
-                                  labelText: 'Destination',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
-                                onTap: () async {
-                                  final city = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CitySearchScreen(
-                                        isOrigin: false,
-                                        onCitySelected: (selectedCity) {
-                                          Navigator.pop(context, selectedCity);
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                  if (city != null) {
-                                    setState(() {
-                                      selectedDestination = city['station_code'];
-                                      selectedDestinationName = city['station_name'];
-                                      destinationController.text = '${selectedDestinationName ?? ''} (${selectedDestination})';
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 18),
-                              GestureDetector(
-                                onTap: () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedDate ?? DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                                  );
-                                  if (picked != null) {
-                                    setState(() => selectedDate = picked);
-                                  }
-                                },
-                                child: AbsorbPointer(
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      labelText: 'Departure Date',
-                                      labelStyle: TextStyle(fontFamily: 'Lato'),
-                                      filled: true,
-                                      fillColor: Color(0xFFF7F7FA),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                      suffixIcon: Icon(Icons.calendar_today_outlined, color: Color(0xFF7C3AED)),
-                                    ),
-                                    controller: TextEditingController(
-                                      text: selectedDate == null ? '' : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
-                                    ),
-                                    style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Train Class',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Passengers',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                              ),
-                              const SizedBox(height: 26),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const TrainSearchResultsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    minimumSize: const Size.fromHeight(52),
-                                    elevation: 0,
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                  ).merge(
-                                    ButtonStyle(
-                                      overlayColor: MaterialStateProperty.all(Colors.deepPurple.withOpacity(0.07)),
-                                    ),
-                                  ),
-                                  child: Ink(
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      ),
-                                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                                    ),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      constraints: const BoxConstraints(minHeight: 52),
-                                      child: const Text(
-                                        'Search Trains',
-                                        style: TextStyle(
-                                          fontFamily: 'Lato',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        else
-                          // Round Trip UI
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextFormField(
-                                readOnly: true,
-                                controller: originController,
-                                decoration: InputDecoration(
-                                  labelText: 'Origin',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
-                                onTap: () async {
-                                  final city = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CitySearchScreen(
-                                        isOrigin: true,
-                                        onCitySelected: (selectedCity) {
-                                          Navigator.pop(context, selectedCity);
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                  if (city != null) {
-                                    setState(() {
-                                      selectedOrigin = city['station_code'];
-                                      selectedOriginName = city['station_name'];
-                                      originController.text = '${selectedOriginName ?? ''} (${selectedOrigin})';
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                readOnly: true,
-                                controller: destinationController,
-                                decoration: InputDecoration(
-                                  labelText: 'Destination',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
-                                onTap: () async {
-                                  final city = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CitySearchScreen(
-                                        isOrigin: false,
-                                        onCitySelected: (selectedCity) {
-                                          Navigator.pop(context, selectedCity);
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                  if (city != null) {
-                                    setState(() {
-                                      selectedDestination = city['station_code'];
-                                      selectedDestinationName = city['station_name'];
-                                      destinationController.text = '${selectedDestinationName ?? ''} (${selectedDestination})';
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 18),
-                              GestureDetector(
-                                onTap: () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedDate ?? DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                                  );
-                                  if (picked != null) {
-                                    setState(() => selectedDate = picked);
-                                  }
-                                },
-                                child: AbsorbPointer(
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      labelText: 'Departure Date',
-                                      labelStyle: TextStyle(fontFamily: 'Lato'),
-                                      filled: true,
-                                      fillColor: Color(0xFFF7F7FA),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                      suffixIcon: Icon(Icons.calendar_today_outlined, color: Color(0xFF7C3AED)),
-                                    ),
-                                    controller: TextEditingController(
-                                      text: selectedDate == null ? '' : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
-                                    ),
-                                    style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              GestureDetector(
-                                onTap: () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: returnDate ?? DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                                  );
-                                  if (picked != null) {
-                                    setState(() => returnDate = picked);
-                                  }
-                                },
-                                child: AbsorbPointer(
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      labelText: 'Return Date',
-                                      labelStyle: TextStyle(fontFamily: 'Lato'),
-                                      filled: true,
-                                      fillColor: Color(0xFFF7F7FA),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                      suffixIcon: Icon(Icons.calendar_today_outlined, color: Color(0xFF7C3AED)),
-                                    ),
-                                    controller: TextEditingController(
-                                      text: returnDate == null ? '' : '${returnDate!.day}/${returnDate!.month}/${returnDate!.year}',
-                                    ),
-                                    style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Train Class',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                              ),
-                              const SizedBox(height: 18),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Passengers',
-                                  labelStyle: TextStyle(fontFamily: 'Lato'),
-                                  filled: true,
-                                  fillColor: Color(0xFFF7F7FA),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                                ),
-                                style: const TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.black87),
-                              ),
-                              const SizedBox(height: 26),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const TrainSearchResultsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    minimumSize: const Size.fromHeight(52),
-                                    elevation: 0,
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                  ).merge(
-                                    ButtonStyle(
-                                      overlayColor: MaterialStateProperty.all(Colors.deepPurple.withOpacity(0.07)),
-                                    ),
-                                  ),
-                                  child: Ink(
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      ),
-                                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                                    ),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      constraints: const BoxConstraints(minHeight: 52),
-                                      child: const Text(
-                                        'Search Trains',
-                                        style: TextStyle(
-                                          fontFamily: 'Lato',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                      ),
+                    );
+                    if (selectedCity != null) {
+                      setState(() {
+                        selectedOrigin = selectedCity['station_code'] ?? '';
+                        selectedOriginName = selectedCity['station_name'] ?? '';
+                        originController.text = selectedCity['station_name'] ?? '';
+                      });
+                    }
+                  },
+                  onDestinationTap: () async {
+                    final selectedCity = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CitySearchScreen(
+                          isOrigin: false,
+                          onCitySelected: (city) {
+                            Navigator.pop(context, city);
+                          },
+                        ),
+                      ),
+                    );
+                    if (selectedCity != null) {
+                      setState(() {
+                        selectedDestination = selectedCity['station_code'] ?? '';
+                        selectedDestinationName = selectedCity['station_name'] ?? '';
+                        destinationController.text = selectedCity['station_name'] ?? '';
+                      });
+                    }
+                  },
+                  passengers: passengers,
+                  onPassengersChanged: (isAdd) {
+                    setState(() {
+                      if (isAdd) {
+                        passengers++;
+                      } else if (passengers > 1) {
+                        passengers--;
+                      }
+                    });
+                  },
+                  trainClass: trainClass,
+                  onTrainClassChanged: (val) {
+                    setState(() {
+                      trainClass = val ?? trainClass;
+                    });
+                  },
+                  trainClasses: trainClasses,
+                  onPassengersTap: () {}, // Optionally show a modal in future
+                  onDepartureDateTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                  onReturnDateTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: returnDate ?? (selectedDate ?? DateTime.now()),
+                      firstDate: selectedDate ?? DateTime.now(),
+                      lastDate: DateTime.now().add(Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        returnDate = picked;
+                      });
+                    }
+                  },
+                  departureDateText: formatDate(selectedDate),
+                  returnDateText: formatDate(returnDate),
+                  onSearch: () async {
+                    // Compose API query parameters
+                    final origin = selectedOrigin;
+                    final destination = selectedDestination;
+                    final date = selectedDate != null
+                        ? '${selectedDate!.year.toString().padLeft(4, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
+                        : '';
+                    final travelClass = trainClass;
+                    if (origin.isEmpty || destination.isEmpty || date.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Please select origin, destination, and date.')),
+                      );
+                      return;
+                    }
+                    try {
+                      final dio = Dio();
+                      final response = await dio.get(
+                        '${ApiConstants.baseUrl}/api/v1/trains/search'.replaceAll(RegExp(r'\/$'), ''),
+                        queryParameters: {
+                          'origin': origin,
+                          'destination': destination,
+                          'date': date,
+                          'travel_class': travelClass,
+                        },
+                      );
+                      final List<dynamic> trains = response.data;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TrainSearchResultsScreen(
+                            trains: trains,
+                            origin: selectedOriginName ?? origin,
+                            destination: selectedDestinationName ?? destination,
+                            date: formatDate(selectedDate),
                           ),
-                      ],
-                    ),
-                  ),
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to fetch trains: $e')),
+                      );
+                    }
+                  },
+                  extraFields: (BuildContext context, String type) {
+                    if (type == 'departure') {
+                      return null; // The onTap is now handled in the TextFormField itself in SearchCard
+                    } else if (type == 'return') {
+                      return null;
+                    } else {
+                      return SizedBox.shrink();
+                    }
+                  },
                 ),
               ),
             ),
+            SizedBox(height: 30),
             Transform.translate(
-              offset: Offset(0, -120), // Move label+quick actions up together
+              offset: Offset(0, -130), // Tighter gap
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left: 24, right: 24, top: 8, bottom: 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Quick Actions',
-                          style: TextStyle(
-                            fontFamily: 'Lato',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Color(0xFF7C3AED),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            'Access frequent services instantly',
-                            style: TextStyle(
-                              fontFamily: 'Lato',
-                              fontSize: 14,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
+                    child: Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Color(0xFF7C3AED),
+                      ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16), // Match search card horizontal padding
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 2,
-                      color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        child: GridView.count(
-                          crossAxisCount: 3,
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          childAspectRatio: 1.2,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          children: const [
-                            _QuickAction(icon: Icons.event_available, label: 'Check Booking'),
-                            _QuickAction(icon: Icons.repeat, label: 'Re-Schedule'),
-                            _QuickAction(icon: Icons.cancel, label: 'Cancellation'),
-                            _QuickAction(icon: Icons.fastfood, label: 'Order Food'),
-                            _QuickAction(icon: Icons.currency_rupee, label: 'Fare'),
-                            _QuickAction(icon: Icons.info_outline, label: 'Live Status'),
-                            _QuickAction(icon: Icons.alarm, label: 'Station Alarm'),
-                            _QuickAction(icon: Icons.calculate, label: 'Refund'),
-                            _QuickAction(icon: Icons.info, label: 'Line Info'),
-                            _QuickAction(icon: Icons.local_shipping, label: 'Shipping'),
-                            _QuickAction(icon: Icons.train, label: 'Connection'),
-                            _QuickAction(icon: Icons.wallet, label: 'Wallet'),
-                          ],
-                        ),
+                  SizedBox(height: 12),
+                  Card(
+                    color: Colors.white,
+                    margin: EdgeInsets.symmetric(horizontal: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: 4,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        physics: NeverScrollableScrollPhysics(),
+                        children: [
+                          QuickAction(icon: Icons.train, label: 'Book Train', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.history, label: 'History', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.favorite, label: 'Favorites', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.search, label: 'Search PNR', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.directions_bus, label: 'Book Bus', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.hotel, label: 'Book Hotel', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.airplanemode_active, label: 'Book Flight', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.directions_car, label: 'Cab', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.local_offer, label: 'Offers', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.support_agent, label: 'Support', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.language, label: 'Language', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(icon: Icons.info_outline, label: 'Info', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                        ],
                       ),
                     ),
                   ),
@@ -735,38 +357,6 @@ class _SearchTabState extends State<SearchTab> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _QuickAction({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F7FA),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          padding: const EdgeInsets.all(8),
-          child: Icon(icon, color: Color(0xFF7C3AED), size: 24),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Lato', fontSize: 11, color: Colors.black),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
     );
   }
 }

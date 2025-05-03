@@ -29,7 +29,13 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       final response = await dio.get("${ApiConstants.baseUrl}/api/v1/cities");
       setState(() {
         _cities = (response.data as List)
-            .map((item) => Map<String, dynamic>.from(item as Map))
+            .map((item) => {
+              'city_id': item['city_id'] ?? item['id'],
+              'station_code': item['keyword'] ?? item['station_code'] ?? item['code'],
+              'station_name': item['name'] ?? item['station_name'] ?? item['city'],
+              'state': item['state'] ?? '',
+              'id': item['id'] ?? item['city_id'],
+            })
             .toList();
         _filteredCities = _cities;
         _loading = false;
@@ -53,6 +59,60 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         return code.contains(query.toLowerCase()) || name.contains(query.toLowerCase()) || cityName.contains(query.toLowerCase());
       }).toList();
     });
+  }
+
+  Widget _buildCityTile(Map city) {
+    final Map<String, dynamic> cityMap = Map<String, dynamic>.from(city);
+    final cityName = cityMap['station_name'] ?? cityMap['name'] ?? cityMap['city'] ?? '';
+    final code = cityMap['station_code'] ?? cityMap['keyword'] ?? cityMap['code'] ?? '';
+    final state = cityMap['state'] ?? '';
+    return InkWell(
+      onTap: () => widget.onCitySelected(cityMap),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  cityName,
+                  style: const TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
+                ),
+                if (code.isNotEmpty) ...[
+                  SizedBox(width: 8),
+                  Text(
+                    '($code)',
+                    style: const TextStyle(
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ),
+                ]
+              ],
+            ),
+            if (state.isNotEmpty) ...[
+              SizedBox(height: 6),
+              Text(
+                state,
+                style: const TextStyle(
+                  fontFamily: 'Lato',
+                  fontSize: 15,
+                  color: Colors.black87,
+                ),
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -121,22 +181,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 itemBuilder: (context, index) {
                   final city = _filteredCities[index];
-                  return ListTile(
-                    title: Text(
-                      '${city['station_name']} (${city['station_code']})',
-                      style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Text(
-                      '${city['city']}, ${city['state']}',
-                      style: const TextStyle(fontFamily: 'Lato', color: Colors.black54),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context, city); // Pop and return city to previous screen
-                    },
-                    tileColor: Colors.transparent,
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  );
+                  return _buildCityTile(city);
                 },
               ),
             ),

@@ -30,7 +30,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
       _isLoading = true;
     });
     try {
-      final email = _emailController.text.trim();
+      final email = _emailController.text.trim().toLowerCase();
       final password = _passwordController.text;
       final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/login');
       final response = await http.post(
