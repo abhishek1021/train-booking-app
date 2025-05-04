@@ -5,10 +5,12 @@ class CreateNewAccountEmailScreen extends StatefulWidget {
   const CreateNewAccountEmailScreen({Key? key}) : super(key: key);
 
   @override
-  State<CreateNewAccountEmailScreen> createState() => _CreateNewAccountEmailScreenState();
+  State<CreateNewAccountEmailScreen> createState() =>
+      _CreateNewAccountEmailScreenState();
 }
 
-class _CreateNewAccountEmailScreenState extends State<CreateNewAccountEmailScreen> {
+class _CreateNewAccountEmailScreenState
+    extends State<CreateNewAccountEmailScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -40,7 +42,8 @@ class _CreateNewAccountEmailScreenState extends State<CreateNewAccountEmailScree
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.black),
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.black),
                             onPressed: () => Navigator.pop(context),
                           ),
                           const SizedBox(width: 8),
@@ -117,7 +120,8 @@ class _CreateNewAccountEmailScreenState extends State<CreateNewAccountEmailScree
                           Expanded(child: Divider()),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text('or', style: TextStyle(color: Colors.black45)),
+                            child: Text('or',
+                                style: TextStyle(color: Colors.black45)),
                           ),
                           Expanded(child: Divider()),
                         ],
@@ -149,12 +153,25 @@ class _CreateNewAccountEmailScreenState extends State<CreateNewAccountEmailScree
                           child: RichText(
                             textAlign: TextAlign.center,
                             text: const TextSpan(
-                              style: TextStyle(fontFamily: 'Lato', color: Colors.black45, fontSize: 13),
+                              style: TextStyle(
+                                  fontFamily: 'Lato',
+                                  color: Colors.black45,
+                                  fontSize: 13),
                               children: [
-                                TextSpan(text: 'By using TatkalPro, you agree to the '),
-                                TextSpan(text: 'Terms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                                TextSpan(
+                                    text:
+                                        'By using TatkalPro, you agree to the '),
+                                TextSpan(
+                                    text: 'Terms',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black)),
                                 TextSpan(text: ' and '),
-                                TextSpan(text: 'Privacy Policy.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                                TextSpan(
+                                    text: 'Privacy Policy.',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black)),
                               ],
                             ),
                           ),

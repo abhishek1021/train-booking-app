@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 class CitySearchScreen extends StatefulWidget {
   final bool isOrigin;
   final Function(Map<String, dynamic>) onCitySelected;
-  const CitySearchScreen({Key? key, required this.isOrigin, required this.onCitySelected}) : super(key: key);
+  const CitySearchScreen(
+      {Key? key, required this.isOrigin, required this.onCitySelected})
+      : super(key: key);
 
   @override
   _CitySearchScreenState createState() => _CitySearchScreenState();
@@ -30,12 +32,14 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       setState(() {
         _cities = (response.data as List)
             .map((item) => {
-              'city_id': item['city_id'] ?? item['id'],
-              'station_code': item['keyword'] ?? item['station_code'] ?? item['code'],
-              'station_name': item['name'] ?? item['station_name'] ?? item['city'],
-              'state': item['state'] ?? '',
-              'id': item['id'] ?? item['city_id'],
-            })
+                  'city_id': item['city_id'] ?? item['id'],
+                  'station_code':
+                      item['keyword'] ?? item['station_code'] ?? item['code'],
+                  'station_name':
+                      item['name'] ?? item['station_name'] ?? item['city'],
+                  'state': item['state'] ?? '',
+                  'id': item['id'] ?? item['city_id'],
+                })
             .toList();
         _filteredCities = _cities;
         _loading = false;
@@ -56,15 +60,19 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         final code = city['station_code']?.toString()?.toLowerCase() ?? '';
         final name = city['station_name']?.toString()?.toLowerCase() ?? '';
         final cityName = city['city']?.toString()?.toLowerCase() ?? '';
-        return code.contains(query.toLowerCase()) || name.contains(query.toLowerCase()) || cityName.contains(query.toLowerCase());
+        return code.contains(query.toLowerCase()) ||
+            name.contains(query.toLowerCase()) ||
+            cityName.contains(query.toLowerCase());
       }).toList();
     });
   }
 
   Widget _buildCityTile(Map city) {
     final Map<String, dynamic> cityMap = Map<String, dynamic>.from(city);
-    final cityName = cityMap['station_name'] ?? cityMap['name'] ?? cityMap['city'] ?? '';
-    final code = cityMap['station_code'] ?? cityMap['keyword'] ?? cityMap['code'] ?? '';
+    final cityName =
+        cityMap['station_name'] ?? cityMap['name'] ?? cityMap['city'] ?? '';
+    final code =
+        cityMap['station_code'] ?? cityMap['keyword'] ?? cityMap['code'] ?? '';
     final state = cityMap['state'] ?? '';
     return InkWell(
       onTap: () => widget.onCitySelected(cityMap),
@@ -164,8 +172,10 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
               decoration: InputDecoration(
                 hintText: 'Search by city, code or name',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               ),
               style: const TextStyle(fontFamily: 'Lato', fontSize: 16),
             ),
@@ -173,7 +183,11 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator())),
           if (!_loading && _filteredCities.isEmpty)
-            const Expanded(child: Center(child: Text('No cities found', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600)))),
+            const Expanded(
+                child: Center(
+                    child: Text('No cities found',
+                        style: TextStyle(
+                            fontFamily: 'Lato', fontWeight: FontWeight.w600)))),
           if (!_loading && _filteredCities.isNotEmpty)
             Expanded(
               child: ListView.builder(

@@ -10,7 +10,8 @@ class SignupStep3PasswordScreen extends StatefulWidget {
   const SignupStep3PasswordScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignupStep3PasswordScreen> createState() => _SignupStep3PasswordScreenState();
+  State<SignupStep3PasswordScreen> createState() =>
+      _SignupStep3PasswordScreenState();
 }
 
 class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
@@ -43,7 +44,8 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
     final fullName = prefs.getString('signup_fullName');
     if (email == null || username == null || fullName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing signup details. Please restart signup.')),
+        const SnackBar(
+            content: Text('Missing signup details. Please restart signup.')),
       );
       return;
     }
@@ -75,13 +77,15 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
       if (response.statusCode == 201) {
         // Store user info in prefs
         final userInfo = jsonDecode(response.body);
-        await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+        await prefs.setString(
+            'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Signup complete!')),
         );
       } else {
-        final error = jsonDecode(response.body)['detail'] ?? 'Failed to create user';
+        final error =
+            jsonDecode(response.body)['detail'] ?? 'Failed to create user';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error)),
         );
@@ -131,43 +135,68 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.black),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.black),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Step 3/3', style: TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.deepPurple)),
+                            const Text('Step 3/3',
+                                style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontSize: 15,
+                                    color: Colors.deepPurple)),
                             Expanded(
                               child: Align(
                                 alignment: Alignment.centerRight,
-                                child: _SignupProgressBar(currentStep: 3, totalSteps: 3),
+                                child: _SignupProgressBar(
+                                    currentStep: 3, totalSteps: 3),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text('Create Your Password', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 26, color: Colors.black)),
+                        const Text('Create Your Password',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 26,
+                                color: Colors.black)),
                         const SizedBox(height: 12),
-                        const Text('Set a secure password for your account.', style: TextStyle(fontFamily: 'Lato', fontSize: 16, color: Colors.black87)),
+                        const Text('Set a secure password for your account.',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontSize: 16,
+                                color: Colors.black87)),
                         const SizedBox(height: 32),
                         TextField(
                           controller: _passwordController,
                           obscureText: _obscure,
-                          style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w400),
+                            labelStyle: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w400),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.black54, width: 1.5),
+                              borderSide: const BorderSide(
+                                  color: Colors.black54, width: 1.5),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFF7C1EFF), width: 2),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF7C1EFF), width: 2),
                             ),
                             errorText: _errorText,
                             suffixIcon: IconButton(
-                              icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              icon: Icon(_obscure
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
                           onChanged: _validatePassword,
@@ -182,12 +211,16 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                             decoration: BoxDecoration(
                               gradient: _isValid
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF7C1EFF), Color(0xFFB983FF)],
+                                      colors: [
+                                        Color(0xFF7C1EFF),
+                                        Color(0xFFB983FF)
+                                      ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
                                     )
                                   : null,
-                              color: _isValid ? null : Colors.deepPurple.shade100,
+                              color:
+                                  _isValid ? null : Colors.deepPurple.shade100,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: _isValid
                                   ? [
@@ -260,9 +293,14 @@ class _PasswordCriteriaChecklist extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Icon(met ? Icons.check_circle : Icons.radio_button_unchecked, color: met ? Colors.green : Colors.grey, size: 18),
+          Icon(met ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: met ? Colors.green : Colors.grey, size: 18),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: met ? Colors.green : Colors.black54)),
+          Text(text,
+              style: TextStyle(
+                  fontFamily: 'Lato',
+                  fontSize: 14,
+                  color: met ? Colors.green : Colors.black54)),
         ],
       ),
     );
@@ -272,7 +310,8 @@ class _PasswordCriteriaChecklist extends StatelessWidget {
 class _SignupProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-  const _SignupProgressBar({required this.currentStep, required this.totalSteps});
+  const _SignupProgressBar(
+      {required this.currentStep, required this.totalSteps});
   @override
   Widget build(BuildContext context) {
     double percent = currentStep / totalSteps;

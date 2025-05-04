@@ -65,7 +65,10 @@ class _SearchTabState extends State<SearchTab> {
   String _toCamelCase(String? input) {
     if (input == null || input.trim().isEmpty) return '';
     final words = input.trim().split(RegExp(r'[_\s]+'));
-    return words.map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase()).join(' ');
+    return words
+        .map((w) =>
+            w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
   }
 
   void _updateSearchCardHeight() {
@@ -85,7 +88,7 @@ class _SearchTabState extends State<SearchTab> {
   Future<void> _fetchCities() async {
     try {
       final dio = Dio();
-      final response = await dio.get(citiesEndpoint); 
+      final response = await dio.get(citiesEndpoint);
       setState(() {
         cities = response.data;
       });
@@ -103,10 +106,17 @@ class _SearchTabState extends State<SearchTab> {
     if (userProfileStr != null) {
       try {
         final userProfile = jsonDecode(userProfileStr);
-        name = userProfile['OtherAttributes']?['FullName'] ?? userProfile['fullName'] ?? userProfile['name'] ?? userProfile['username'];
+        name = userProfile['OtherAttributes']?['FullName'] ??
+            userProfile['fullName'] ??
+            userProfile['name'] ??
+            userProfile['username'];
       } catch (_) {}
     }
-    name = name ?? prefs.getString('flutter.signup_username') ?? prefs.getString('signup_username') ?? prefs.getString('username') ?? 'User';
+    name = name ??
+        prefs.getString('flutter.signup_username') ??
+        prefs.getString('signup_username') ??
+        prefs.getString('username') ??
+        'User';
     setState(() {
       username = name;
     });
@@ -123,7 +133,8 @@ class _SearchTabState extends State<SearchTab> {
     super.initState();
     _loadUsername();
     _fetchCities();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateSearchCardHeight());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _updateSearchCardHeight());
   }
 
   @override
@@ -177,7 +188,8 @@ class _SearchTabState extends State<SearchTab> {
                       setState(() {
                         selectedOrigin = selectedCity['station_code'] ?? '';
                         selectedOriginName = selectedCity['station_name'] ?? '';
-                        originController.text = selectedCity['station_name'] ?? '';
+                        originController.text =
+                            selectedCity['station_name'] ?? '';
                       });
                     }
                   },
@@ -195,9 +207,12 @@ class _SearchTabState extends State<SearchTab> {
                     );
                     if (selectedCity != null) {
                       setState(() {
-                        selectedDestination = selectedCity['station_code'] ?? '';
-                        selectedDestinationName = selectedCity['station_name'] ?? '';
-                        destinationController.text = selectedCity['station_name'] ?? '';
+                        selectedDestination =
+                            selectedCity['station_code'] ?? '';
+                        selectedDestinationName =
+                            selectedCity['station_name'] ?? '';
+                        destinationController.text =
+                            selectedCity['station_name'] ?? '';
                       });
                     }
                   },
@@ -235,7 +250,8 @@ class _SearchTabState extends State<SearchTab> {
                   onReturnDateTap: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate: returnDate ?? (selectedDate ?? DateTime.now()),
+                      initialDate:
+                          returnDate ?? (selectedDate ?? DateTime.now()),
                       firstDate: selectedDate ?? DateTime.now(),
                       lastDate: DateTime.now().add(Duration(days: 365)),
                     );
@@ -257,14 +273,17 @@ class _SearchTabState extends State<SearchTab> {
                     final travelClass = trainClass;
                     if (origin.isEmpty || destination.isEmpty || date.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please select origin, destination, and date.')),
+                        SnackBar(
+                            content: Text(
+                                'Please select origin, destination, and date.')),
                       );
                       return;
                     }
                     try {
                       final dio = Dio();
                       final response = await dio.get(
-                        '${ApiConstants.baseUrl}/api/v1/trains/search'.replaceAll(RegExp(r'\/$'), ''),
+                        '${ApiConstants.baseUrl}/api/v1/trains/search'
+                            .replaceAll(RegExp(r'\/$'), ''),
                         queryParameters: {
                           'origin': origin,
                           'destination': destination,
@@ -309,7 +328,8 @@ class _SearchTabState extends State<SearchTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
                     child: Text(
                       'Quick Actions',
                       style: TextStyle(
@@ -325,7 +345,8 @@ class _SearchTabState extends State<SearchTab> {
                     color: Colors.white,
                     margin: EdgeInsets.symmetric(horizontal: 16),
                     elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: GridView.count(
@@ -335,18 +356,66 @@ class _SearchTabState extends State<SearchTab> {
                         crossAxisSpacing: 8,
                         physics: NeverScrollableScrollPhysics(),
                         children: [
-                          QuickAction(icon: Icons.train, label: 'Book Train', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.history, label: 'History', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.favorite, label: 'Favorites', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.search, label: 'Search PNR', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.directions_bus, label: 'Book Bus', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.hotel, label: 'Book Hotel', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.airplanemode_active, label: 'Book Flight', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.directions_car, label: 'Cab', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.local_offer, label: 'Offers', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.support_agent, label: 'Support', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.language, label: 'Language', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
-                          QuickAction(icon: Icons.info_outline, label: 'Info', iconColor: Color(0xFF7C3AED), labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.train,
+                              label: 'Book Train',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.history,
+                              label: 'History',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.favorite,
+                              label: 'Favorites',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.search,
+                              label: 'Search PNR',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.directions_bus,
+                              label: 'Book Bus',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.hotel,
+                              label: 'Book Hotel',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.airplanemode_active,
+                              label: 'Book Flight',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.directions_car,
+                              label: 'Cab',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.local_offer,
+                              label: 'Offers',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.support_agent,
+                              label: 'Support',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.language,
+                              label: 'Language',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
+                          QuickAction(
+                              icon: Icons.info_outline,
+                              label: 'Info',
+                              iconColor: Color(0xFF7C3AED),
+                              labelColor: Color(0xFF7C3AED)),
                         ],
                       ),
                     ),

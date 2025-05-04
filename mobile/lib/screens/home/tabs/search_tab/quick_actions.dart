@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class QuickActionsSection extends StatelessWidget {
   final List<Widget> actions;
-  const QuickActionsSection({Key? key, required this.actions}) : super(key: key);
+  const QuickActionsSection({Key? key, required this.actions})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +46,14 @@ class QuickAction extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? iconColor;
   final Color? labelColor;
-  const QuickAction({Key? key, required this.icon, required this.label, this.onTap, this.iconColor, this.labelColor}) : super(key: key);
+  const QuickAction(
+      {Key? key,
+      required this.icon,
+      required this.label,
+      this.onTap,
+      this.iconColor,
+      this.labelColor})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +75,11 @@ class QuickAction extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Lato', fontSize: 11, color: labelColor ?? Color(0xFF7C3AED), fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontFamily: 'Lato',
+                fontSize: 11,
+                color: labelColor ?? Color(0xFF7C3AED),
+                fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

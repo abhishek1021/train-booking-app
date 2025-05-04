@@ -32,7 +32,8 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
     try {
       final email = _emailController.text.trim().toLowerCase();
       final password = _passwordController.text;
-      final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/login');
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/login');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -45,7 +46,8 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
         // Store user info in prefs
         final userInfo = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+        await prefs.setString(
+            'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
         Navigator.of(context).pushReplacementNamed('/home');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful!')),
@@ -108,7 +110,8 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                                icon: const Icon(Icons.arrow_back,
+                                    color: Colors.black),
                                 onPressed: () => Navigator.pop(context),
                               ),
                               const SizedBox(width: 8),
@@ -155,33 +158,47 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                   child: TextFormField(
                                     controller: _emailController,
                                     keyboardType: TextInputType.emailAddress,
-                                    style: const TextStyle(fontFamily: 'Lato', color: Colors.black),
+                                    style: const TextStyle(
+                                        fontFamily: 'Lato',
+                                        color: Colors.black),
                                     decoration: InputDecoration(
                                       hintText: 'example@example',
-                                      hintStyle: const TextStyle(color: Colors.black38, fontFamily: 'Lato'),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                                      hintStyle: const TextStyle(
+                                          color: Colors.black38,
+                                          fontFamily: 'Lato'),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 18, vertical: 18),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.black12),
+                                        borderSide: const BorderSide(
+                                            color: Colors.black12),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.black26),
+                                        borderSide: const BorderSide(
+                                            color: Colors.black26),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.deepPurple),
+                                        borderSide: const BorderSide(
+                                            color: Colors.deepPurple),
                                       ),
                                       filled: true,
                                       fillColor: Colors.white,
-                                      errorStyle: const TextStyle(color: Colors.red, fontSize: 13, height: 1.2),
+                                      errorStyle: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 13,
+                                          height: 1.2),
                                       errorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 1.5),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 1.5),
                                       ),
                                     ),
                                     validator: (value) {
@@ -211,44 +228,61 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                   child: TextFormField(
                                     controller: _passwordController,
                                     obscureText: _obscurePassword,
-                                    style: const TextStyle(fontFamily: 'Lato', color: Colors.black),
+                                    style: const TextStyle(
+                                        fontFamily: 'Lato',
+                                        color: Colors.black),
                                     decoration: InputDecoration(
                                       hintText: 'Enter password',
-                                      hintStyle: const TextStyle(color: Colors.black38, fontFamily: 'Lato'),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                                      hintStyle: const TextStyle(
+                                          color: Colors.black38,
+                                          fontFamily: 'Lato'),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 18, vertical: 18),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.black12),
+                                        borderSide: const BorderSide(
+                                            color: Colors.black12),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.black26),
+                                        borderSide: const BorderSide(
+                                            color: Colors.black26),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.deepPurple),
+                                        borderSide: const BorderSide(
+                                            color: Colors.deepPurple),
                                       ),
                                       filled: true,
                                       fillColor: Colors.white,
                                       suffixIcon: IconButton(
                                         icon: Icon(
-                                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                          _obscurePassword
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
                                           color: Colors.black38,
                                         ),
                                         onPressed: () {
                                           setState(() {
-                                            _obscurePassword = !_obscurePassword;
+                                            _obscurePassword =
+                                                !_obscurePassword;
                                           });
                                         },
                                       ),
-                                      errorStyle: const TextStyle(color: Colors.red, fontSize: 13, height: 1.2),
+                                      errorStyle: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 13,
+                                          height: 1.2),
                                       errorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 1.5),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 1.5),
                                       ),
                                     ),
                                     validator: (value) {
@@ -274,20 +308,26 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                       splashColor: Colors.transparent,
                                       highlightColor: Colors.transparent,
                                       onTap: () {
-                                        if (_formKey.currentState?.validate() ?? false) {
+                                        if (_formKey.currentState?.validate() ??
+                                            false) {
                                           _login();
                                         }
                                       },
                                       child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 16),
                                         child: Center(
                                           child: _isLoading
                                               ? const SizedBox(
                                                   height: 22,
                                                   width: 22,
-                                                  child: CircularProgressIndicator(
+                                                  child:
+                                                      CircularProgressIndicator(
                                                     strokeWidth: 2.5,
-                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            Colors.white),
                                                   ),
                                                 )
                                               : const Text(
@@ -332,12 +372,25 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                               child: RichText(
                                 textAlign: TextAlign.center,
                                 text: const TextSpan(
-                                  style: TextStyle(fontFamily: 'Lato', color: Colors.black45, fontSize: 13),
+                                  style: TextStyle(
+                                      fontFamily: 'Lato',
+                                      color: Colors.black45,
+                                      fontSize: 13),
                                   children: [
-                                    TextSpan(text: 'By using TatkalPro, you agree to the '),
-                                    TextSpan(text: 'Terms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                                    TextSpan(
+                                        text:
+                                            'By using TatkalPro, you agree to the '),
+                                    TextSpan(
+                                        text: 'Terms',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black)),
                                     TextSpan(text: ' and '),
-                                    TextSpan(text: 'Privacy Policy.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                                    TextSpan(
+                                        text: 'Privacy Policy.',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black)),
                                   ],
                                 ),
                               ),

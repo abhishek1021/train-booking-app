@@ -24,7 +24,8 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
   }
 
   Future<bool> _checkUserExists(String email) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
+    final url = Uri.parse(
+        '${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -47,7 +48,9 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
     final exists = await _checkUserExists(email);
     if (exists) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A user with this email already exists. Please login using your credentials.')),
+        const SnackBar(
+            content: Text(
+                'A user with this email already exists. Please login using your credentials.')),
       );
       return;
     }
@@ -70,7 +73,8 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
         );
         Navigator.pushNamed(context, '/signup_step2');
       } else {
-        final error = jsonDecode(response.body)['detail'] ?? 'Failed to send OTP';
+        final error =
+            jsonDecode(response.body)['detail'] ?? 'Failed to send OTP';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error)),
         );
@@ -110,47 +114,71 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.black),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.black),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Step 1/3', style: TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.deepPurple)),
+                            const Text('Step 1/3',
+                                style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontSize: 15,
+                                    color: Colors.deepPurple)),
                             Expanded(
                               child: Align(
                                 alignment: Alignment.centerRight,
-                                child: _SignupProgressBar(currentStep: 1, totalSteps: 3),
+                                child: _SignupProgressBar(
+                                    currentStep: 1, totalSteps: 3),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text('Add Your Email', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 26, color: Colors.black)),
+                        const Text('Add Your Email',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 26,
+                                color: Colors.black)),
                         const SizedBox(height: 12),
-                        const Text('Enter your email address to begin signup.', style: TextStyle(fontFamily: 'Lato', fontSize: 16, color: Colors.black87)),
+                        const Text('Enter your email address to begin signup.',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontSize: 16,
+                                color: Colors.black87)),
                         const SizedBox(height: 32),
                         Form(
                           key: _formKey,
                           child: TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500),
                             decoration: InputDecoration(
                               labelText: 'Email Address',
-                              labelStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w400),
+                              labelStyle: const TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w400),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Colors.black54, width: 1.5),
+                                borderSide: const BorderSide(
+                                    color: Colors.black54, width: 1.5),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF7C1EFF), width: 2),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF7C1EFF), width: 2),
                               ),
-                              helperText: 'We’ll send a verification code to this email.',
+                              helperText:
+                                  'We’ll send a verification code to this email.',
                             ),
                             validator: (value) {
                               final email = value ?? '';
                               if (email.isEmpty) return 'Email is required';
-                              if (!Validators.isValidEmail(email)) return 'Enter a valid email';
+                              if (!Validators.isValidEmail(email))
+                                return 'Enter a valid email';
                               return null;
                             },
                             onChanged: _validateEmail,
@@ -164,12 +192,16 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                             decoration: BoxDecoration(
                               gradient: _isValid
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF7C1EFF), Color(0xFFB983FF)],
+                                      colors: [
+                                        Color(0xFF7C1EFF),
+                                        Color(0xFFB983FF)
+                                      ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
                                     )
                                   : null,
-                              color: _isValid ? null : Colors.deepPurple.shade100,
+                              color:
+                                  _isValid ? null : Colors.deepPurple.shade100,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: _isValid
                                   ? [
@@ -231,7 +263,8 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
 class _SignupProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-  const _SignupProgressBar({required this.currentStep, required this.totalSteps});
+  const _SignupProgressBar(
+      {required this.currentStep, required this.totalSteps});
 
   @override
   Widget build(BuildContext context) {

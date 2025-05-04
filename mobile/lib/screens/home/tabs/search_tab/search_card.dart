@@ -7,7 +7,8 @@ class SearchCard extends StatelessWidget {
   final TextEditingController destinationController;
   final VoidCallback onOriginTap;
   final VoidCallback onDestinationTap;
-  final Widget? Function(BuildContext, String)? extraFields; // e.g. date pickers, etc.
+  final Widget? Function(BuildContext, String)?
+      extraFields; // e.g. date pickers, etc.
   final int passengers;
   final void Function(bool)? onPassengersChanged;
   final VoidCallback onPassengersTap;
@@ -62,18 +63,24 @@ class SearchCard extends StatelessWidget {
                     child: Column(
                       children: [
                         Text('One-Way',
-                          style: TextStyle(
-                            fontFamily: 'Lato',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: selectedTabIndex == 0 ? Color(0xFF7C3AED) : Colors.black26,
-                          )),
+                            style: TextStyle(
+                              fontFamily: 'Lato',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: selectedTabIndex == 0
+                                  ? Color(0xFF7C3AED)
+                                  : Colors.black26,
+                            )),
                         AnimatedContainer(
                           duration: Duration(milliseconds: 200),
-                          height: 3, width: 56, margin: const EdgeInsets.only(top: 6),
+                          height: 3,
+                          width: 56,
+                          margin: const EdgeInsets.only(top: 6),
                           decoration: BoxDecoration(
-                            color: selectedTabIndex == 0 ? Color(0xFF7C3AED) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(2)),
+                              color: selectedTabIndex == 0
+                                  ? Color(0xFF7C3AED)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(2)),
                         ),
                       ],
                     ),
@@ -85,18 +92,24 @@ class SearchCard extends StatelessWidget {
                     child: Column(
                       children: [
                         Text('Round Trip',
-                          style: TextStyle(
-                            fontFamily: 'Lato',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: selectedTabIndex == 1 ? Color(0xFF7C3AED) : Colors.black26,
-                          )),
+                            style: TextStyle(
+                              fontFamily: 'Lato',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: selectedTabIndex == 1
+                                  ? Color(0xFF7C3AED)
+                                  : Colors.black26,
+                            )),
                         AnimatedContainer(
                           duration: Duration(milliseconds: 200),
-                          height: 3, width: 56, margin: const EdgeInsets.only(top: 6),
+                          height: 3,
+                          width: 56,
+                          margin: const EdgeInsets.only(top: 6),
                           decoration: BoxDecoration(
-                            color: selectedTabIndex == 1 ? Color(0xFF7C3AED) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(2)),
+                              color: selectedTabIndex == 1
+                                  ? Color(0xFF7C3AED)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(2)),
                         ),
                       ],
                     ),
@@ -113,15 +126,24 @@ class SearchCard extends StatelessWidget {
                 controller: originController,
                 decoration: InputDecoration(
                   labelText: 'Origin',
-                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                  labelStyle:
+                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
-                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
+                  suffixIcon: const Icon(Icons.arrow_drop_down,
+                      color: Color(0xFF7C3AED)),
                 ),
-                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                style: const TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black),
                 onTap: onOriginTap,
               ),
             ),
@@ -133,14 +155,22 @@ class SearchCard extends StatelessWidget {
                 controller: destinationController,
                 decoration: InputDecoration(
                   labelText: 'Destination',
-                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                  labelStyle:
+                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
                 ),
-                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                style: const TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black),
                 onTap: onDestinationTap,
               ),
             ),
@@ -152,34 +182,51 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
-                    labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                    labelStyle:
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                    prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    prefixIcon:
+                        Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
-                  style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                  style: TextStyle(
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black),
                   controller: TextEditingController(text: departureDateText),
                   onTap: onDepartureDateTap,
                 ),
               ),
-            ]
-            else ...[
+            ] else ...[
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: TextFormField(
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
-                    labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                    labelStyle:
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                    prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    prefixIcon:
+                        Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
-                  style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                  style: TextStyle(
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black),
                   controller: TextEditingController(text: departureDateText),
                   onTap: onDepartureDateTap,
                 ),
@@ -191,14 +238,23 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Return Date',
-                    labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                    labelStyle:
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                    prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    prefixIcon:
+                        Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
-                  style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                  style: TextStyle(
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black),
                   controller: TextEditingController(text: returnDateText),
                   onTap: onReturnDateTap,
                 ),
@@ -213,28 +269,48 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Passengers',
-                    labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                    labelStyle:
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                     suffix: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.remove_circle_outline, color: Color(0xFF7C3AED)),
-                          onPressed: () => onPassengersChanged != null ? onPassengersChanged!(false) : null,
+                          icon: Icon(Icons.remove_circle_outline,
+                              color: Color(0xFF7C3AED)),
+                          onPressed: () => onPassengersChanged != null
+                              ? onPassengersChanged!(false)
+                              : null,
                         ),
-                        Text('$passengers', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C3AED))),
+                        Text('$passengers',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF7C3AED))),
                         IconButton(
-                          icon: Icon(Icons.add_circle_outline, color: Color(0xFF7C3AED)),
-                          onPressed: () => onPassengersChanged != null ? onPassengersChanged!(true) : null,
+                          icon: Icon(Icons.add_circle_outline,
+                              color: Color(0xFF7C3AED)),
+                          onPressed: () => onPassengersChanged != null
+                              ? onPassengersChanged!(true)
+                              : null,
                         ),
                       ],
                     ),
                   ),
-                  controller: TextEditingController(text: '$passengers Adult${passengers > 1 ? 's' : ''}'),
-                  style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                  controller: TextEditingController(
+                      text: '$passengers Adult${passengers > 1 ? 's' : ''}'),
+                  style: const TextStyle(
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black),
                   onTap: onPassengersTap,
                 ),
               ),
@@ -246,32 +322,46 @@ class SearchCard extends StatelessWidget {
                 value: trainClass,
                 decoration: InputDecoration(
                   labelText: 'Class',
-                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                  labelStyle:
+                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 ),
                 dropdownColor: Colors.white,
-                items: trainClasses.map((c) => DropdownMenuItem(
-                  value: c,
-                  child: MouseRegion(
-                    onHover: (event) {},
-                    child: StatefulBuilder(
-                      builder: (context, setState) {
-                        return Container(
-                          decoration: BoxDecoration(),
-                          child: Text(
-                            c,
-                            style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                items: trainClasses
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: MouseRegion(
+                            onHover: (event) {},
+                            child: StatefulBuilder(
+                              builder: (context, setState) {
+                                return Container(
+                                  decoration: BoxDecoration(),
+                                  child: Text(
+                                    c,
+                                    style: const TextStyle(
+                                        fontFamily: 'Lato',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.black),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                )).toList(),
+                        ))
+                    .toList(),
                 onChanged: onTrainClassChanged,
-                style: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                style: const TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black),
                 icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
               ),
             ),
@@ -282,20 +372,31 @@ class SearchCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onSearch,
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
                   padding: MaterialStateProperty.all(EdgeInsets.zero),
                   elevation: MaterialStateProperty.all(0),
-                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
-                  overlayColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.pressed) ? Colors.purple.withOpacity(0.08) : null),
+                  backgroundColor:
+                      MaterialStateProperty.all(Colors.transparent),
+                  overlayColor: MaterialStateProperty.resolveWith((states) =>
+                      states.contains(MaterialState.pressed)
+                          ? Colors.purple.withOpacity(0.08)
+                          : null),
                 ),
                 child: Ink(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)]),
+                    gradient: LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)]),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Container(
                     alignment: Alignment.center,
-                    child: Text('Search Trains', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                    child: Text('Search Trains',
+                        style: TextStyle(
+                            fontFamily: 'Lato',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white)),
                   ),
                 ),
               ),

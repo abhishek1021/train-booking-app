@@ -15,7 +15,8 @@ class BookingsTab extends StatelessWidget {
             child: Neumorphic(
               style: NeumorphicStyle(
                 depth: 8,
-                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                boxShape:
+                    NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),

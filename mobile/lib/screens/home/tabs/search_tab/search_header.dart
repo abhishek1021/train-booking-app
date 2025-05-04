@@ -41,7 +41,11 @@ class SearchHeader extends StatelessWidget {
                     greeting,
                     style: const TextStyle(
                       fontFamily: 'Lato',
-                      fontFamilyFallback: ['NotoColorEmoji', 'Segoe UI Emoji', 'Apple Color Emoji'],
+                      fontFamilyFallback: [
+                        'NotoColorEmoji',
+                        'Segoe UI Emoji',
+                        'Apple Color Emoji'
+                      ],
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                       color: Colors.white,
@@ -58,7 +62,8 @@ class SearchHeader extends StatelessWidget {
                       border: Border.all(color: Colors.white, width: 1.4),
                       color: Colors.white.withOpacity(0.10),
                     ),
-                    child: const Icon(Icons.notifications_none_outlined, color: Colors.white, size: 24),
+                    child: const Icon(Icons.notifications_none_outlined,
+                        color: Colors.white, size: 24),
                   ),
                 ),
               ],

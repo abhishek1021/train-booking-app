@@ -30,7 +30,10 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final fullName = userProfile?['OtherAttributes']?['FullName'] ?? userProfile?['fullName'] ?? userProfile?['name'] ?? 'User';
+    final fullName = userProfile?['OtherAttributes']?['FullName'] ??
+        userProfile?['fullName'] ??
+        userProfile?['name'] ??
+        'User';
     final email = userProfile?['Email'] ?? userProfile?['email'] ?? '';
     final avatarUrl = userProfile?['avatarUrl'];
     return Scaffold(
@@ -76,14 +79,19 @@ class _ProfileTabState extends State<ProfileTab> {
               children: [
                 // Profile header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 24),
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 32,
                         backgroundColor: Colors.grey[300],
-                        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                        child: avatarUrl == null ? Icon(Icons.person, size: 38, color: Colors.grey[700]) : null,
+                        backgroundImage:
+                            avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                        child: avatarUrl == null
+                            ? Icon(Icons.person,
+                                size: 38, color: Colors.grey[700])
+                            : null,
                       ),
                       const SizedBox(width: 18),
                       Expanded(
@@ -113,13 +121,15 @@ class _ProfileTabState extends State<ProfileTab> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.qr_code_2, color: Colors.black54),
+                        icon:
+                            const Icon(Icons.qr_code_2, color: Colors.black54),
                         onPressed: () {},
                       ),
                     ],
                   ),
                 ),
-                const Divider(height: 1, thickness: 1, indent: 24, endIndent: 24),
+                const Divider(
+                    height: 1, thickness: 1, indent: 24, endIndent: 24),
                 const SizedBox(height: 12),
                 _sectionHeader('General'),
                 _menuItem(Icons.person, 'Personal Info', onTap: () {}),
@@ -127,8 +137,10 @@ class _ProfileTabState extends State<ProfileTab> {
                 _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {}),
                 _menuItem(Icons.notifications, 'Notification', onTap: () {}),
                 _menuItem(Icons.security, 'Security', onTap: () {}),
-                _menuItem(Icons.language, 'Language', trailing: Text('English (US)', style: _trailingStyle)),
-                _menuItem(Icons.remove_red_eye, 'Dark Mode', trailing: Switch(value: false, onChanged: (_) {})),
+                _menuItem(Icons.language, 'Language',
+                    trailing: Text('English (US)', style: _trailingStyle)),
+                _menuItem(Icons.remove_red_eye, 'Dark Mode',
+                    trailing: Switch(value: false, onChanged: (_) {})),
                 const SizedBox(height: 12),
                 _sectionHeader('About'),
                 _menuItem(Icons.help_outline, 'Help Center', onTap: () {}),
@@ -144,10 +156,15 @@ class _ProfileTabState extends State<ProfileTab> {
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                     icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                    label: const Text('Logout',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
                     style: TextButton.styleFrom(
                       alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 0),
                     ),
                   ),
                 ),
@@ -174,7 +191,9 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
       );
 
-  Widget _menuItem(IconData icon, String label, {Widget? trailing, VoidCallback? onTap}) => InkWell(
+  Widget _menuItem(IconData icon, String label,
+          {Widget? trailing, VoidCallback? onTap}) =>
+      InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
@@ -195,7 +214,8 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
               if (trailing != null) trailing,
               if (trailing == null)
-                const Icon(Icons.chevron_right, color: Colors.black26, size: 22),
+                const Icon(Icons.chevron_right,
+                    color: Colors.black26, size: 22),
             ],
           ),
         ),

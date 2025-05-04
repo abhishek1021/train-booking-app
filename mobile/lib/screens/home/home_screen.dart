@@ -45,7 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
           type: BottomNavigationBarType.fixed,
           selectedItemColor: const Color(0xFF7C3AED),
           unselectedItemColor: Colors.black45,
-          selectedLabelStyle: const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold),
+          selectedLabelStyle:
+              const TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontFamily: 'Lato'),
           items: const [
             BottomNavigationBarItem(

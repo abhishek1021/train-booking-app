@@ -9,10 +9,12 @@ class SignupStep2VerifyEmailScreen extends StatefulWidget {
   const SignupStep2VerifyEmailScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignupStep2VerifyEmailScreen> createState() => _SignupStep2VerifyEmailScreenState();
+  State<SignupStep2VerifyEmailScreen> createState() =>
+      _SignupStep2VerifyEmailScreenState();
 }
 
-class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScreen> {
+class _SignupStep2VerifyEmailScreenState
+    extends State<SignupStep2VerifyEmailScreen> {
   final _otpController = TextEditingController();
   bool _isValid = false;
   String? _errorText;
@@ -54,7 +56,8 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
         );
         Navigator.pushNamed(context, '/signup_step3');
       } else {
-        final error = jsonDecode(response.body)['detail'] ?? 'Invalid or expired OTP';
+        final error =
+            jsonDecode(response.body)['detail'] ?? 'Invalid or expired OTP';
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -120,39 +123,62 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.black),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.black),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Step 2/3', style: TextStyle(fontFamily: 'Lato', fontSize: 15, color: Colors.deepPurple)),
+                            const Text('Step 2/3',
+                                style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontSize: 15,
+                                    color: Colors.deepPurple)),
                             Expanded(
                               child: Align(
                                 alignment: Alignment.centerRight,
-                                child: _SignupProgressBar(currentStep: 2, totalSteps: 3),
+                                child: _SignupProgressBar(
+                                    currentStep: 2, totalSteps: 3),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text('Verify Your Email', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 26, color: Colors.black)),
+                        const Text('Verify Your Email',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 26,
+                                color: Colors.black)),
                         const SizedBox(height: 12),
-                        const Text('A 6-digit code has been sent to your email. Enter it below to verify.', style: TextStyle(fontFamily: 'Lato', fontSize: 16, color: Colors.black87)),
+                        const Text(
+                            'A 6-digit code has been sent to your email. Enter it below to verify.',
+                            style: TextStyle(
+                                fontFamily: 'Lato',
+                                fontSize: 16,
+                                color: Colors.black87)),
                         const SizedBox(height: 32),
                         TextField(
                           controller: _otpController,
                           keyboardType: TextInputType.number,
                           maxLength: 6,
-                          style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             labelText: 'OTP Code',
-                            labelStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w400),
+                            labelStyle: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w400),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.black54, width: 1.5),
+                              borderSide: const BorderSide(
+                                  color: Colors.black54, width: 1.5),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFF7C1EFF), width: 2),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF7C1EFF), width: 2),
                             ),
                             errorText: _errorText,
                             counterText: '',
@@ -171,10 +197,15 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
                                   _otpController.clear();
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('OTP resent to your email.')),
+                                  const SnackBar(
+                                      content:
+                                          Text('OTP resent to your email.')),
                                 );
                               },
-                              child: const Text('Resend Code', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                              child: const Text('Resend Code',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -186,12 +217,16 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
                             decoration: BoxDecoration(
                               gradient: _isValid
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF7C1EFF), Color(0xFFB983FF)],
+                                      colors: [
+                                        Color(0xFF7C1EFF),
+                                        Color(0xFFB983FF)
+                                      ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
                                     )
                                   : null,
-                              color: _isValid ? null : Colors.deepPurple.shade100,
+                              color:
+                                  _isValid ? null : Colors.deepPurple.shade100,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: _isValid
                                   ? [
@@ -247,7 +282,8 @@ class _SignupStep2VerifyEmailScreenState extends State<SignupStep2VerifyEmailScr
 class _SignupProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-  const _SignupProgressBar({required this.currentStep, required this.totalSteps});
+  const _SignupProgressBar(
+      {required this.currentStep, required this.totalSteps});
 
   @override
   Widget build(BuildContext context) {

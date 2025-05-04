@@ -22,7 +22,8 @@ class WelcomeScreen extends StatelessWidget {
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -104,7 +105,11 @@ class WelcomeScreen extends StatelessWidget {
                     children: [
                       const Text(
                         'Already have an account? ',
-                        style: TextStyle(color: Colors.white70, fontFamily: 'Lato', fontSize: 16, decoration: TextDecoration.none),
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontFamily: 'Lato',
+                            fontSize: 16,
+                            decoration: TextDecoration.none),
                       ),
                       GestureDetector(
                         onTap: () {

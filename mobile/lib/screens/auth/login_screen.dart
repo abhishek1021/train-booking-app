@@ -12,7 +12,8 @@ class LoginScreen extends StatelessWidget {
         child: Scaffold(
           backgroundColor: Colors.white,
           body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -88,7 +89,9 @@ class LoginScreen extends StatelessWidget {
                     Expanded(child: Divider()),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Text('or', style: TextStyle(fontFamily: 'Lato', color: Colors.black54)),
+                      child: Text('or',
+                          style: TextStyle(
+                              fontFamily: 'Lato', color: Colors.black54)),
                     ),
                     Expanded(child: Divider()),
                   ],
@@ -126,12 +129,24 @@ class LoginScreen extends StatelessWidget {
                     child: RichText(
                       textAlign: TextAlign.center,
                       text: const TextSpan(
-                        style: TextStyle(fontFamily: 'Lato', color: Colors.black45, fontSize: 13),
+                        style: TextStyle(
+                            fontFamily: 'Lato',
+                            color: Colors.black45,
+                            fontSize: 13),
                         children: [
-                          TextSpan(text: 'By using TatkalPro, you agree to the '),
-                          TextSpan(text: 'Terms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                          TextSpan(
+                              text: 'By using TatkalPro, you agree to the '),
+                          TextSpan(
+                              text: 'Terms',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
                           TextSpan(text: ' and '),
-                          TextSpan(text: 'Privacy Policy.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                          TextSpan(
+                              text: 'Privacy Policy.',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
                         ],
                       ),
                     ),
