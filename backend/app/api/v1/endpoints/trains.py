@@ -2,44 +2,48 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
+import pathlib
+import json
+import os
 
-# from app.db.session import get_db
-# from app.core.irctc import IRCTCClient
-# from app.schemas.train import TrainResponse
 from app.api.v1.external_mock_api import get_trains
 from typing import Optional
 
 router = APIRouter()
 
-
+# Fix search_trains to only filter by source, destination, and date/day. Remove class filtering.
 @router.get("/search", tags=["trains"])
 def search_trains(
     origin: str = Query(..., description="Origin station code (e.g., NDLS)"),
     destination: str = Query(..., description="Destination station code (e.g., HWH)"),
-    date: str = Query(..., description="Journey date (YYYY-MM-DD)"),
-    travel_class: Optional[str] = Query(None, description="Travel class (e.g., SL, 3A, 2A, 1A)")
+    date: str = Query(..., description="Journey date (YYYY-MM-DD)")
 ):
     """
-    Search for trains between origin and destination on a given date and class.
-    Filters by route order, class, and (if present in data) availability.
+    Search for trains between origin and destination on a given date.
+    Only filters by route and days of run. Class filtering is removed.
     """
     try:
         trains = get_trains()
         results = []
+        # Convert date string to weekday abbreviation (e.g. 'Wed')
+        from datetime import datetime
+        day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
         for train in trains:
-            route = train.get("route", [])
-            classes = train.get("classes_available", [])
-            # Check if both stations are in route and in correct order
-            if origin in route and destination in route:
-                if route.index(origin) < route.index(destination):
-                    if not travel_class or travel_class in classes:
-                        # Optionally, check availability by date/class if present
-                        available = True
-                        if "seat_availability" in train:
-                            avail_info = train["seat_availability"].get(date, {})
-                            available = avail_info.get(travel_class, True)
-                        if available:
-                            results.append(train)
+            if train.get('source_station') == origin and train.get('destination_station') == destination:
+                days_of_run = train.get('days_of_run', [])
+                # Compare case-insensitively
+                if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                    results.append(train)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get('/api/v1/trains/seat_count')
+def get_seat_count(train_id: int = Query(...), travel_class: str = Query(...)):
+    trains = get_trains()
+    for train in trains:
+        if str(train.get('train_id')) == str(train_id):
+            seat_count = train.get('seat_availability', {}).get(travel_class)
+            price = train.get('class_prices', {}).get(travel_class)
+            return {"train_id": train_id, "class": travel_class, "seat_count": seat_count, "price": price}
+    return {"error": "Not found"}

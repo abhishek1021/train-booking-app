@@ -68,10 +68,28 @@ with open('trains.csv', 'r', encoding='utf-8') as f:
 all_classes = ["SL", "1A", "2A", "3A", "CC", "2S", "3E"]
 all_days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 merged_trains = []
+CLASS_PRICE_MAP = {
+    '1A': 3000,
+    '2A': 1900,
+    '3A': 1300,
+    'SL': 550,
+    '2S': 300,
+    'CC': 850,
+    'FC': 700,
+    '3E': 1100,
+}
+
+def random_seat_count():
+    return random.randint(0, 150)
+
 for t in list(trains.values())[:3000]:  # Limit to 3000 trains for performance
     t['classes_available'] = random.sample(all_classes, k=random.randint(2, 4))
     t['days_of_run'] = random.sample(all_days, k=random.randint(3, 5))
     t['updated_at'] = "2025-05-01T00:00:00Z"
+    seat_availability = {c: random_seat_count() for c in t['classes_available']}
+    class_prices = {c: CLASS_PRICE_MAP.get(c, random.randint(200, 3500)) for c in t['classes_available']}
+    t['seat_availability'] = seat_availability
+    t['class_prices'] = class_prices
     merged_trains.append(t)
 
 db['trains'] = merged_trains

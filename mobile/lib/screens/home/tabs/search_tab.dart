@@ -31,8 +31,6 @@ class _SearchTabState extends State<SearchTab> {
   final GlobalKey _searchCardKey = GlobalKey();
   double _searchCardHeight = 0;
   int passengers = 1;
-  String trainClass = 'SL';
-  List<String> trainClasses = ['SL', '1A', '2A', '3A', 'CC', '2S', '3E'];
 
   final String citiesEndpoint = "${ApiConstants.baseUrl}/api/v1/cities";
 
@@ -226,13 +224,6 @@ class _SearchTabState extends State<SearchTab> {
                       }
                     });
                   },
-                  trainClass: trainClass,
-                  onTrainClassChanged: (val) {
-                    setState(() {
-                      trainClass = val ?? trainClass;
-                    });
-                  },
-                  trainClasses: trainClasses,
                   onPassengersTap: () {}, // Optionally show a modal in future
                   onDepartureDateTap: () async {
                     final picked = await showDatePicker(
@@ -270,7 +261,6 @@ class _SearchTabState extends State<SearchTab> {
                     final date = selectedDate != null
                         ? '${selectedDate!.year.toString().padLeft(4, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
                         : '';
-                    final travelClass = trainClass;
                     if (origin.isEmpty || destination.isEmpty || date.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -288,7 +278,6 @@ class _SearchTabState extends State<SearchTab> {
                           'origin': origin,
                           'destination': destination,
                           'date': date,
-                          'travel_class': travelClass,
                         },
                       );
                       final List<dynamic> trains = response.data;

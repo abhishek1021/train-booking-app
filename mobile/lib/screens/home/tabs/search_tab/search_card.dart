@@ -7,14 +7,10 @@ class SearchCard extends StatelessWidget {
   final TextEditingController destinationController;
   final VoidCallback onOriginTap;
   final VoidCallback onDestinationTap;
-  final Widget? Function(BuildContext, String)?
-      extraFields; // e.g. date pickers, etc.
+  final Widget? Function(BuildContext, String)? extraFields;
   final int passengers;
   final void Function(bool)? onPassengersChanged;
   final VoidCallback onPassengersTap;
-  final String trainClass;
-  final void Function(String?)? onTrainClassChanged;
-  final List<String> trainClasses;
   final VoidCallback onSearch;
   final VoidCallback onDepartureDateTap;
   final VoidCallback onReturnDateTap;
@@ -33,9 +29,6 @@ class SearchCard extends StatelessWidget {
     required this.passengers,
     this.onPassengersChanged,
     required this.onPassengersTap,
-    required this.trainClass,
-    this.onTrainClassChanged,
-    required this.trainClasses,
     required this.onSearch,
     required this.onDepartureDateTap,
     required this.onReturnDateTap,
@@ -313,56 +306,6 @@ class SearchCard extends StatelessWidget {
                       color: Colors.black),
                   onTap: onPassengersTap,
                 ),
-              ),
-            ),
-            // Train class dropdown styled as textbox
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: DropdownButtonFormField<String>(
-                value: trainClass,
-                decoration: InputDecoration(
-                  labelText: 'Class',
-                  labelStyle:
-                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
-                  filled: true,
-                  fillColor: Color(0xFFF7F7FA),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                ),
-                dropdownColor: Colors.white,
-                items: trainClasses
-                    .map((c) => DropdownMenuItem(
-                          value: c,
-                          child: MouseRegion(
-                            onHover: (event) {},
-                            child: StatefulBuilder(
-                              builder: (context, setState) {
-                                return Container(
-                                  decoration: BoxDecoration(),
-                                  child: Text(
-                                    c,
-                                    style: const TextStyle(
-                                        fontFamily: 'Lato',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.black),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: onTrainClassChanged,
-                style: const TextStyle(
-                    fontFamily: 'Lato',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black),
-                icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
               ),
             ),
             // Search Trains Button

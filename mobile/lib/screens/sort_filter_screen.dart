@@ -3,11 +3,10 @@ import 'package:marquee/marquee.dart';
 
 class SortFilterScreen extends StatefulWidget {
   final Map<String, dynamic> apiFilters;
-  final List<String> allClasses;
   final int minPrice;
   final int maxPrice;
   final List<String> daysOfRun;
-  const SortFilterScreen({Key? key, required this.apiFilters, required this.allClasses, required this.minPrice, required this.maxPrice, required this.daysOfRun}) : super(key: key);
+  const SortFilterScreen({Key? key, required this.apiFilters, required this.minPrice, required this.maxPrice, required this.daysOfRun}) : super(key: key);
 
   @override
   State<SortFilterScreen> createState() => _SortFilterScreenState();
@@ -16,7 +15,6 @@ class SortFilterScreen extends StatefulWidget {
 class _SortFilterScreenState extends State<SortFilterScreen> {
   late String sortBy;
   late bool onlyAvailable;
-  late List<String> selectedClasses;
   late RangeValues priceRange;
   late List<String> selectedDays;
 
@@ -25,7 +23,6 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
     super.initState();
     sortBy = widget.apiFilters['sortBy'] ?? 'Relevance';
     onlyAvailable = widget.apiFilters['onlyAvailable'] ?? false;
-    selectedClasses = List<String>.from(widget.apiFilters['selectedClasses'] ?? []);
     priceRange = RangeValues(
       (widget.apiFilters['minPrice'] ?? widget.minPrice).toDouble(),
       (widget.apiFilters['maxPrice'] ?? widget.maxPrice).toDouble(),
@@ -76,13 +73,6 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
               ],
             ),
             SizedBox(height: 28),
-            Text('Class', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF7C3AED))),
-            SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              children: widget.allClasses.map((c) => _classChip(c)).toList(),
-            ),
-            SizedBox(height: 28),
             Text('Days of Run', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF7C3AED))),
             SizedBox(height: 8),
             Wrap(
@@ -122,7 +112,6 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
                   Navigator.of(context).pop({
                     'sortBy': sortBy,
                     'onlyAvailable': onlyAvailable,
-                    'selectedClasses': selectedClasses,
                     'selectedDays': selectedDays,
                     'minPrice': priceRange.start.toInt(),
                     'maxPrice': priceRange.end.toInt(),
@@ -154,24 +143,6 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
       selectedColor: Color(0xFF7C3AED),
       backgroundColor: Color(0xFFF6F3FF),
       onSelected: (val) => setState(() => sortBy = label),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    );
-  }
-
-  Widget _classChip(String c) {
-    final selected = selectedClasses.contains(c);
-    return FilterChip(
-      label: Text(c, style: TextStyle(fontFamily: 'Lato', color: selected ? Colors.white : Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
-      selected: selected,
-      selectedColor: Color(0xFF7C3AED),
-      backgroundColor: Color(0xFFF6F3FF),
-      onSelected: (val) => setState(() {
-        if (val) {
-          selectedClasses.add(c);
-        } else {
-          selectedClasses.remove(c);
-        }
-      }),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }

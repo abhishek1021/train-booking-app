@@ -14,6 +14,8 @@ class CitySearchScreen extends StatefulWidget {
 }
 
 class _CitySearchScreenState extends State<CitySearchScreen> {
+  final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _cities = [];
   List<Map<String, dynamic>> _filteredCities = [];
   bool _loading = true;
@@ -23,6 +25,17 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   void initState() {
     super.initState();
     _fetchCities();
+    // Auto-focus the search box after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchCities() async {
@@ -168,6 +181,8 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
               onChanged: _filterCities,
               decoration: InputDecoration(
                 hintText: 'Search by city, code or name',
