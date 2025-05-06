@@ -4,19 +4,29 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'sort_filter_screen.dart';
+import 'passenger_details_screen.dart';
+import '../../api_constants.dart';
 
 class TrainSearchResultsScreen extends StatefulWidget {
   final List<dynamic> trains;
   final String origin;
   final String destination;
+  final String originName;
+  final String destinationName;
   final String date;
+  final int passengers;
+  final String selectedClass;
 
   const TrainSearchResultsScreen({
     Key? key,
     required this.trains,
     required this.origin,
     required this.destination,
+    required this.originName,
+    required this.destinationName,
     required this.date,
+    required this.passengers,
+    required this.selectedClass,
   }) : super(key: key);
 
   @override
@@ -63,13 +73,38 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     });
   }
 
+  Future<void> fetchTrainsForDate(DateTime date) async {
+    final formattedDate = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    // Ensure we always use station code, not name
+    String originCode = widget.origin;
+    String destinationCode = widget.destination;
+    // If the value contains both code and name (e.g. "BKSC - BOKARO STEEL CITY"), split and take the code
+    if (originCode.contains(' - ')) originCode = originCode.split(' - ')[0];
+    if (destinationCode.contains(' - ')) destinationCode = destinationCode.split(' - ')[0];
+    final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/trains/search?origin=$originCode&destination=$destinationCode&date=$formattedDate');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final List<dynamic> trainList = json.decode(response.body);
+      setState(() {
+        trains = trainList;
+        selectedDate = date;
+        expandedCardIdx = null;
+        selectedClassByCard.clear();
+        // Optionally re-initialize class selection for new trains
+        for (int idx = 0; idx < trains.length; idx++) {
+          final List<dynamic> classes = trains[idx]['classes_available'] ?? [];
+          String? defaultClass = classes.contains('SL') ? 'SL' : (classes.isNotEmpty ? classes[0] : null);
+          selectedClassByCard[idx] = defaultClass;
+          if (defaultClass != null && trains[idx]['class_prices'] != null) {
+            trains[idx]['price'] = trains[idx]['class_prices'][defaultClass] ?? 0;
+          }
+        }
+      });
+    }
+  }
+
   void onDateChange(DateTime newDate) async {
-    setState(() {
-      selectedDate = newDate;
-    });
-    // TODO: Replace with actual fetch logic
-    // final newTrains = await fetchTrainsForDate(newDate);
-    // setState(() { trains = newTrains; });
+    await fetchTrainsForDate(newDate);
   }
 
   DateTime _parseDate(String dateStr) {
@@ -91,7 +126,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
 
   Future<Map<String, dynamic>?> fetchSeatAndPrice(int trainId, String travelClass) async {
     try {
-      final uri = Uri.parse('http://localhost:8000/api/v1/trains/seat_count?train_id=$trainId&travel_class=$travelClass');
+      final uri = Uri.parse('${ApiConstants.baseUrl}/api/v1/trains/seat_count?train_id=$trainId&travel_class=$travelClass');
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -138,7 +173,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
             Icon(Icons.train, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Expanded(
-              child: _headerStationMarquee(widget.origin, widget.destination),
+              child: _headerStationMarquee(widget.originName, widget.destinationName),
             ),
           ],
         ),
@@ -245,6 +280,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                     separatorBuilder: (context, idx) => SizedBox(height: 18),
                     itemCount: trains.length,
                     itemBuilder: (context, idx) {
+                      if (!classScrollControllers.containsKey(idx)) {
+                        classScrollControllers[idx] = ScrollController();
+                      }
                       final train = trains[idx];
                       final String trainName =
                           train['train_name'] ?? train['name'] ?? '';
@@ -265,9 +303,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           setState(() {
                             expandedCardIdx =
                                 expandedCardIdx == idx ? null : idx;
+                            print('Accordion tapped. expandedCardIdx: '
+                                '\x1B[32m$expandedCardIdx\x1B[0m'); // Debug print, shows in green in console
                           });
                         },
                         child: Card(
+                          key: ValueKey(idx),
                           color: Colors.white,
                           margin: EdgeInsets.symmetric(
                               vertical: 5, horizontal: 10),
@@ -379,7 +420,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          _stationTextMarquee(widget.origin, align: TextAlign.left),
+                                          _stationTextMarquee(widget.originName, align: TextAlign.left),
                                           SizedBox(height: 6),
                                           Text(
                                             depTime,
@@ -441,7 +482,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: [
-                                          _stationTextMarquee(widget.destination, align: TextAlign.right),
+                                          _stationTextMarquee(widget.destinationName, align: TextAlign.right),
                                           SizedBox(height: 6),
                                           Text(
                                             arrTime,
@@ -474,16 +515,13 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   Builder(
                                     builder: (context) {
                                       final ScrollController? controller = classScrollControllers[idx];
-                                      if (controller == null) {
-                                        return SizedBox.shrink();
-                                      }
                                       final int classCount = (train['classes_available'] as List?)?.length ?? 0;
                                       final double boxWidth = 142;
                                       final double totalWidth = classCount * (boxWidth + 12) + 76; // 12 is separator, 76 is padding
                                       final double viewWidth = MediaQuery.of(context).size.width - 72; // 38 left + 38 right
                                       bool rightArrow = false;
                                       bool leftArrow = false;
-                                      if (controller.hasClients) {
+                                      if (controller != null && controller.hasClients) {
                                         rightArrow = controller.offset < controller.position.maxScrollExtent;
                                         leftArrow = controller.offset > 0;
                                       }
@@ -648,7 +686,22 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                     overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
                                                   ),
                                                   onPressed: () {
-                                                    // Book now action
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (context) => PassengerDetailsScreen(
+                                                          train: train,
+                                                          origin: widget.origin,
+                                                          destination: widget.destination,
+                                                          originName: widget.originName,
+                                                          destinationName: widget.destinationName,
+                                                          date: selectedDate.toString().split(' ')[0],
+                                                          passengers: widget.passengers,
+                                                          selectedClass: selectedClassByCard[idx] ?? '',
+                                                          price: train['price'] ?? 0,
+                                                          seatCount: train['seat_availability']?[selectedClassByCard[idx]] ?? 0,
+                                                        ),
+                                                      ),
+                                                    );
                                                   },
                                                   child: Ink(
                                                     decoration: BoxDecoration(

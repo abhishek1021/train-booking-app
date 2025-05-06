@@ -31,6 +31,7 @@ class _SearchTabState extends State<SearchTab> {
   final GlobalKey _searchCardKey = GlobalKey();
   double _searchCardHeight = 0;
   int passengers = 1;
+  String? selectedClass;
 
   final String citiesEndpoint = "${ApiConstants.baseUrl}/api/v1/cities";
 
@@ -286,9 +287,13 @@ class _SearchTabState extends State<SearchTab> {
                         MaterialPageRoute(
                           builder: (context) => TrainSearchResultsScreen(
                             trains: trains,
-                            origin: selectedOriginName ?? origin,
-                            destination: selectedDestinationName ?? destination,
+                            origin: origin, // always station code
+                            destination: destination, // always station code
+                            originName: selectedOriginName ?? '',
+                            destinationName: selectedDestinationName ?? '',
                             date: formatDate(selectedDate),
+                            passengers: passengers,
+                            selectedClass: selectedClass ?? '',
                           ),
                         ),
                       );

@@ -29,11 +29,17 @@ def search_trains(
         from datetime import datetime
         day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
         for train in trains:
-            if train.get('source_station') == origin and train.get('destination_station') == destination:
-                days_of_run = train.get('days_of_run', [])
-                # Compare case-insensitively
-                if any(day.lower() == day_of_week.lower() for day in days_of_run):
-                    results.append(train)
+            # Get the list of station codes in the route
+            route_stations = [
+                stop['station_code'] if isinstance(stop, dict) and 'station_code' in stop else str(stop)
+                for stop in train.get('route', [])
+            ]
+            if origin in route_stations and destination in route_stations:
+                # Ensure origin comes before destination in the route
+                if route_stations.index(origin) < route_stations.index(destination):
+                    days_of_run = train.get('days_of_run', [])
+                    if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                        results.append(train)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
