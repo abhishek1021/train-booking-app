@@ -41,8 +41,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
   int? expandedCardIdx;
   Map<int, String?> selectedClassByCard = {};
   Map<int, Map<String, int>> seatCountsByCard = {};
-  Map<int, Map<String, int>> backendSeatCountsByCard = {}; // {cardIdx: {class: seatCount}}
-  Map<int, Map<String, int>> backendPricesByCard = {}; // {cardIdx: {class: price}}
+  Map<int, Map<String, int>> backendSeatCountsByCard =
+      {}; // {cardIdx: {class: seatCount}}
+  Map<int, Map<String, int>> backendPricesByCard =
+      {}; // {cardIdx: {class: price}}
   Map<int, GlobalKey<__PriceBounceState>> priceKeys = {};
   ScrollController dateScrollController = ScrollController();
   Map<int, ScrollController> classScrollControllers = {};
@@ -58,7 +60,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     trains = widget.trains;
     for (int idx = 0; idx < trains.length; idx++) {
       final List<dynamic> classes = trains[idx]['classes_available'] ?? [];
-      String? defaultClass = classes.contains('SL') ? 'SL' : (classes.isNotEmpty ? classes[0] : null);
+      String? defaultClass = classes.contains('SL')
+          ? 'SL'
+          : (classes.isNotEmpty ? classes[0] : null);
       selectedClassByCard[idx] = defaultClass;
       // Set initial price to SL or first class
       if (defaultClass != null && trains[idx]['class_prices'] != null) {
@@ -68,20 +72,24 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final selectedIdx = dateOptions.indexOf(selectedDate);
       if (selectedIdx != -1) {
-        dateScrollController.jumpTo((selectedIdx - 2).clamp(0, dateOptions.length - 1) * 72.0);
+        dateScrollController
+            .jumpTo((selectedIdx - 2).clamp(0, dateOptions.length - 1) * 72.0);
       }
     });
   }
 
   Future<void> fetchTrainsForDate(DateTime date) async {
-    final formattedDate = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final formattedDate =
+        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     // Ensure we always use station code, not name
     String originCode = widget.origin;
     String destinationCode = widget.destination;
     // If the value contains both code and name (e.g. "BKSC - BOKARO STEEL CITY"), split and take the code
     if (originCode.contains(' - ')) originCode = originCode.split(' - ')[0];
-    if (destinationCode.contains(' - ')) destinationCode = destinationCode.split(' - ')[0];
-    final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/trains/search?origin=$originCode&destination=$destinationCode&date=$formattedDate');
+    if (destinationCode.contains(' - '))
+      destinationCode = destinationCode.split(' - ')[0];
+    final url = Uri.parse(
+        '${ApiConstants.baseUrl}/api/v1/trains/search?origin=$originCode&destination=$destinationCode&date=$formattedDate');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final List<dynamic> trainList = json.decode(response.body);
@@ -93,10 +101,13 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
         // Optionally re-initialize class selection for new trains
         for (int idx = 0; idx < trains.length; idx++) {
           final List<dynamic> classes = trains[idx]['classes_available'] ?? [];
-          String? defaultClass = classes.contains('SL') ? 'SL' : (classes.isNotEmpty ? classes[0] : null);
+          String? defaultClass = classes.contains('SL')
+              ? 'SL'
+              : (classes.isNotEmpty ? classes[0] : null);
           selectedClassByCard[idx] = defaultClass;
           if (defaultClass != null && trains[idx]['class_prices'] != null) {
-            trains[idx]['price'] = trains[idx]['class_prices'][defaultClass] ?? 0;
+            trains[idx]['price'] =
+                trains[idx]['class_prices'][defaultClass] ?? 0;
           }
         }
       });
@@ -124,9 +135,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     }
   }
 
-  Future<Map<String, dynamic>?> fetchSeatAndPrice(int trainId, String travelClass) async {
+  Future<Map<String, dynamic>?> fetchSeatAndPrice(
+      int trainId, String travelClass) async {
     try {
-      final uri = Uri.parse('${ApiConstants.baseUrl}/api/v1/trains/seat_count?train_id=$trainId&travel_class=$travelClass');
+      final uri = Uri.parse(
+          '${ApiConstants.baseUrl}/api/v1/trains/seat_count?train_id=$trainId&travel_class=$travelClass');
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -151,7 +164,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
       }
       // If price is available in train object, update min/max
       if (train['price'] != null) {
-        int price = train['price'] is int ? train['price'] : int.tryParse(train['price'].toString()) ?? 0;
+        int price = train['price'] is int
+            ? train['price']
+            : int.tryParse(train['price'].toString()) ?? 0;
         if (price < minPrice) minPrice = price;
         if (price > maxPrice) maxPrice = price;
       }
@@ -173,7 +188,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
             Icon(Icons.train, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Expanded(
-              child: _headerStationMarquee(widget.originName, widget.destinationName),
+              child: _headerStationMarquee(
+                  widget.originName, widget.destinationName),
             ),
           ],
         ),
@@ -182,7 +198,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
             icon: Icon(Icons.sort, color: Colors.white),
             onPressed: () async {
               final apiFilters = {
-                'sortBy': 'Relevance', // Replace with actual value from your API response/state
+                'sortBy':
+                    'Relevance', // Replace with actual value from your API response/state
                 'onlyAvailable': false, // Replace with actual value
                 'minPrice': minPrice,
                 'maxPrice': maxPrice,
@@ -310,8 +327,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                         child: Card(
                           key: ValueKey(idx),
                           color: Colors.white,
-                          margin: EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 10),
+                          margin:
+                              EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
                           elevation: 3,
@@ -324,8 +341,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -353,9 +369,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                             _stationTextMarquee(trainName),
                                             if (trainNumber.isNotEmpty)
                                               Padding(
-                                                padding:
-                                                    const EdgeInsets.only(
-                                                        top: 2.0, bottom: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                    top: 2.0, bottom: 2.0),
                                                 child: Text(
                                                   'Train No: $trainNumber',
                                                   style: TextStyle(
@@ -400,8 +415,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 Container(
                                   height: 1,
                                   width: double.infinity,
-                                  margin:
-                                      EdgeInsets.only(top: 7, bottom: 14),
+                                  margin: EdgeInsets.only(top: 7, bottom: 14),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(1),
                                     gradient: LinearGradient(colors: [
@@ -411,8 +425,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   ),
                                 ),
                                 Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
                                       flex: 3,
@@ -420,7 +433,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          _stationTextMarquee(widget.originName, align: TextAlign.left),
+                                          _stationTextMarquee(widget.originName,
+                                              align: TextAlign.left),
                                           SizedBox(height: 6),
                                           Text(
                                             depTime,
@@ -482,7 +496,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: [
-                                          _stationTextMarquee(widget.destinationName, align: TextAlign.right),
+                                          _stationTextMarquee(
+                                              widget.destinationName,
+                                              align: TextAlign.right),
                                           SizedBox(height: 6),
                                           Text(
                                             arrTime,
@@ -514,15 +530,25 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   SizedBox(height: 12),
                                   Builder(
                                     builder: (context) {
-                                      final ScrollController? controller = classScrollControllers[idx];
-                                      final int classCount = (train['classes_available'] as List?)?.length ?? 0;
+                                      final ScrollController? controller =
+                                          classScrollControllers[idx];
+                                      final int classCount =
+                                          (train['classes_available'] as List?)
+                                                  ?.length ??
+                                              0;
                                       final double boxWidth = 142;
-                                      final double totalWidth = classCount * (boxWidth + 12) + 76; // 12 is separator, 76 is padding
-                                      final double viewWidth = MediaQuery.of(context).size.width - 72; // 38 left + 38 right
+                                      final double totalWidth = classCount *
+                                              (boxWidth + 12) +
+                                          76; // 12 is separator, 76 is padding
+                                      final double viewWidth =
+                                          MediaQuery.of(context).size.width -
+                                              72; // 38 left + 38 right
                                       bool rightArrow = false;
                                       bool leftArrow = false;
-                                      if (controller != null && controller.hasClients) {
-                                        rightArrow = controller.offset < controller.position.maxScrollExtent;
+                                      if (controller != null &&
+                                          controller.hasClients) {
+                                        rightArrow = controller.offset <
+                                            controller.position.maxScrollExtent;
                                         leftArrow = controller.offset > 0;
                                       }
                                       if (totalWidth <= viewWidth) {
@@ -533,15 +559,24 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         width: double.infinity,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: Color(0xFF7C3AED), width: 1),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                              color: Color(0xFF7C3AED),
+                                              width: 1),
                                         ),
                                         padding: const EdgeInsets.all(18.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text('Availability Details',
-                                              style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF7C3AED)),
+                                            Text(
+                                              'Availability Details',
+                                              style: TextStyle(
+                                                  fontFamily: 'Lato',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                  color: Color(0xFF7C3AED)),
                                             ),
                                             SizedBox(height: 10),
                                             SizedBox(
@@ -550,80 +585,173 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                 children: [
                                                   ListView.separated(
                                                     controller: controller,
-                                                    scrollDirection: Axis.horizontal,
+                                                    scrollDirection:
+                                                        Axis.horizontal,
                                                     itemCount: classCount,
-                                                    physics: BouncingScrollPhysics(),
-                                                    padding: EdgeInsets.symmetric(horizontal: 38),
+                                                    physics:
+                                                        BouncingScrollPhysics(),
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 38),
                                                     itemBuilder: (context, i) {
-                                                      final String className = train['classes_available'][i];
-                                                      final int seatCount = train['seat_availability']?[className] ?? 0;
-                                                      final int price = train['class_prices']?[className] ?? 0;
-                                                      final bool isSelected = selectedClassByCard[idx] == className;
+                                                      final String className =
+                                                          train['classes_available']
+                                                              [i];
+                                                      final int seatCount =
+                                                          train['seat_availability']
+                                                                  ?[
+                                                                  className] ??
+                                                              0;
+                                                      final int price =
+                                                          train['class_prices']
+                                                                  ?[
+                                                                  className] ??
+                                                              0;
+                                                      final bool isSelected =
+                                                          selectedClassByCard[
+                                                                  idx] ==
+                                                              className;
                                                       String seatMsg = '';
-                                                      Color seatMsgColor = Colors.green;
+                                                      Color seatMsgColor =
+                                                          Colors.green;
                                                       if (seatCount == 0) {
-                                                        seatMsg = 'Not Available'; seatMsgColor = Colors.red;
-                                                      } else if (seatCount < 100) {
-                                                        seatMsg = 'Filling up Fast'; seatMsgColor = Colors.red;
+                                                        seatMsg =
+                                                            'Not Available';
+                                                        seatMsgColor =
+                                                            Colors.red;
+                                                      } else if (seatCount <
+                                                          100) {
+                                                        seatMsg =
+                                                            'Filling up Fast';
+                                                        seatMsgColor =
+                                                            Colors.red;
                                                       } else {
-                                                        seatMsg = 'Available'; seatMsgColor = Colors.green;
+                                                        seatMsg = 'Available';
+                                                        seatMsgColor =
+                                                            Colors.green;
                                                       }
                                                       return GestureDetector(
                                                         onTap: () async {
                                                           setState(() {
-                                                            selectedClassByCard[idx] = className;
-                                                            train['price'] = price; // Dynamically update price
+                                                            selectedClassByCard[
+                                                                    idx] =
+                                                                className;
+                                                            train['price'] =
+                                                                price; // Dynamically update price
                                                           });
                                                         },
                                                         child: Container(
                                                           width: 142,
                                                           height: 56,
-                                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                                          decoration: BoxDecoration(
-                                                            color: isSelected ? Color(0xFFF6F3FF) : Colors.white,
-                                                            borderRadius: BorderRadius.circular(10),
-                                                            border: Border.all(color: isSelected ? Color(0xFF7C3AED) : Colors.grey.shade300, width: 1.5),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal: 8,
+                                                                  vertical: 8),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: isSelected
+                                                                ? Color(
+                                                                    0xFFF6F3FF)
+                                                                : Colors.white,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                            border: Border.all(
+                                                                color: isSelected
+                                                                    ? Color(
+                                                                        0xFF7C3AED)
+                                                                    : Colors
+                                                                        .grey
+                                                                        .shade300,
+                                                                width: 1.5),
                                                             boxShadow: [
                                                               if (isSelected)
                                                                 BoxShadow(
-                                                                  color: Color(0x337C3AED),
+                                                                  color: Color(
+                                                                      0x337C3AED),
                                                                   blurRadius: 8,
-                                                                  offset: Offset(0, 2),
+                                                                  offset:
+                                                                      Offset(
+                                                                          0, 2),
                                                                 ),
                                                             ],
                                                           ),
                                                           child: Column(
-                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
                                                             children: [
                                                               Row(
-                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
                                                                 children: [
                                                                   Text(
                                                                     className,
-                                                                    style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF7C3AED)),
+                                                                    style: TextStyle(
+                                                                        fontFamily:
+                                                                            'Lato',
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        fontSize:
+                                                                            13,
+                                                                        color: Color(
+                                                                            0xFF7C3AED)),
                                                                   ),
-                                                                  SizedBox(width: 7),
-                                                                  Icon(Icons.event_seat, color: Color(0xFF7C3AED), size: 16),
-                                                                  SizedBox(width: 2),
+                                                                  SizedBox(
+                                                                      width: 7),
+                                                                  Icon(
+                                                                      Icons
+                                                                          .event_seat,
+                                                                      color: Color(
+                                                                          0xFF7C3AED),
+                                                                      size: 16),
+                                                                  SizedBox(
+                                                                      width: 2),
                                                                   Text(
-                                                                    seatCount.toString(),
-                                                                    style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black),
+                                                                    seatCount
+                                                                        .toString(),
+                                                                    style: TextStyle(
+                                                                        fontFamily:
+                                                                            'Lato',
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w600,
+                                                                        fontSize:
+                                                                            13,
+                                                                        color: Colors
+                                                                            .black),
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(height: 4),
+                                                              SizedBox(
+                                                                  height: 4),
                                                               Text(
                                                                 seatMsg,
-                                                                style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600, fontSize: 12, color: seatMsgColor),
+                                                                style: TextStyle(
+                                                                    fontFamily:
+                                                                        'Lato',
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        seatMsgColor),
                                                                 maxLines: 1,
-                                                                overflow: TextOverflow.ellipsis,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
                                                             ],
                                                           ),
                                                         ),
                                                       );
                                                     },
-                                                    separatorBuilder: (_, __) => SizedBox(width: 12),
+                                                    separatorBuilder: (_, __) =>
+                                                        SizedBox(width: 12),
                                                   ),
                                                   if (rightArrow)
                                                     Positioned(
@@ -633,15 +761,32 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                       child: IgnorePointer(
                                                         child: Container(
                                                           width: 38,
-                                                          alignment: Alignment.center,
-                                                          decoration: BoxDecoration(
-                                                            gradient: LinearGradient(
-                                                              begin: Alignment.centerLeft,
-                                                              end: Alignment.centerRight,
-                                                              colors: [Colors.transparent, Color(0x117C3AED)],
+                                                          alignment:
+                                                              Alignment.center,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            gradient:
+                                                                LinearGradient(
+                                                              begin: Alignment
+                                                                  .centerLeft,
+                                                              end: Alignment
+                                                                  .centerRight,
+                                                              colors: [
+                                                                Colors
+                                                                    .transparent,
+                                                                Color(
+                                                                    0x117C3AED)
+                                                              ],
                                                             ),
                                                           ),
-                                                          child: Icon(Icons.arrow_forward_ios, color: Color(0xFF7C3AED).withOpacity(0.6), size: 22),
+                                                          child: Icon(
+                                                              Icons
+                                                                  .arrow_forward_ios,
+                                                              color: Color(
+                                                                      0xFF7C3AED)
+                                                                  .withOpacity(
+                                                                      0.6),
+                                                              size: 22),
                                                         ),
                                                       ),
                                                     ),
@@ -653,15 +798,32 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                       child: IgnorePointer(
                                                         child: Container(
                                                           width: 38,
-                                                          alignment: Alignment.center,
-                                                          decoration: BoxDecoration(
-                                                            gradient: LinearGradient(
-                                                              begin: Alignment.centerRight,
-                                                              end: Alignment.centerLeft,
-                                                              colors: [Colors.transparent, Color(0x117C3AED)],
+                                                          alignment:
+                                                              Alignment.center,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            gradient:
+                                                                LinearGradient(
+                                                              begin: Alignment
+                                                                  .centerRight,
+                                                              end: Alignment
+                                                                  .centerLeft,
+                                                              colors: [
+                                                                Colors
+                                                                    .transparent,
+                                                                Color(
+                                                                    0x117C3AED)
+                                                              ],
                                                             ),
                                                           ),
-                                                          child: Icon(Icons.arrow_back_ios_new, color: Color(0xFF7C3AED).withOpacity(0.6), size: 22),
+                                                          child: Icon(
+                                                              Icons
+                                                                  .arrow_back_ios_new,
+                                                              color: Color(
+                                                                      0xFF7C3AED)
+                                                                  .withOpacity(
+                                                                      0.6),
+                                                              size: 22),
                                                         ),
                                                       ),
                                                     ),
@@ -669,48 +831,99 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                               ),
                                             ),
                                             SizedBox(height: 16),
-                                            if (selectedClassByCard[idx] != null)
+                                            if (selectedClassByCard[idx] !=
+                                                null)
                                               Container(
                                                 width: double.infinity,
                                                 height: 52,
                                                 child: ElevatedButton(
                                                   style: ButtonStyle(
-                                                    shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(10),
+                                                    shape: MaterialStateProperty
+                                                        .all(
+                                                            RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
                                                     )),
-                                                    padding: MaterialStateProperty.all(EdgeInsets.zero),
-                                                    backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                                    padding:
+                                                        MaterialStateProperty
+                                                            .all(EdgeInsets
+                                                                .zero),
+                                                    backgroundColor:
+                                                        MaterialStateProperty
+                                                            .resolveWith(
+                                                                (states) {
                                                       return null;
                                                     }),
-                                                    elevation: MaterialStateProperty.all(0),
-                                                    overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
+                                                    elevation:
+                                                        MaterialStateProperty
+                                                            .all(0),
+                                                    overlayColor:
+                                                        MaterialStateProperty
+                                                            .all(Color(
+                                                                    0xFF9F7AEA)
+                                                                .withOpacity(
+                                                                    0.08)),
                                                   ),
                                                   onPressed: () {
                                                     Navigator.of(context).push(
                                                       MaterialPageRoute(
-                                                        builder: (context) => PassengerDetailsScreen(
+                                                        builder: (context) =>
+                                                            PassengerDetailsScreen(
                                                           train: train,
                                                           origin: widget.origin,
-                                                          destination: widget.destination,
-                                                          originName: widget.originName,
-                                                          destinationName: widget.destinationName,
-                                                          date: selectedDate.toString().split(' ')[0],
-                                                          passengers: widget.passengers,
-                                                          selectedClass: selectedClassByCard[idx] ?? '',
-                                                          price: train['price'] ?? 0,
-                                                          seatCount: train['seat_availability']?[selectedClassByCard[idx]] ?? 0,
+                                                          destination: widget
+                                                              .destination,
+                                                          originName:
+                                                              widget.originName,
+                                                          destinationName: widget
+                                                              .destinationName,
+                                                          date: selectedDate
+                                                              .toString()
+                                                              .split(' ')[0],
+                                                          passengers:
+                                                              widget.passengers,
+                                                          selectedClass:
+                                                              selectedClassByCard[
+                                                                      idx] ??
+                                                                  '',
+                                                          price:
+                                                              train['price'] ??
+                                                                  0,
+                                                          seatCount: train[
+                                                                      'seat_availability']
+                                                                  ?[
+                                                                  selectedClassByCard[
+                                                                      idx]] ??
+                                                              0,
                                                         ),
                                                       ),
                                                     );
                                                   },
                                                   child: Ink(
                                                     decoration: BoxDecoration(
-                                                      gradient: LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)]),
-                                                      borderRadius: BorderRadius.circular(10),
+                                                      gradient: LinearGradient(
+                                                          colors: [
+                                                            Color(0xFF7C3AED),
+                                                            Color(0xFF9F7AEA)
+                                                          ]),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
                                                     ),
                                                     child: Container(
-                                                      alignment: Alignment.center,
-                                                      child: Text('Book Now', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: Text('Book Now',
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  'Lato',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 16,
+                                                              color: Colors
+                                                                  .white)),
                                                     ),
                                                   ),
                                                 ),
@@ -775,7 +988,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
         height: 20,
         child: Marquee(
           text: text,
-          style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black),
+          style: TextStyle(
+              fontFamily: 'Lato',
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: Colors.black),
           scrollAxis: Axis.horizontal,
           blankSpace: 30.0,
           velocity: 25.0,
@@ -791,7 +1008,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     } else {
       return Text(
         text,
-        style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black),
+        style: TextStyle(
+            fontFamily: 'Lato',
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: Colors.black),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: align,
@@ -806,7 +1027,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
         height: 22,
         child: Marquee(
           text: text,
-          style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(
+              fontFamily: 'Lato',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.white),
           scrollAxis: Axis.horizontal,
           blankSpace: 32.0,
           velocity: 25.0,
@@ -822,7 +1047,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     } else {
       return Text(
         text,
-        style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+        style: TextStyle(
+            fontFamily: 'Lato',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.white),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
@@ -833,23 +1062,30 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
 class PriceBounce extends StatefulWidget {
   final int price;
   final double fontSize;
-  const PriceBounce({Key? key, required this.price, this.fontSize = 16}) : super(key: key);
+  const PriceBounce({Key? key, required this.price, this.fontSize = 16})
+      : super(key: key);
   @override
   __PriceBounceState createState() => __PriceBounceState();
 }
 
-class __PriceBounceState extends State<PriceBounce> with SingleTickerProviderStateMixin {
+class __PriceBounceState extends State<PriceBounce>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: Duration(milliseconds: 1400));
-    _scaleAnim = Tween<double>(begin: 1, end: 1.45).chain(CurveTween(curve: Curves.elasticOut)).animate(_controller);
+    _controller = AnimationController(
+        vsync: this, duration: Duration(milliseconds: 1400));
+    _scaleAnim = Tween<double>(begin: 1, end: 1.45)
+        .chain(CurveTween(curve: Curves.elasticOut))
+        .animate(_controller);
   }
+
   void bounce() {
     _controller.forward(from: 0);
   }
+
   @override
   void didUpdateWidget(PriceBounce oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -857,6 +1093,7 @@ class __PriceBounceState extends State<PriceBounce> with SingleTickerProviderSta
       bounce();
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -867,12 +1104,17 @@ class __PriceBounceState extends State<PriceBounce> with SingleTickerProviderSta
           child: Text(
             '₹${widget.price}',
             key: ValueKey(widget.price),
-            style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, fontSize: widget.fontSize, color: Color(0xFF7C3AED)),
+            style: TextStyle(
+                fontFamily: 'Lato',
+                fontWeight: FontWeight.bold,
+                fontSize: widget.fontSize,
+                color: Color(0xFF7C3AED)),
           ),
         );
       },
     );
   }
+
   @override
   void dispose() {
     _controller.dispose();
