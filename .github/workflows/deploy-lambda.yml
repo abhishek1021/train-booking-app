@@ -1,11 +1,7 @@
 name: Deploy Lambda
 
 on:
-  push:
-    paths:
-      - 'backend/lambda_function/**'
-      - 'backend/terraform/**'
-      - '.github/workflows/deploy-lambda.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -23,7 +19,7 @@ jobs:
     - name: Install dependencies for Lambda (Amazon Linux 2)
       run: |
         cd backend
-        docker run --rm -v "$PWD":/var/task lambci/lambda:build-python3.11 pip install -r requirements.txt -t .
+        docker run --rm -v "$PWD":/var/task public.ecr.aws/sam/build-python3.11 pip install -r requirements.txt -t .
 
     - name: Zip Lambda code
       run: |
