@@ -41,7 +41,21 @@ app.include_router(api_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 print(">>> Routers included")
 
+# Health check endpoint
+@app.get("/api/v1/health")
+def health_check():
+    print(">>> Health check endpoint called")
+    return {"status": "ok", "message": "Lambda is running"}
+
 @app.get("/")
 def root():
     print(">>> Root endpoint called")
     return {"message": "Welcome to Train Booking API"}
+
+# Mangum integration for AWS Lambda
+try:
+    from mangum import Mangum
+    lambda_handler = Mangum(app)
+    print(">>> Mangum lambda_handler created for AWS Lambda integration")
+except ImportError:
+    print("!!! Mangum not installed; lambda_handler not created")
