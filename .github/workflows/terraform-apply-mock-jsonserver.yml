@@ -1,0 +1,44 @@
+name: Terraform Apply (Mock JSON Server Infra)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform_apply_mock_jsonserver:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies and zip mock_api
+        run: |
+          cd backend/mock_api
+          npm install
+          zip -r ../mock_api_lambda.zip . -x 'node_modules/aws-sdk/**' '*.log'
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve \
+            -var="acm_certificate_arn=${{ secrets.JSON_ACM_CERTIFICATE_ARN }}"
+        env:
+          TF_VAR_aws_region: ap-south-1
+          TF_VAR_custom_domain: mockjsonserver.tatkalpro.in

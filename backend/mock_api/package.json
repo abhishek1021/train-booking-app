@@ -1,0 +1,13 @@
+{
+  "name": "mock-api-lambda",
+  "version": "1.0.0",
+  "description": "Mock API using json-server for AWS Lambda",
+  "main": "lambda.js",
+  "scripts": {
+    "start": "node lambda.js"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4",
+    "@vendia/serverless-express": "^4.7.4"
+  }
+}

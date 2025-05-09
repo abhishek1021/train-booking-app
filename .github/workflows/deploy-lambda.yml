@@ -20,10 +20,14 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies and zip Lambda
+    - name: Install dependencies for Lambda (Amazon Linux 2)
       run: |
         cd backend
-        pip install -r requirements.txt -t .
+        docker run --rm -v "$PWD":/var/task lambci/lambda:build-python3.11 pip install -r requirements.txt -t .
+
+    - name: Zip Lambda code
+      run: |
+        cd backend
         zip -r lambda.zip . -x '*.pyc' '*.pyo' '*__pycache__*' 'venv/*' 'terraform/*'
 
     - name: Configure AWS credentials
