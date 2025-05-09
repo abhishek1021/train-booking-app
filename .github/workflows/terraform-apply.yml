@@ -38,7 +38,7 @@ jobs:
           cd terraform
           terraform init
           terraform apply -auto-approve \
-            -var="acm_certificate_arn=arn:aws:acm:us-east-1:754355039501:certificate/8282b579-8c01-474f-a023-4ddd2fb1c060"
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}"
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: services.tatkalpro.in
