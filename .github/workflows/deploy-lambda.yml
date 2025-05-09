@@ -33,12 +33,9 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-south-1
 
-    - name: Terraform Init & Apply
+    - name: Upload Lambda code to AWS
       run: |
-        cd terraform
-        terraform init
-        terraform apply -auto-approve \
-          -var="acm_certificate_arn=arn:aws:acm:us-east-1:754355039501:certificate/8282b579-8c01-474f-a023-4ddd2fb1c060"
-      env:
-        TF_VAR_aws_region: ap-south-1
-        TF_VAR_custom_domain: services.tatkalpro.in
+        aws lambda update-function-code \
+          --function-name tatkalpro-backend \
+          --zip-file fileb://backend/lambda.zip \
+          --region ap-south-1
