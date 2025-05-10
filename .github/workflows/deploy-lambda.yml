@@ -2,6 +2,9 @@ name: Deploy Lambda
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'backend/**'
 
 jobs:
   deploy:
