@@ -12,6 +12,8 @@ from typing import Optional
 router = APIRouter()
 
 # Fix search_trains to only filter by source, destination, and date/day. Remove class filtering.
+import logging
+
 @router.get("/search", tags=["trains"])
 def search_trains(
     origin: str = Query(..., description="Origin station code (e.g., NDLS)"),
@@ -22,8 +24,12 @@ def search_trains(
     Search for trains between origin and destination on a given date.
     Only filters by route and days of run. Class filtering is removed.
     """
+    logger = logging.getLogger("mockapi.trains")
+    logger.info(f"Train search requested: origin={origin}, destination={destination}, date={date}")
     try:
+        logger.info("Calling external mock API for trains...")
         trains = get_trains()
+        logger.info(f"Received {len(trains)} trains from mock API.")
         results = []
         # Convert date string to weekday abbreviation (e.g. 'Wed')
         from datetime import datetime
@@ -40,8 +46,10 @@ def search_trains(
                     days_of_run = train.get('days_of_run', [])
                     if any(day.lower() == day_of_week.lower() for day in days_of_run):
                         results.append(train)
+        logger.info(f"Returning {len(results)} trains after filtering.")
         return results
     except Exception as e:
+        logger.error(f"Error in train search: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get('/api/v1/trains/seat_count')
