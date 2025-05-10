@@ -35,10 +35,10 @@ jobs:
 
       - name: Terraform Init & Apply
         run: |
-          cd terraform
+          cd terraform-mockjson
           terraform init
           terraform apply -auto-approve \
-            -var="acm_certificate_arn=${{ secrets.JSON_ACM_CERTIFICATE_ARN }}"
+            -var="json_acm_certificate_arn=${{ secrets.JSON_ACM_CERTIFICATE_ARN }}"
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: mockjsonserver.tatkalpro.in
