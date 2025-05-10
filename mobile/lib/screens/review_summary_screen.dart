@@ -9,9 +9,7 @@ class ReviewSummaryScreen extends StatelessWidget {
   final String date;
   final String selectedClass;
   final int price;
-  final String passengerName;
-  final String passengerSeat;
-  final String passengerCarriage;
+  final List<Map<String, dynamic>> passengers;
   final String email;
   final String phone;
   final int coins;
@@ -27,9 +25,7 @@ class ReviewSummaryScreen extends StatelessWidget {
     required this.date,
     required this.selectedClass,
     required this.price,
-    required this.passengerName,
-    required this.passengerSeat,
-    required this.passengerCarriage,
+    required this.passengers,
     required this.email,
     required this.phone,
     this.coins = 0,
@@ -104,6 +100,16 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
+                                  train['train_number'] != null ? 'Train No: ${train['train_number']}' : '',
+                                  style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
                                   selectedClass,
                                   style: TextStyle(
                                     fontFamily: 'Lato',
@@ -129,7 +135,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                '\$${price.toStringAsFixed(2)}',
+                                '₹${price.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontFamily: 'Lato',
                                   fontWeight: FontWeight.bold,
@@ -148,17 +154,18 @@ class ReviewSummaryScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Apex Square',
+                              Text(train['origin_name'] ?? '',
                                   style: TextStyle(
                                       fontFamily: 'Lato',
                                       fontSize: 14,
                                       color: Colors.black54)),
-                              Text(depTime,
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Color(0xFF7C3AED))),
+                              Text(
+                                train['schedule'] != null && train['schedule'].isNotEmpty ? (train['schedule'].first['departure'] ?? '') : '',
+                                style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF7C3AED))),
                               Text(date,
                                   style: TextStyle(
                                       fontFamily: 'Lato',
@@ -170,7 +177,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                             children: [
                               Icon(Icons.train, color: Color(0xFF7C3AED)),
                               Text(
-                                'Duration 1h 30m',
+                                train['duration'] ?? '',
                                 style: TextStyle(
                                   fontFamily: 'Lato',
                                   fontSize: 12,
@@ -182,17 +189,18 @@ class ReviewSummaryScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('Proxima',
+                              Text(train['destination_name'] ?? '',
                                   style: TextStyle(
                                       fontFamily: 'Lato',
                                       fontSize: 14,
                                       color: Colors.black54)),
-                              Text(arrTime,
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Color(0xFF7C3AED))),
+                              Text(
+                                train['schedule'] != null && train['schedule'].isNotEmpty ? (train['schedule'].last['arrival'] ?? '') : '',
+                                style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF7C3AED))),
                               Text(date,
                                   style: TextStyle(
                                       fontFamily: 'Lato',
@@ -215,7 +223,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -225,11 +233,9 @@ class ReviewSummaryScreen extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
-                      SizedBox(height: 12),
-                      _infoRow('Full Name', passengerName),
-                      SizedBox(height: 6),
+                      SizedBox(height: 18),
                       _infoRow('Email', email),
-                      SizedBox(height: 6),
+                      SizedBox(height: 10),
                       _infoRow('Phone Number', phone),
                     ],
                   ),
@@ -258,20 +264,27 @@ class ReviewSummaryScreen extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text('No.', style: _headerStyle())),
-                          Expanded(flex: 3, child: Text('Name', style: _headerStyle())),
-                          Expanded(child: Text('Carriage', style: _headerStyle())),
-                          Expanded(child: Text('Seat', style: _headerStyle())),
+                          Expanded(flex: 2, child: Text('Name', style: _headerStyle())),
+                          Expanded(child: Text('Gender', style: _headerStyle())),
+                          Expanded(child: Text('Age', style: _headerStyle())),
+                          Expanded(child: Text('ID Type', style: _headerStyle())),
+                          Expanded(flex: 2, child: Text('ID Number', style: _headerStyle())),
                         ],
                       ),
                       Divider(),
-                      Row(
-                        children: [
-                          Expanded(child: Text('1', style: _cellStyle())),
-                          Expanded(flex: 3, child: Text(passengerName, style: _cellStyle())),
-                          Expanded(child: Text(passengerCarriage, style: _cellStyle())),
-                          Expanded(child: Text(passengerSeat, style: _cellStyle())),
-                        ],
-                      ),
+                      ...List.generate(passengers.length, (idx) {
+                        final p = passengers[idx];
+                        return Row(
+                          children: [
+                            Expanded(child: Text((idx + 1).toString(), style: _cellStyle())),
+                            Expanded(flex: 2, child: Text(p['name'] ?? '', style: _cellStyle())),
+                            Expanded(child: Text(p['gender'] ?? '', style: _cellStyle())),
+                            Expanded(child: Text(p['age'] ?? '', style: _cellStyle())),
+                            Expanded(child: Text(p['idType'] ?? '', style: _cellStyle())),
+                            Expanded(flex: 2, child: Text(p['idNumber'] ?? '', style: _cellStyle())),
+                          ],
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -319,13 +332,13 @@ class ReviewSummaryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.discount, color: Color(0xFF7C3AED)),
+                          Icon(Icons.local_offer, color: Color(0xFF7C3AED)),
                           SizedBox(width: 10),
                           Text('Discount / Voucher',
                               style: TextStyle(
@@ -335,51 +348,104 @@ class ReviewSummaryScreen extends StatelessWidget {
                                   color: Colors.black87)),
                         ],
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 18),
                       Row(
                         children: [
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
                                 hintText: 'Enter Code',
+                                hintStyle: TextStyle(fontFamily: 'Lato', color: Colors.black38),
                                 filled: true,
                                 fillColor: Color(0xFFF7F7FA),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               ),
+                              style: TextStyle(fontFamily: 'Lato', fontSize: 15),
                             ),
                           ),
-                          SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF7C3AED),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                          SizedBox(width: 12),
+                          SizedBox(
+                            height: 42,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ButtonStyle(
+                                shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                )),
+                                padding: MaterialStateProperty.all(EdgeInsets.zero),
+                                elevation: MaterialStateProperty.all(0),
+                                backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                                overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
                               ),
-                              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  constraints: BoxConstraints(minWidth: 90, minHeight: 42),
+                                  child: Text('Redeem',
+                                    style: TextStyle(
+                                      fontFamily: 'Lato',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Colors.white)),
+                                ),
+                              ),
                             ),
-                            child: Text('Redeem', style: TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 18),
                       Row(
                         children: [
-                          Icon(Icons.monetization_on, color: Color(0xFF7C3AED)),
-                          SizedBox(width: 8),
-                          Text('You Have $coins Coins',
+                          Icon(Icons.attach_money, color: Color(0xFF7C3AED)),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'You have 25 coins',
                               style: TextStyle(
-                                  fontFamily: 'Lato', fontWeight: FontWeight.bold)),
-                          Spacer(),
-                          Switch(value: false, onChanged: (v) {}),
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          StatefulBuilder(
+                            builder: (context, setState) {
+                              bool useCoins = false;
+                              return Switch(
+                                value: useCoins,
+                                onChanged: (v) {
+                                  setState(() {
+                                    useCoins = v;
+                                  });
+                                },
+                                activeColor: Color(0xFF7C3AED),
+                              );
+                            },
+                          ),
                         ],
                       ),
-                      Text('Use coins for your payments. You will get 5 coins after this order.',
-                          style: TextStyle(fontFamily: 'Lato', fontSize: 12, color: Colors.black54)),
+                      SizedBox(height: 4),
+                      Text(
+                        'Use coins for your payments. You will get 5 coins after this order.',
+                        style: TextStyle(
+                          fontFamily: 'Lato',
+                          color: Colors.black54,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -393,7 +459,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -403,11 +469,11 @@ class ReviewSummaryScreen extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
-                      SizedBox(height: 12),
-                      _priceRow('Price (Adult x 1)', price),
+                      SizedBox(height: 18),
+                      _priceRow('Price (Adult x ${passengers.length})', price),
                       _priceRow('Tax', tax),
                       Divider(),
-                      _priceRow('Total Price', totalPrice, bold: true),
+                      _priceRow('Total Price', price + tax, bold: true),
                     ],
                   ),
                 ),

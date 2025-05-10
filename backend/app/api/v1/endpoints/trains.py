@@ -50,6 +50,14 @@ def search_trains(
     logger = logging.getLogger("dynamo.trains")
     print("ENTERED search_trains endpoint")
     print(f"Train search requested: origin={origin}, destination={destination}, date={date}")
+    def extract_list(raw, key='S'):
+        # Handles DynamoDB format or plain list of strings
+        if isinstance(raw, list):
+            return [x[key] if isinstance(x, dict) and key in x else str(x) for x in raw]
+        elif isinstance(raw, dict) and 'L' in raw:
+            return [x[key] if isinstance(x, dict) and key in x else str(x) for x in raw['L']]
+        return []
+
     try:
         from datetime import datetime
         day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
@@ -57,13 +65,10 @@ def search_trains(
         trains = scan_all_trains()
         results = []
         for train in trains:
-            route_stations = [
-                stop['station_code'] if isinstance(stop, dict) and 'station_code' in stop else str(stop)
-                for stop in train.get('route', [])
-            ]
+            route_stations = extract_list(train.get('route'))
             if origin in route_stations and destination in route_stations:
                 if route_stations.index(origin) < route_stations.index(destination):
-                    days_of_run = train.get('days_of_run', [])
+                    days_of_run = extract_list(train.get('days_of_run'))
                     if any(day.lower() == day_of_week.lower() for day in days_of_run):
                         results.append(train)
         print(f"Returning {len(results)} trains after filtering.")

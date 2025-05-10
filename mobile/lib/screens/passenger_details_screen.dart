@@ -34,6 +34,13 @@ class PassengerDetailsScreen extends StatefulWidget {
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   // ...existing fields...
+  List<bool> _favouritePassengers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _favouritePassengers = List<bool>.filled(_passengerList.length, false, growable: true);
+  }
 
   /// Validates all passenger and contact fields.
   /// Returns an error message string if invalid, or null if all valid.
@@ -80,12 +87,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     return null;
   }
   final _formKey = GlobalKey<FormState>();
-  List<Map<String, dynamic>> _passengerList = [{}]; // Dynamic passenger list
-  List<TextEditingController> _nameControllers = [TextEditingController()];
-  List<TextEditingController> _ageControllers = [TextEditingController()];
-  List<TextEditingController> _idNumberControllers = [TextEditingController()];
-  List<String> _idTypeValues = ['Aadhar'];
-  List<String> _genderValues = ['Male'];
+  List<Map<String, dynamic>> _passengerList = <Map<String, dynamic>>[{}]; // Dynamic passenger list
+  List<TextEditingController> _nameControllers = <TextEditingController>[TextEditingController()];
+  List<TextEditingController> _ageControllers = <TextEditingController>[TextEditingController()];
+  List<TextEditingController> _idNumberControllers = <TextEditingController>[TextEditingController()];
+  List<String> _idTypeValues = <String>['Aadhar'];
+  List<String> _genderValues = <String>['Male'];
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   String _gender = 'Male';
@@ -393,6 +400,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     _idNumberControllers.removeAt(index);
                                     _idTypeValues.removeAt(index);
                                     _genderValues.removeAt(index);
+                                    if (_favouritePassengers.length > index) {
+                                      _favouritePassengers.removeAt(index);
+                                    }
                                   });
                                 },
                               )
@@ -564,7 +574,24 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             children: [
                               Checkbox(value: false, onChanged: (v) {}),
                               Text('Senior Citizen (60+)',
-                                  style: TextStyle(fontFamily: 'Lato')),
+                                  style: TextStyle(fontFamily: 'Lato', color: Color(0xFF222222))),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: (_favouritePassengers.length > index ? _favouritePassengers[index] : false),
+                                onChanged: (v) {
+                                  setState(() {
+                                    while (_favouritePassengers.length <= index) {
+                                      _favouritePassengers.add(false);
+                                    }
+                                    _favouritePassengers[index] = v ?? false;
+                                  });
+                                },
+                              ),
+                              Text('Add to Passenger List - For Tatkal Mode',
+                                  style: TextStyle(fontFamily: 'Lato', color: Color(0xFF222222))),
                             ],
                           ),
                         ],
@@ -598,6 +625,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       _idNumberControllers.add(TextEditingController());
                       _idTypeValues.add('Aadhar');
                       _genderValues.add('Male');
+                      _favouritePassengers.add(false);
                     });
                   },
                   child: Ink(
@@ -751,6 +779,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     // Gather passenger data
                     final passengers = List.generate(_passengerList.length, (i) => {
                       'name': _nameControllers[i].text.trim(),
+                      'age': _ageControllers[i].text.trim(),
+                      'gender': _genderValues[i],
+                      'idType': _idTypeValues[i],
+                      'idNumber': _idNumberControllers[i].text.trim(),
                       'carriage': '-', // Placeholder, update if carriage info is available
                       'seat': '-', // Placeholder, update if seat info is available
                     });
@@ -770,9 +802,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           date: widget.date,
                           selectedClass: widget.selectedClass,
                           price: widget.price,
-                          passengerName: contactName, // For single passenger fallback
-                          passengerSeat: '-',
-                          passengerCarriage: '-',
+                          passengers: passengers,
                           email: contactEmail,
                           phone: contactPhone,
                           coins: 25, // Placeholder

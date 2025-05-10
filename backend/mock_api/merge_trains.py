@@ -82,7 +82,8 @@ CLASS_PRICE_MAP = {
 def random_seat_count():
     return random.randint(0, 150)
 
-for t in list(trains.values())[:3000]:  # Limit to 3000 trains for performance
+# Process the next 3000 trains (skip the first 3000 already added to DynamoDB)
+for t in list(trains.values())[3000:6000]:
     t['classes_available'] = random.sample(all_classes, k=random.randint(2, 4))
     t['days_of_run'] = random.sample(all_days, k=random.randint(3, 5))
     t['updated_at'] = "2025-05-01T00:00:00Z"
@@ -92,15 +93,40 @@ for t in list(trains.values())[:3000]:  # Limit to 3000 trains for performance
     t['class_prices'] = class_prices
     merged_trains.append(t)
 
-db['trains'] = merged_trains
+# Do not update db.json with these trains, as they are intended for DynamoDB insertion only.
+
+# Insert directly into DynamoDB
+import boto3
+from decimal import Decimal
+import os
+from dotenv import load_dotenv
+
+# Load AWS credentials from .env (if present)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+TABLE_NAME = "trains"
+dynamodb = boto3.resource("dynamodb", region_name="ap-south-1")
+table = dynamodb.Table(TABLE_NAME)
+
+def put_train_to_dynamodb(table, train):
+    item = {
+        "PK": f"TRAIN#{train['train_id']}",
+        "SK": "METADATA",
+        **train
+    }
+    table.put_item(Item=item)
+
+for train in merged_trains:
+    put_train_to_dynamodb(table, train)
+    print(f"Inserted train {train['train_id']} ({train.get('train_name', '')})")
 
 # Ensure user and booking objects exist as empty lists if not present
-if 'users' not in db:
-    db['users'] = []
-if 'bookings' not in db:
-    db['bookings'] = []
+# if 'users' not in db:
+#     db['users'] = []
+# if 'bookings' not in db:
+#     db['bookings'] = []
 
-with open('db.json', 'w', encoding='utf-8') as f:
-    json.dump(db, f, indent=2, ensure_ascii=False)
+# with open('db.json', 'w', encoding='utf-8') as f:
+#     json.dump(db, f, indent=2, ensure_ascii=False)
 
-print(f"Merged {len(merged_trains)} trains and updated cities in db.json. User and booking objects ensured.")
+# print(f"Merged {len(merged_trains)} trains and updated cities in db.json. User and booking objects ensured.")

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:train_booking_app/api_constants.dart';
 import 'package:dio/dio.dart';
+import 'package:marquee/marquee.dart';
 
 class CitySearchScreen extends StatefulWidget {
   final bool isOrigin;
@@ -54,6 +55,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                   'id': item['id'] ?? item['city_id'],
                 })
             .toList();
+        _cities.sort((a, b) => (a['station_name'] ?? '').toString().toLowerCase().compareTo((b['station_name'] ?? '').toString().toLowerCase()));
         _filteredCities = _cities;
         _loading = false;
       });
@@ -80,6 +82,47 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     });
   }
 
+  Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
+    if (text.length > 14) {
+      return SizedBox(
+        width: 120,
+        height: 22,
+        child: Marquee(
+          text: text,
+          style: const TextStyle(
+            fontFamily: 'Lato',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.black,
+          ),
+          scrollAxis: Axis.horizontal,
+          blankSpace: 30.0,
+          velocity: 25.0,
+          pauseAfterRound: const Duration(milliseconds: 800),
+          startAfter: const Duration(milliseconds: 800),
+          fadingEdgeStartFraction: 0.1,
+          fadingEdgeEndFraction: 0.1,
+          showFadingOnlyWhenScrolling: false,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          textDirection: TextDirection.ltr,
+        ),
+      );
+    } else {
+      return Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'Lato',
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: Colors.black,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: align,
+      );
+    }
+  }
+
   Widget _buildCityTile(Map city) {
     final Map<String, dynamic> cityMap = Map<String, dynamic>.from(city);
     final cityName =
@@ -96,15 +139,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
           children: [
             Row(
               children: [
-                Text(
-                  cityName,
-                  style: const TextStyle(
-                    fontFamily: 'Lato',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.black,
-                  ),
-                ),
+                _stationTextMarquee(cityName),
                 if (code.isNotEmpty) ...[
                   SizedBox(width: 8),
                   Text(
