@@ -80,8 +80,16 @@ def search_trains(
     try:
         from datetime import datetime
         day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
-        # For now, scan all trains (can optimize later with GSI)
-        trains = scan_all_trains()
+        # Query using the new source-destination-station-index GSI
+        table = get_trains_table()
+        response = table.query(
+            IndexName="source-destination-station-index",
+            KeyConditionExpression=(
+                boto3.dynamodb.conditions.Key("source_station").eq(origin) &
+                boto3.dynamodb.conditions.Key("destination_station").eq(destination)
+            )
+        )
+        trains = response.get("Items", [])
         results = []
         for train in trains:
             train = unmarshal(train)  # Always unmarshal!
