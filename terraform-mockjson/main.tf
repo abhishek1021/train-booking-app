@@ -73,7 +73,7 @@ resource "aws_lambda_permission" "apigw_lambda" {
 resource "aws_apigatewayv2_domain_name" "custom_domain" {
   domain_name = "mockjsonserver.tatkalpro.in"
   domain_name_configuration {
-    certificate_arn = var.mockjson_acm_certificate_arn
+    certificate_arn = var.json_acm_certificate_arn
     endpoint_type   = "REGIONAL"
     security_policy = "TLS_1_2"
   }
@@ -85,14 +85,3 @@ resource "aws_apigatewayv2_api_mapping" "custom_domain_mapping" {
   stage       = aws_apigatewayv2_stage.default_stage.id
 }
 
-variable "mockjson_acm_certificate_arn" {
-  description = "ACM certificate ARN for mockjsonserver.tatkalpro.in"
-  type        = string
-}
-
-output "mockjson_api_url" {
-  value = aws_apigatewayv2_api.mockjson_api.api_endpoint
-}
-output "mockjson_custom_domain_target" {
-  value = aws_apigatewayv2_domain_name.custom_domain.domain_name_configuration[0].target_domain_name
-}
