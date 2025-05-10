@@ -11,7 +11,7 @@ import logging
 def get_trains():
     url = f"{MOCK_API_BASE_URL}/trains"
     logging.info(f"[external_mock_api] Requesting {url}")
-    resp = requests.get(url, timeout=5)
+    resp = requests.get(url, timeout=120)
     logging.info(f"[external_mock_api] Received response: {resp.status_code} for {url}")
     resp.raise_for_status()
     return resp.json()
@@ -21,7 +21,7 @@ def get_trains():
 def get_stations():
     url = f"{MOCK_API_BASE_URL}/stations"
     logging.info(f"[external_mock_api] Requesting {url}")
-    resp = requests.get(url, timeout=5)
+    resp = requests.get(url, timeout=120)
     logging.info(f"[external_mock_api] Received response: {resp.status_code} for {url}")
     resp.raise_for_status()
     return resp.json()
@@ -31,7 +31,7 @@ def get_stations():
 def get_cities():
     url = f"{MOCK_API_BASE_URL}/cities"
     logging.info(f"[external_mock_api] Requesting {url}")
-    resp = requests.get(url, timeout=5)
+    resp = requests.get(url, timeout=120)
     logging.info(f"[external_mock_api] Received response: {resp.status_code} for {url}")
     resp.raise_for_status()
     return resp.json()
@@ -40,7 +40,7 @@ def get_cities():
 def search_trains(params=None):
     url = f"{MOCK_API_BASE_URL}/trains"
     logging.info(f"[external_mock_api] Requesting {url} with params={params}")
-    resp = requests.get(url, params=params, timeout=5)
+    resp = requests.get(url, params=params, timeout=120)
     logging.info(f"[external_mock_api] Received response: {resp.status_code} for {url}")
     resp.raise_for_status()
     return resp.json()
