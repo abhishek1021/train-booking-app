@@ -85,21 +85,31 @@ def search_trains(
             route_stations = train.get('route', [])
             # Robustly handle both string and dict route entries
             route_stations = [s if isinstance(s, str) else s.get('station_code') or s.get('S') for s in route_stations]
-            # Compare source/destination fields directly
             train_source = train.get('source_station') or train.get('source_station_code')
             train_dest = train.get('destination_station') or train.get('destination_station_code')
-            if (
-                origin in route_stations and destination in route_stations and
-                route_stations.index(origin) < route_stations.index(destination) and
-                (not train_source or train_source == origin) and
-                (not train_dest or train_dest == destination)
-            ):
-                days_of_run = train.get('days_of_run', [])
-                # Normalize days_of_run to list of str
-                if days_of_run and isinstance(days_of_run[0], dict):
-                    days_of_run = [d.get('S') or str(d) for d in days_of_run]
-                if any(day.lower() == day_of_week.lower() for day in days_of_run):
-                    results.append(train)
+            print(f"Checking train_id={train.get('train_id')}, route_stations={route_stations}, train_source={train_source}, train_dest={train_dest}")
+            print(f"origin={origin}, destination={destination}, origin_in_route={origin in route_stations}, dest_in_route={destination in route_stations}")
+            if origin in route_stations and destination in route_stations:
+                print(f"Order check: {route_stations.index(origin)} < {route_stations.index(destination)}")
+                if route_stations.index(origin) < route_stations.index(destination):
+                    print(f"Source match: {train_source} == {origin}, Dest match: {train_dest} == {destination}")
+                    if (not train_source or train_source == origin) and (not train_dest or train_dest == destination):
+                        days_of_run = train.get('days_of_run', [])
+                        # Normalize days_of_run to list of str
+                        if days_of_run and isinstance(days_of_run[0], dict):
+                            days_of_run = [d.get('S') or str(d) for d in days_of_run]
+                        print(f"days_of_run={days_of_run}, day_of_week={day_of_week}")
+                        if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                            print(f"MATCH: Appending train_id={train.get('train_id')}")
+                            results.append(train)
+                        else:
+                            print(f"Day of run mismatch for train_id={train.get('train_id')}")
+                    else:
+                        print(f"Source or destination mismatch for train_id={train.get('train_id')}")
+                else:
+                    print(f"Route order mismatch for train_id={train.get('train_id')}")
+            else:
+                print(f"Origin or destination not in route for train_id={train.get('train_id')}")
         print(f"Returning {len(results)} trains after filtering.")
         return results
     except Exception as e:
