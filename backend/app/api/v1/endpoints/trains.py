@@ -79,9 +79,7 @@ def search_trains(
         trains = scan_all_trains()
         results = []
         for train in trains:
-            # Unmarshal if DynamoDB format
-            if any(isinstance(v, dict) and set(v.keys()) <= {'S','N','BOOL','NULL','M','L'} for v in train.values()):
-                train = unmarshal(train)
+            train = unmarshal(train)  # Always unmarshal!
             route_stations = train.get('route', [])
             # Robustly handle both string and dict route entries
             route_stations = [s if isinstance(s, str) else s.get('station_code') or s.get('S') for s in route_stations]
