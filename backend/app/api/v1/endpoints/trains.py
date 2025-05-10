@@ -50,6 +50,20 @@ def search_trains(
     logger = logging.getLogger("dynamo.trains")
     print("ENTERED search_trains endpoint")
     print(f"Train search requested: origin={origin}, destination={destination}, date={date}")
+    from boto3.dynamodb.types import TypeDeserializer
+    deserializer = TypeDeserializer()
+
+    def unmarshal(item):
+        # Recursively unmarshal a DynamoDB item
+        if isinstance(item, dict) and set(item.keys()) <= {'S','N','BOOL','NULL','M','L'}:
+            return deserializer.deserialize(item)
+        elif isinstance(item, dict):
+            return {k: unmarshal(v) for k, v in item.items()}
+        elif isinstance(item, list):
+            return [unmarshal(x) for x in item]
+        else:
+            return item
+
     def extract_list(raw, key='S'):
         # Handles DynamoDB format or plain list of strings
         if isinstance(raw, list):
@@ -65,12 +79,27 @@ def search_trains(
         trains = scan_all_trains()
         results = []
         for train in trains:
-            route_stations = extract_list(train.get('route'))
-            if origin in route_stations and destination in route_stations:
-                if route_stations.index(origin) < route_stations.index(destination):
-                    days_of_run = extract_list(train.get('days_of_run'))
-                    if any(day.lower() == day_of_week.lower() for day in days_of_run):
-                        results.append(train)
+            # Unmarshal if DynamoDB format
+            if any(isinstance(v, dict) and set(v.keys()) <= {'S','N','BOOL','NULL','M','L'} for v in train.values()):
+                train = unmarshal(train)
+            route_stations = train.get('route', [])
+            # Robustly handle both string and dict route entries
+            route_stations = [s if isinstance(s, str) else s.get('station_code') or s.get('S') for s in route_stations]
+            # Compare source/destination fields directly
+            train_source = train.get('source_station') or train.get('source_station_code')
+            train_dest = train.get('destination_station') or train.get('destination_station_code')
+            if (
+                origin in route_stations and destination in route_stations and
+                route_stations.index(origin) < route_stations.index(destination) and
+                (not train_source or train_source == origin) and
+                (not train_dest or train_dest == destination)
+            ):
+                days_of_run = train.get('days_of_run', [])
+                # Normalize days_of_run to list of str
+                if days_of_run and isinstance(days_of_run[0], dict):
+                    days_of_run = [d.get('S') or str(d) for d in days_of_run]
+                if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                    results.append(train)
         print(f"Returning {len(results)} trains after filtering.")
         return results
     except Exception as e:
