@@ -2,7 +2,7 @@
 # Utility functions for interacting with the mock API (json-server)
 
 import requests
-from app.config import MOCK_API_BASE_URL
+MOCK_API_BASE_URL = "https://mockjsonserver.tatkalpro.in"
 
 # Example: Get all trains
 
