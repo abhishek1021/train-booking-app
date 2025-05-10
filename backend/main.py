@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info("Logging is configured at INFO level.")
 print(">>> main.py is starting up")
 try:
     from fastapi import FastAPI, Depends, HTTPException, status
