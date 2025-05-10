@@ -1,6 +1,11 @@
 import logging
-logging.basicConfig(level=logging.INFO)
-logging.info("Logging is configured at INFO level.")
+import sys
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logging.info("Logging is configured at INFO level and outputs to stdout.")
 print(">>> main.py is starting up")
 try:
     from fastapi import FastAPI, Depends, HTTPException, status
