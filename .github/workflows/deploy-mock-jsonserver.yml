@@ -19,7 +19,7 @@ jobs:
         run: |
           cd backend/mock_api
           npm install
-          zip -r ../mock_api_lambda.zip . -x 'node_modules/aws-sdk/**' '*.log'
+          zip -r lambda.zip . -x 'node_modules/aws-sdk/**' '*.log'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -31,6 +31,6 @@ jobs:
       - name: Upload Lambda code to AWS
         run: |
           aws lambda update-function-code \
-            --function-name mock-jsonserver-backend \
-            --zip-file fileb://backend/mock_api_lambda.zip \
+            --function-name mock-json-server \
+            --zip-file fileb://backend/mock_api/lambda.zip \
             --region ap-south-1
