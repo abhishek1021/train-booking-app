@@ -45,12 +45,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
       - name: Terraform Plan (before destroy)
-        run: terraform plan -destroy
+        run: terraform plan -destroy -var="json_acm_certificate_arn=${{ secrets.JSON_ACM_CERTIFICATE_ARN }}"
       - name: Terraform Destroy with Debug Logging
         run: |
           export TF_LOG=DEBUG
           export TF_LOG_PATH=terraform-debug.log
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve -var="json_acm_certificate_arn=${{ secrets.JSON_ACM_CERTIFICATE_ARN }}"
           echo "==== TF_LOG output ===="
           cat terraform-debug.log || true
         env:
