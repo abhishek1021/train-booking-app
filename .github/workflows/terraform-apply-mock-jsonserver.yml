@@ -19,7 +19,7 @@ jobs:
         run: |
           cd backend/mock_api
           npm install
-          zip -r ../mock_api_lambda.zip . -x 'node_modules/aws-sdk/**' '*.log'
+          zip -r lambda.zip . -x 'node_modules/aws-sdk/**' '*.log'
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
