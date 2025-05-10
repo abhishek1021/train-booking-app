@@ -22,33 +22,32 @@ def search_trains(
 ):
     logger = logging.getLogger("mockapi.trains")
     print("ENTERED search_trains endpoint")
-    # logger.info(f"Train search requested: origin={origin}, destination={destination}, date={date}")
-    # try:
-    #     logger.info("Calling external mock API for trains...")
-    #     trains = get_trains()
-    #     logger.info(f"Received {len(trains)} trains from mock API.")
-    #     results = []
-    #     # Convert date string to weekday abbreviation (e.g. 'Wed')
-    #     from datetime import datetime
-    #     day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
-    #     for train in trains:
-    #         # Get the list of station codes in the route
-    #         route_stations = [
-    #             stop['station_code'] if isinstance(stop, dict) and 'station_code' in stop else str(stop)
-    #             for stop in train.get('route', [])
-    #         ]
-    #         if origin in route_stations and destination in route_stations:
-    #             # Ensure origin comes before destination in the route
-    #             if route_stations.index(origin) < route_stations.index(destination):
-    #                 days_of_run = train.get('days_of_run', [])
-    #                 if any(day.lower() == day_of_week.lower() for day in days_of_run):
-    #                     results.append(train)
-    #     logger.info(f"Returning {len(results)} trains after filtering.")
-    #     return results
-    # except Exception as e:
-    #     logger.error(f"Error in train search: {e}", exc_info=True)
-    #     raise HTTPException(status_code=500, detail=str(e))
-    return {"status": "test", "msg": "Minimal response from search_trains endpoint."}
+    print(f"Train search requested: origin={origin}, destination={destination}, date={date}")
+    try:
+        print("Calling external mock API for trains...")
+        trains = get_trains()
+        print(f"Received {len(trains)} trains from mock API.")
+        results = []
+        # Convert date string to weekday abbreviation (e.g. 'Wed')
+        from datetime import datetime
+        day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
+        for train in trains:
+            # Get the list of station codes in the route
+            route_stations = [
+                stop['station_code'] if isinstance(stop, dict) and 'station_code' in stop else str(stop)
+                for stop in train.get('route', [])
+            ]
+            if origin in route_stations and destination in route_stations:
+                # Ensure origin comes before destination in the route
+                if route_stations.index(origin) < route_stations.index(destination):
+                    days_of_run = train.get('days_of_run', [])
+                    if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                        results.append(train)
+        print(f"Returning {len(results)} trains after filtering.")
+        return results
+    except Exception as e:
+        print(f"Error in train search: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/search/minimal", tags=["trains"])
 def search_trains_minimal():
