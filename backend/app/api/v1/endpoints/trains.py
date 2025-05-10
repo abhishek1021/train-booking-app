@@ -34,8 +34,13 @@ def query_trains_by_train_number(train_number):
 # Helper to get all trains (scan)
 def scan_all_trains():
     table = get_trains_table()
+    items = []
     response = table.scan()
-    return response.get("Items", [])
+    items.extend(response.get("Items", []))
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        items.extend(response.get("Items", []))
+    return items
 
 # Fix search_trains to only filter by source, destination, and date/day. Remove class filtering.
 import logging
