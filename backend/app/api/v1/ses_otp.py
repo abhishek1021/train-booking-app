@@ -4,17 +4,14 @@ import sendgrid
 from sendgrid.helpers.mail import Mail
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel, EmailStr
-from dotenv import load_dotenv
+import os
 import time
 import boto3
 from typing import Dict
 
-# Load .env variables (for local dev)
-load_dotenv()
-
 router = APIRouter()
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
 SENDER_EMAIL = "admin@abhishektripathi.art"  # Sender identity remains the same
 
 class OtpRequest(BaseModel):

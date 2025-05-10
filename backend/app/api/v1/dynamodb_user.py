@@ -4,22 +4,15 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 import boto3
-from dotenv import load_dotenv
+import os
 import bcrypt
 
 # Load .env variables (for local dev)
-load_dotenv()
+
 
 # DynamoDB resource
-aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 region_name = os.getenv("AWS_REGION", "ap-south-1")  # Change if needed
-dynamodb = boto3.resource(
-    'dynamodb',
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    region_name=region_name
-)
+dynamodb = boto3.resource('dynamodb', region_name=region_name)
 users_table = dynamodb.Table("users")
 
 class OtherAttributes(BaseModel):
