@@ -21,7 +21,7 @@ def search_trains(
     date: str = Query(..., description="Journey date (YYYY-MM-DD)")
 ):
     logger = logging.getLogger("mockapi.trains")
-    logger.info("ENTERED search_trains endpoint")
+    print("ENTERED search_trains endpoint")
     # logger.info(f"Train search requested: origin={origin}, destination={destination}, date={date}")
     # try:
     #     logger.info("Calling external mock API for trains...")
@@ -53,13 +53,13 @@ def search_trains(
 @router.get("/search/minimal", tags=["trains"])
 def search_trains_minimal():
     logger = logging.getLogger("mockapi.trains")
-    logger.info("ENTERED search_trains_minimal endpoint")
+    print("ENTERED search_trains_minimal endpoint")
     return {"status": "ok", "msg": "Minimal endpoint reached."}
 
 @router.get('/api/v1/trains/seat_count')
 def get_seat_count(train_id: int = Query(...), travel_class: str = Query(...)):
     logger = logging.getLogger("mockapi.trains")
-    logger.info("ENTERED get_seat_count endpoint")
+    print("ENTERED get_seat_count endpoint")
     # trains = get_trains()
     # for train in trains:
     #     if str(train.get('train_id')) == str(train_id):
