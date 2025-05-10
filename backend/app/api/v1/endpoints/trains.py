@@ -6,10 +6,36 @@ import pathlib
 import json
 import os
 
-from app.api.v1.external_mock_api import get_trains
+import boto3
+import os
+from decimal import Decimal
 from typing import Optional
 
 router = APIRouter()
+
+TRAINS_TABLE = "trains"
+
+# Helper to get DynamoDB table
+
+def get_trains_table():
+    dynamodb = boto3.resource("dynamodb")  # region_name not needed in Lambda
+    return dynamodb.Table(TRAINS_TABLE)
+
+# Helper to query by train_number-index
+
+def query_trains_by_train_number(train_number):
+    table = get_trains_table()
+    response = table.query(
+        IndexName="train_number-index",
+        KeyConditionExpression=boto3.dynamodb.conditions.Key("train_number").eq(train_number)
+    )
+    return response.get("Items", [])
+
+# Helper to get all trains (scan)
+def scan_all_trains():
+    table = get_trains_table()
+    response = table.scan()
+    return response.get("Items", [])
 
 # Fix search_trains to only filter by source, destination, and date/day. Remove class filtering.
 import logging
@@ -20,25 +46,22 @@ def search_trains(
     destination: str = Query(..., description="Destination station code (e.g., HWH)"),
     date: str = Query(..., description="Journey date (YYYY-MM-DD)")
 ):
-    logger = logging.getLogger("mockapi.trains")
+    import logging
+    logger = logging.getLogger("dynamo.trains")
     print("ENTERED search_trains endpoint")
     print(f"Train search requested: origin={origin}, destination={destination}, date={date}")
     try:
-        print("Calling external mock API for trains...")
-        trains = get_trains()
-        print(f"Received {len(trains)} trains from mock API.")
-        results = []
-        # Convert date string to weekday abbreviation (e.g. 'Wed')
         from datetime import datetime
         day_of_week = datetime.strptime(date, "%Y-%m-%d").strftime("%a")
+        # For now, scan all trains (can optimize later with GSI)
+        trains = scan_all_trains()
+        results = []
         for train in trains:
-            # Get the list of station codes in the route
             route_stations = [
                 stop['station_code'] if isinstance(stop, dict) and 'station_code' in stop else str(stop)
                 for stop in train.get('route', [])
             ]
             if origin in route_stations and destination in route_stations:
-                # Ensure origin comes before destination in the route
                 if route_stations.index(origin) < route_stations.index(destination):
                     days_of_run = train.get('days_of_run', [])
                     if any(day.lower() == day_of_week.lower() for day in days_of_run):

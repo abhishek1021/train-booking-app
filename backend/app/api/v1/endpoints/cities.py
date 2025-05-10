@@ -1,9 +1,22 @@
 # FastAPI endpoint to fetch all cities from the mock API
 from fastapi import APIRouter, HTTPException
-from app.api.v1.external_mock_api import get_cities
+import boto3
+import os
+from decimal import Decimal
 import sys
 
 router = APIRouter()
+
+DYNAMO_TABLE = "stations"
+
+def get_all_cities_from_dynamo():
+    dynamodb = boto3.resource("dynamodb")  # region_name not needed in Lambda
+    table = dynamodb.Table(DYNAMO_TABLE)
+    response = table.scan()
+    # Only return items with PK starting with STATION#
+    items = [item for item in response.get("Items", []) if item.get("PK", "").startswith("STATION#")]
+    # Optionally, map to city schema if needed
+    return items
 
 @router.on_event("startup")
 def log_cities_endpoint():
@@ -17,6 +30,6 @@ def fetch_cities_noslash():
 @router.get("/", tags=["cities"])
 def fetch_cities():
     try:
-        return get_cities()
+        return get_all_cities_from_dynamo()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
