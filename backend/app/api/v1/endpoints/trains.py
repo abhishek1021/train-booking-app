@@ -85,8 +85,7 @@ def search_trains(
         response = table.query(
             IndexName="source-destination-station-index",
             KeyConditionExpression=(
-                boto3.dynamodb.conditions.Key("source_station").eq(origin) &
-                boto3.dynamodb.conditions.Key("destination_station").eq(destination)
+                boto3.dynamodb.conditions.Key("source_station").eq(origin)
             )
         )
         trains = response.get("Items", [])
