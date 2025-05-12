@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'google_sign_in_service.dart';
 
 class CreateNewAccountEmailScreen extends StatefulWidget {
   const CreateNewAccountEmailScreen({Key? key}) : super(key: key);
@@ -128,23 +129,120 @@ class _CreateNewAccountEmailScreenState
                       ),
                       const SizedBox(height: 18),
                       _SocialButton(
-                        label: 'Continue with Apple',
-                        iconAsset: 'assets/icons/apple.svg',
-                        onPressed: () {},
-                      ),
-                      const SizedBox(height: 12),
-                      _SocialButton(
-                        label: 'Continue with Instagram',
-                        iconAsset: 'assets/icons/instagram.svg',
-                        color: Color(0xFF1877F3),
-                        onPressed: () {},
-                      ),
-                      const SizedBox(height: 12),
-                      _SocialButton(
                         label: 'Continue with Google',
                         iconAsset: 'assets/icons/google.svg',
                         color: Color(0xFFEA4335),
-                        onPressed: () {},
+                        onPressed: () async {
+                          try {
+                            final result = await GoogleSignInService.signInAndCheckUser();
+                            if (result['exists'] == true) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('User Already Exists'),
+                                  content: Text('A user already exists with this email (${result['email']}). Please log in.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              // Proceed with registration logic for Google user
+                              final created = await GoogleSignInService.createUserWithGoogle(
+                                email: result['email'],
+                                name: result['name'] ?? '',
+                              );
+                              if (created) {
+                                // Fetch user profile from DynamoDB and store in prefs
+                                try {
+                                  final profileResp = await http.get(
+                                    Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
+                                  );
+                                  if (profileResp.statusCode == 200) {
+                                    final userInfo = jsonDecode(profileResp.body);
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Signup Complete'),
+                                        content: Text('Account created successfully for ${result['email']}.'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                                            },
+                                            child: const Text('OK'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  } else {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Error'),
+                                        content: const Text('Could not fetch user profile after signup.'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: const Text('OK'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Error'),
+                                      content: Text('Error fetching user profile: $e'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              } else {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Signup Failed'),
+                                    content: const Text('Failed to create account. Please try again.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Sign-In Failed'),
+                                content: Text('Google sign-in failed: $e'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
                       ),
                       const Spacer(),
                       Padding(

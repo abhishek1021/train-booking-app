@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:train_booking_app/screens/splash_screen.dart';
+import 'package:train_booking_app/screens/pre_splash_screen.dart';
 import 'package:train_booking_app/screens/auth/login_screen.dart';
 import 'package:train_booking_app/screens/home/home_screen.dart';
 import 'package:train_booking_app/screens/welcome_screen.dart';
@@ -11,11 +12,36 @@ import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.
 import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
 
 void main() {
-  runApp(const TrainBookingApp());
+  runApp(TrainBookingApp());
 }
 
-class TrainBookingApp extends StatelessWidget {
-  const TrainBookingApp({Key? key}) : super(key: key);
+class TrainBookingApp extends StatefulWidget {
+
+
+  @override
+  State<TrainBookingApp> createState() => _TrainBookingAppState();
+}
+
+class _TrainBookingAppState extends State<TrainBookingApp> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Simulate loading resources, auth, etc.
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +63,7 @@ class TrainBookingApp extends StatelessWidget {
         depth: 6,
       ),
       themeMode: ThemeMode.system,
-      home: const WelcomeScreen(),
+      home: _isLoading ? const PreSplashScreen() : const WelcomeScreen(),
       routes: {
         '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),

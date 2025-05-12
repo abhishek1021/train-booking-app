@@ -25,12 +25,15 @@ dependencies:
   # lato: ^3.0.0
   marquee: ^2.2.3
   barcode_widget: ^2.0.4
+  google_sign_in: ^6.1.5
   # Add other dependencies as needed
 flutter:
   uses-material-design: true
   assets:
     - assets/icons/
     - assets/fonts/
+    - assets/logos/
+
   fonts:
     - family: Lato
       fonts:

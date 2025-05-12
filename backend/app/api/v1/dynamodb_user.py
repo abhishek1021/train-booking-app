@@ -65,6 +65,20 @@ def user_exists(email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/dynamodb/users/profile/{email}")
+def get_user_profile(email: str):
+    try:
+        response = users_table.get_item(Key={"PK": f"USER#{email}", "SK": "PROFILE"})
+        user = response.get("Item")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        user.pop("PasswordHash", None)
+        return {"user": user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/dynamodb/users/login")
 def login_user(login: UserLoginRequest):
     try:
