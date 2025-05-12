@@ -111,26 +111,23 @@ class SearchCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            // Origin field
+            // Origin and Destination fields stacked vertically with interchange arrow
             Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.only(bottom: 10),
               child: TextFormField(
                 readOnly: true,
                 controller: originController,
                 decoration: InputDecoration(
                   labelText: 'Origin',
-                  labelStyle:
-                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
-                  suffixIcon: const Icon(Icons.arrow_drop_down,
-                      color: Color(0xFF7C3AED)),
+                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
                     fontFamily: 'Lato',
@@ -140,23 +137,39 @@ class SearchCard extends StatelessWidget {
                 onTap: onOriginTap,
               ),
             ),
-            // Destination field
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                child: Material(
+                  color: Colors.white,
+                  shape: CircleBorder(),
+                  elevation: 2,
+                  child: IconButton(
+                    icon: Icon(Icons.swap_vert, color: Color(0xFF7C3AED)),
+                    tooltip: 'Swap Origin & Destination',
+                    onPressed: () {
+                      final temp = originController.text;
+                      originController.text = destinationController.text;
+                      destinationController.text = temp;
+                    },
+                  ),
+                ),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.only(top: 20, bottom: 16),
               child: TextFormField(
                 readOnly: true,
                 controller: destinationController,
                 decoration: InputDecoration(
                   labelText: 'Destination',
-                  labelStyle:
-                      TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
@@ -167,6 +180,7 @@ class SearchCard extends StatelessWidget {
                 onTap: onDestinationTap,
               ),
             ),
+
             // Date pickers (departure/return)
             if (selectedTabIndex == 0) ...[
               Padding(
@@ -176,7 +190,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -204,7 +218,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -232,7 +246,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Return Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -263,7 +277,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Passengers',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF444444)),
+                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(

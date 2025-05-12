@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'select_payment_method_screen.dart';
+import 'transaction_details_screen.dart';
 
 class ReviewSummaryScreen extends StatelessWidget {
   final Map<String, dynamic> train;
@@ -10,6 +12,11 @@ class ReviewSummaryScreen extends StatelessWidget {
   final String selectedClass;
   final int price;
   final List<Map<String, dynamic>> passengers;
+
+  String _calculateDuration(String dep, String arr) {
+    // Dummy implementation, you can replace with actual duration logic
+    return '4h';
+  }
   final String email;
   final String phone;
   final int coins;
@@ -110,7 +117,17 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  selectedClass,
+                                  'From $originName → $destinationName',
+                                  style: TextStyle(
+                                    fontFamily: 'Lato',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Class: $selectedClass',
                                   style: TextStyle(
                                     fontFamily: 'Lato',
                                     fontWeight: FontWeight.w500,
@@ -154,58 +171,66 @@ class ReviewSummaryScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(train['origin_name'] ?? '',
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontSize: 14,
-                                      color: Colors.black54)),
                               Text(
-                                train['schedule'] != null && train['schedule'].isNotEmpty ? (train['schedule'].first['departure'] ?? '') : '',
+                                originName,
                                 style: TextStyle(
-                                    fontFamily: 'Lato',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF7C3AED))),
-                              Text(date,
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontSize: 12,
-                                      color: Colors.black45)),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Icon(Icons.train, color: Color(0xFF7C3AED)),
+                                  fontFamily: 'Lato',
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 2),
                               Text(
-                                train['duration'] ?? '',
+                                depTime,
+                                style: TextStyle(
+                                  fontFamily: 'Lato',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                              Text(
+                                date,
                                 style: TextStyle(
                                   fontFamily: 'Lato',
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color: Colors.black45,
                                 ),
                               ),
                             ],
                           ),
+                          Icon(Icons.train, color: Color(0xFF7C3AED)),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(train['destination_name'] ?? '',
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontSize: 14,
-                                      color: Colors.black54)),
                               Text(
-                                train['schedule'] != null && train['schedule'].isNotEmpty ? (train['schedule'].last['arrival'] ?? '') : '',
+                                destinationName,
                                 style: TextStyle(
-                                    fontFamily: 'Lato',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF7C3AED))),
-                              Text(date,
-                                  style: TextStyle(
-                                      fontFamily: 'Lato',
-                                      fontSize: 12,
-                                      color: Colors.black45)),
+                                  fontFamily: 'Lato',
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                arrTime,
+                                style: TextStyle(
+                                  fontFamily: 'Lato',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                              Text(
+                                date,
+                                style: TextStyle(
+                                  fontFamily: 'Lato',
+                                  fontSize: 12,
+                                  color: Colors.black45,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -261,28 +286,36 @@ class ReviewSummaryScreen extends StatelessWidget {
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
                       SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(child: Text('No.', style: _headerStyle())),
-                          Expanded(flex: 2, child: Text('Name', style: _headerStyle())),
-                          Expanded(child: Text('Gender', style: _headerStyle())),
-                          Expanded(child: Text('Age', style: _headerStyle())),
-                          Expanded(child: Text('ID Type', style: _headerStyle())),
-                          Expanded(flex: 2, child: Text('ID Number', style: _headerStyle())),
-                        ],
-                      ),
-                      Divider(),
                       ...List.generate(passengers.length, (idx) {
                         final p = passengers[idx];
-                        return Row(
-                          children: [
-                            Expanded(child: Text((idx + 1).toString(), style: _cellStyle())),
-                            Expanded(flex: 2, child: Text(p['name'] ?? '', style: _cellStyle())),
-                            Expanded(child: Text(p['gender'] ?? '', style: _cellStyle())),
-                            Expanded(child: Text(p['age'] ?? '', style: _cellStyle())),
-                            Expanded(child: Text(p['idType'] ?? '', style: _cellStyle())),
-                            Expanded(flex: 2, child: Text(p['idNumber'] ?? '', style: _cellStyle())),
-                          ],
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 14),
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF7F7FA),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text('Passenger ${idx + 1}',
+                                      style: TextStyle(
+                                          fontFamily: 'Lato',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.black87)),
+                                ],
+                              ),
+                              SizedBox(height: 6),
+                              Text('Name: ${p['name'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                              Text('Gender: ${p['gender'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                              Text('Age: ${p['age'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                              Text('ID Type: ${p['idType'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                              Text('ID Number: ${p['idNumber'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                            ],
+                          ),
                         );
                       }),
                     ],
@@ -314,8 +347,41 @@ class ReviewSummaryScreen extends StatelessWidget {
                                   color: Colors.black87)),
                           Spacer(),
                           TextButton(
-                            onPressed: () {},
-                            child: Text('Change', style: TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SelectPaymentMethodScreen(
+                                    walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
+                                    bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
+                                    trainName: train['train_name'] ?? '',
+                                    trainClass: selectedClass,
+                                    departureStation: originName,
+                                    arrivalStation: destinationName,
+                                    departureTime: depTime,
+                                    arrivalTime: arrTime,
+                                    departureDate: date,
+                                    arrivalDate: date,
+                                    duration: _calculateDuration(depTime, arrTime),
+                                    price: price.toDouble(),
+                                    tax: tax,
+                                    totalPrice: price.toDouble() + tax,
+                                    status: 'Paid',
+                                    transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                                    merchantId: 'MERCHANT123',
+                                    paymentMethod: 'Wallet',
+                                    passengers: passengers.map((p) => Passenger(
+                                      fullName: p['fullName'],
+                                      idType: p['idType'],
+                                      idNumber: p['idNumber'],
+                                      passengerType: p['passengerType'],
+                                      seat: p['seat'] ?? 'B2-34',
+                                    )).toList(),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Text('Change', style: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -371,7 +437,40 @@ class ReviewSummaryScreen extends StatelessWidget {
                           SizedBox(
                             height: 42,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SelectPaymentMethodScreen(
+                                      walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
+                                      bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
+                                      trainName: train['train_name'] ?? '',
+                                      trainClass: selectedClass,
+                                      departureStation: originName,
+                                      arrivalStation: destinationName,
+                                      departureTime: depTime,
+                                      arrivalTime: arrTime,
+                                      departureDate: date,
+                                      arrivalDate: date,
+                                      duration: _calculateDuration(depTime, arrTime),
+                                      price: price.toDouble(),
+                                      tax: tax,
+                                      totalPrice: price.toDouble() + tax,
+                                      status: 'Paid',
+                                      transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                                      merchantId: 'MERCHANT123',
+                                      paymentMethod: 'Wallet',
+                                      passengers: passengers.map((p) => Passenger(
+                                        fullName: p['fullName'],
+                                        idType: p['idType'],
+                                        idNumber: p['idNumber'],
+                                        passengerType: p['passengerType'],
+                                        seat: p['seat'] ?? 'B2-34',
+                                      )).toList(),
+                                    ),
+                                  ),
+                                );
+                              },
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.all(RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -398,7 +497,9 @@ class ReviewSummaryScreen extends StatelessWidget {
                                       fontFamily: 'Lato',
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
-                                      color: Colors.white)),
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -483,7 +584,40 @@ class ReviewSummaryScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SelectPaymentMethodScreen(
+                          walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
+                          bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
+                          trainName: train['train_name'] ?? '',
+                          trainClass: selectedClass,
+                          departureStation: originName,
+                          arrivalStation: destinationName,
+                          departureTime: depTime,
+                          arrivalTime: arrTime,
+                          departureDate: date,
+                          arrivalDate: date,
+                          duration: _calculateDuration(depTime, arrTime),
+                          price: price.toDouble(),
+                          tax: tax,
+                          totalPrice: price.toDouble() + tax,
+                          status: 'Paid',
+                          transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                          merchantId: 'MERCHANT123',
+                          paymentMethod: 'Wallet',
+                          passengers: passengers.map((p) => Passenger(
+                            fullName: p['fullName'] ?? '',
+                            idType: p['idType'] ?? '',
+                            idNumber: p['idNumber'] ?? '',
+                            passengerType: p['passengerType'] ?? '',
+                            seat: p['seat'] ?? 'B2-34',
+                          )).toList(),
+                        ),
+                      ),
+                    );
+                  },
                   style: ButtonStyle(
                     shape: MaterialStateProperty.all(RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -512,11 +646,12 @@ class ReviewSummaryScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ], // <-- End of children for Column
+          ), // <-- End of Column
+        ), // <-- End of Padding
+      ), // <-- End of SingleChildScrollView
+    ); // <-- End of Scaffold
+  
   }
 
   Widget _infoRow(String label, String value) {
@@ -540,10 +675,17 @@ class ReviewSummaryScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontFamily: 'Lato', fontSize: 14, fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
           Text(
-            value is int ? '\$${value.toStringAsFixed(2)}' : '\$${value.toStringAsFixed(2)}',
-            style: TextStyle(fontFamily: 'Lato', fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: 14),
+            label,
+            style: TextStyle(
+              fontFamily: 'Lato',
+              fontSize: 15,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            '₹${value.toStringAsFixed(2)}',
           ),
         ],
       ),
