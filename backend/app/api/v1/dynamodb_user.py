@@ -42,6 +42,8 @@ class UserLoginRequest(BaseModel):
 
 router = APIRouter()
 
+from decimal import Decimal
+
 def convert_floats_to_decimal(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
