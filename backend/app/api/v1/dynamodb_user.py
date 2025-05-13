@@ -201,7 +201,7 @@ def create_user(user: UserCreateRequest):
                 </div>
               </body>
             </html>
-            "
+            """
             if SENDGRID_API_KEY and to_email:
                 print("[TatkalPro][Email] All email vars present, attempting to send...")
                 try:
