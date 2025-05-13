@@ -124,19 +124,19 @@ def create_user(user: UserCreateRequest):
                     border-radius: 50%;
                     width: 56px;
                     height: 56px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 14px auto;
-                    text-align: center;
+                    display: table-cell;
                     vertical-align: middle;
+                    text-align: center;
+                    margin: 0 auto 18px auto;
                   }}
                   .feature-icon-bg img {{
                     width: 28px;
                     height: 28px;
+                    display: inline-block;
+                    vertical-align: middle;
                     filter: none;
                   }}
-                  .feature-title {{ font-weight: 700; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; }}
+                  .feature-title {{ font-weight: 700; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; margin-top: 25px; }}
                   .feature-desc {{ color: #444; font-size: 13px; line-height: 1.6; margin-bottom: 0; }}
                   .cta-btn {{
                     background: linear-gradient(90deg, #7C3AED, #9F7AEA);
@@ -157,22 +157,22 @@ def create_user(user: UserCreateRequest):
                   }}
                   .why-section {{ color: #222; font-size: 15px; margin: 24px 0 0 0; line-height: 1.8; }}
                   .support-icons {{ margin: 48px 0 36px 0; }}
-                  .support-icon-block {{ display: inline-block; width: 22%; text-align: center; margin: 0 1%; vertical-align: top; }}
+                  .support-icon-block {{ display: inline-block; width: 22%; text-align: -webkit-center; margin: 0 1%; vertical-align: top; }}
                   .support-icon-bg {{
                     border: 2px solid #7C1EFF;
                     border-radius: 50%;
                     width: 40px;
                     height: 40px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 10px auto;
-                    text-align: center;
+                    display: table-cell;
                     vertical-align: middle;
+                    text-align: center;
+                    margin: 0 auto 10px auto;
                   }}
                   .support-icon-bg img {{
                     width: 20px;
                     height: 20px;
+                    display: inline-block;
+                    vertical-align: middle;
                     filter: none;
                   }}
                   .support-label {{ display: block; color: #7C1EFF; font-size: 13px; font-weight: 600; margin-top: 4px; }}
