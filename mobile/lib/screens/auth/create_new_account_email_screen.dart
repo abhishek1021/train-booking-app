@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
 
 class CreateNewAccountEmailScreen extends StatefulWidget {
@@ -134,24 +138,19 @@ class _CreateNewAccountEmailScreenState
                         color: Color(0xFFEA4335),
                         onPressed: () async {
                           try {
-                            final result = await GoogleSignInService.signInAndCheckUser();
+                            final result =
+                                await GoogleSignInService.signInAndCheckUser();
                             if (result['exists'] == true) {
                               showDialog(
                                 context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('User Already Exists'),
-                                  content: Text('A user already exists with this email (${result['email']}). Please log in.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                ),
+                                barrierDismissible: false,
+                                builder: (context) =>
+                                    _UserExistsDialog(email: result['email']),
                               );
                             } else {
                               // Proceed with registration logic for Google user
-                              final created = await GoogleSignInService.createUserWithGoogle(
+                              final created = await GoogleSignInService
+                                  .createUserWithGoogle(
                                 email: result['email'],
                                 name: result['name'] ?? '',
                               );
@@ -159,26 +158,24 @@ class _CreateNewAccountEmailScreenState
                                 // Fetch user profile from DynamoDB and store in prefs
                                 try {
                                   final profileResp = await http.get(
-                                    Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
+                                    Uri.parse(
+                                        '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
                                   );
                                   if (profileResp.statusCode == 200) {
-                                    final userInfo = jsonDecode(profileResp.body);
-                                    final prefs = await SharedPreferences.getInstance();
-                                    await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+                                    final userInfo =
+                                        jsonDecode(profileResp.body);
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                        'user_profile',
+                                        jsonEncode(
+                                            userInfo['user'] ?? userInfo));
                                     showDialog(
                                       context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Signup Complete'),
-                                        content: Text('Account created successfully for ${result['email']}.'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                                            },
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
+                                      barrierDismissible: false,
+                                      builder: (context) =>
+                                          _AccountCreatedDialog(
+                                        email: result['email'],
                                       ),
                                     );
                                   } else {
@@ -186,10 +183,12 @@ class _CreateNewAccountEmailScreenState
                                       context: context,
                                       builder: (context) => AlertDialog(
                                         title: const Text('Error'),
-                                        content: const Text('Could not fetch user profile after signup.'),
+                                        content: const Text(
+                                            'Could not fetch user profile after signup.'),
                                         actions: [
                                           TextButton(
-                                            onPressed: () => Navigator.of(context).pop(),
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
                                             child: const Text('OK'),
                                           ),
                                         ],
@@ -201,10 +200,12 @@ class _CreateNewAccountEmailScreenState
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       title: const Text('Error'),
-                                      content: Text('Error fetching user profile: $e'),
+                                      content: Text(
+                                          'Error fetching user profile: $e'),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(context).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
                                           child: const Text('OK'),
                                         ),
                                       ],
@@ -216,10 +217,12 @@ class _CreateNewAccountEmailScreenState
                                   context: context,
                                   builder: (context) => AlertDialog(
                                     title: const Text('Signup Failed'),
-                                    content: const Text('Failed to create account. Please try again.'),
+                                    content: const Text(
+                                        'Failed to create account. Please try again.'),
                                     actions: [
                                       TextButton(
-                                        onPressed: () => Navigator.of(context).pop(),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
                                         child: const Text('OK'),
                                       ),
                                     ],
@@ -235,7 +238,8 @@ class _CreateNewAccountEmailScreenState
                                 content: Text('Google sign-in failed: $e'),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
                                     child: const Text('OK'),
                                   ),
                                 ],
@@ -282,6 +286,182 @@ class _CreateNewAccountEmailScreenState
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _AccountCreatedDialog extends StatefulWidget {
+  final String email;
+  const _AccountCreatedDialog({Key? key, required this.email})
+      : super(key: key);
+
+  @override
+  State<_AccountCreatedDialog> createState() => _AccountCreatedDialogState();
+}
+
+class _AccountCreatedDialogState extends State<_AccountCreatedDialog> {
+  int secondsLeft = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+      if (secondsLeft > 1) {
+        setState(() {
+          secondsLeft--;
+        });
+        _startCountdown();
+      } else {
+        Navigator.of(context).pop();
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C1EFF).withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Icon(Icons.check_circle_rounded,
+                  color: Color(0xFF7C1EFF), size: 72),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Account Created Successfully!',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFF7C1EFF),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You have successfully created an account with ${widget.email}. You can now access all features of TatkalPro.',
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'Redirecting in $secondsLeft sec',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF7C1EFF),
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Lato',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UserExistsDialog extends StatelessWidget {
+  final String email;
+  const _UserExistsDialog({Key? key, required this.email}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C1EFF).withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Icon(Icons.info_outline_rounded,
+                  color: Color(0xFF7C1EFF), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'User Already Exists',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFF7C1EFF),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'A user already exists with this email (${email}). Please log in.',
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C1EFF), Color(0xFFB983FF)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Center(
+                      child: Text(
+                        'Log In',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Lato',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

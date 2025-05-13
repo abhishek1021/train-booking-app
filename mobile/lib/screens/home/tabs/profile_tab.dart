@@ -152,7 +152,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   child: TextButton.icon(
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('user_profile');
+                      await prefs.clear(); // Clear all preferences
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                     icon: const Icon(Icons.logout, color: Colors.red),

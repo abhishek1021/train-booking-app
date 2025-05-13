@@ -8,7 +8,8 @@ import '../../api_constants.dart';
 class GoogleSignInService {
   static final GoogleSignIn _googleSignIn = kIsWeb
       ? GoogleSignIn(
-          clientId: '67107230139-gr30cv7m5ts9mjn2ol2v2nd8r17bburd.apps.googleusercontent.com',
+          clientId:
+              '67107230139-gr30cv7m5ts9mjn2ol2v2nd8r17bburd.apps.googleusercontent.com',
         )
       : GoogleSignIn();
 
@@ -24,7 +25,8 @@ class GoogleSignInService {
       final email = account.email;
       final displayName = account.displayName ?? '';
       // Check if user exists in DynamoDB
-      final url = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
+      final url = Uri.parse(
+          '${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final exists = jsonDecode(response.body)['exists'] as bool;
@@ -38,7 +40,8 @@ class GoogleSignInService {
   }
 
   /// Creates a new user in DynamoDB for Google sign-in
-  static Future<bool> createUserWithGoogle({required String email, required String name}) async {
+  static Future<bool> createUserWithGoogle(
+      {required String email, required String name}) async {
     final userId = const Uuid().v4();
     final now = DateTime.now().toIso8601String();
     final username = email.split('@')[0];
@@ -55,7 +58,6 @@ class GoogleSignInService {
           'PasswordHash': 'GOOGLE_OAUTH', // Placeholder for Google users
           'CreatedAt': now,
           'IsActive': true,
-          'is_active': true,
           'kyc_status': 'pending',
           'LastLoginAt': now,
           'OtherAttributes': {'FullName': name, 'Role': 'user'},
