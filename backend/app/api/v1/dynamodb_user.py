@@ -42,6 +42,16 @@ class UserLoginRequest(BaseModel):
 
 router = APIRouter()
 
+def convert_floats_to_decimal(obj):
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_floats_to_decimal(i) for i in obj]
+    else:
+        return obj
+
 @router.post("/dynamodb/users/create", status_code=201)
 def create_user(user: UserCreateRequest):
     # Hash the password before storing
@@ -53,6 +63,10 @@ def create_user(user: UserCreateRequest):
     item["CreatedAt"] = item["CreatedAt"].isoformat()
     if item.get("LastLoginAt"):
         item["LastLoginAt"] = item["LastLoginAt"].isoformat()
+
+    # Convert all floats to Decimal for DynamoDB compatibility
+    item = convert_floats_to_decimal(item)
+
     # Remove .dict() usage, as OtherAttributes is already a dict
     try:
         users_table.put_item(Item=item)

@@ -88,10 +88,12 @@ class _SearchTabState extends State<SearchTab> {
     try {
       final dio = Dio();
       final response = await dio.get(citiesEndpoint);
+      if (!mounted) return;
       setState(() {
         cities = response.data;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         cities = [];
       });

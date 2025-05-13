@@ -226,7 +226,8 @@ class LoginScreen extends StatelessWidget {
 class _UserNotFoundDialog extends StatefulWidget {
   final String? email;
   final String? name;
-  const _UserNotFoundDialog({Key? key, this.email, this.name}) : super(key: key);
+  const _UserNotFoundDialog({Key? key, this.email, this.name})
+      : super(key: key);
 
   @override
   State<_UserNotFoundDialog> createState() => _UserNotFoundDialogState();
@@ -249,15 +250,18 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
       if (success) {
         // Optionally fetch profile and store in prefs
         final profileResp = await http.get(
-          Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${widget.email}'),
+          Uri.parse(
+              '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${widget.email}'),
         );
         if (profileResp.statusCode == 200) {
           final userInfo = jsonDecode(profileResp.body);
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+          await prefs.setString(
+              'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
           if (mounted) {
             Navigator.of(context).pop();
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            Navigator.pushNamedAndRemoveUntil(
+                context, '/home', (route) => false);
           }
         } else {
           setState(() {
@@ -369,11 +373,13 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                   padding: EdgeInsets.zero,
                   backgroundColor: Colors.transparent,
                 ).copyWith(
-                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                  backgroundColor:
+                      MaterialStateProperty.all(Colors.transparent),
                   shadowColor: MaterialStateProperty.all(Colors.transparent),
                 ),
                 onPressed: _isLoading ? null : _createWithGoogleData,
@@ -416,6 +422,7 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
     );
   }
 }
+
 class _SocialButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;

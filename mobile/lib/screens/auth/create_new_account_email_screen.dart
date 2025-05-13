@@ -145,7 +145,7 @@ class _CreateNewAccountEmailScreenState
                                 context: context,
                                 barrierDismissible: false,
                                 builder: (context) =>
-                                    _UserExistsDialog(email: result['email']),
+                                    UserExistsDialog(email: result['email']),
                               );
                             } else {
                               // Proceed with registration logic for Google user
@@ -174,76 +174,41 @@ class _CreateNewAccountEmailScreenState
                                       context: context,
                                       barrierDismissible: false,
                                       builder: (context) =>
-                                          _AccountCreatedDialog(
-                                        email: result['email'],
-                                      ),
+                                          AccountCreatedDialog(
+                                              email: result['email']),
                                     );
                                   } else {
                                     showDialog(
                                       context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Error'),
-                                        content: const Text(
-                                            'Could not fetch user profile after signup.'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(),
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
-                                      ),
+                                      barrierDismissible: false,
+                                      builder: (context) =>
+                                          ProfileFetchErrorDialog(),
                                     );
                                   }
                                 } catch (e) {
                                   showDialog(
                                     context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Error'),
-                                      content: Text(
-                                          'Error fetching user profile: $e'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    ),
+                                    barrierDismissible: false,
+                                    builder: (context) => SignupErrorDialog(
+                                        error: 'Error fetching user profile: ' +
+                                            e.toString()),
                                   );
                                 }
                               } else {
                                 showDialog(
                                   context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Signup Failed'),
-                                    content: const Text(
-                                        'Failed to create account. Please try again.'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        child: const Text('OK'),
-                                      ),
-                                    ],
-                                  ),
+                                  barrierDismissible: false,
+                                  builder: (context) => SignupFailedDialog(),
                                 );
                               }
                             }
                           } catch (e) {
                             showDialog(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Sign-In Failed'),
-                                content: Text('Google sign-in failed: $e'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              ),
+                              barrierDismissible: false,
+                              builder: (context) => SignInFailedDialog(
+                                  error:
+                                      'Google sign-in failed: ' + e.toString()),
                             );
                           }
                         },
@@ -291,21 +256,406 @@ class _CreateNewAccountEmailScreenState
   }
 }
 
-class _AccountCreatedDialog extends StatefulWidget {
+// Dialog for user already exists
+class UserExistsDialog extends StatelessWidget {
   final String email;
-  const _AccountCreatedDialog({Key? key, required this.email})
-      : super(key: key);
+  const UserExistsDialog({Key? key, required this.email}) : super(key: key);
 
   @override
-  State<_AccountCreatedDialog> createState() => _AccountCreatedDialogState();
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C1EFF).withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.info_outline_rounded,
+                  color: Color(0xFF7C1EFF), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'User Already Exists',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFF7C1EFF),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'A user already exists with this email ($email). Please log in.',
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: EdgeInsets.zero,
+                  
+                  
+                ).copyWith(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+                    (states) => null,
+                  ),
+                  foregroundColor:
+                      MaterialStateProperty.all<Color>(Colors.white),
+                  shadowColor:
+                      MaterialStateProperty.all<Color>(Colors.transparent),
+                  surfaceTintColor:
+                      MaterialStateProperty.all<Color>(Colors.transparent),
+                  overlayColor: MaterialStateProperty.all<Color>(
+                    const Color(0x1A7C3AED),
+                  ),
+                ),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Log In',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _AccountCreatedDialogState extends State<_AccountCreatedDialog> {
+// Generic error dialog for signup
+class SignupErrorDialog extends StatelessWidget {
+  final String error;
+  const SignupErrorDialog({Key? key, required this.error}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE5E5),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFD32F2F), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Error',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFFD32F2F),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              error,
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Error dialog for profile fetch failure after signup
+class ProfileFetchErrorDialog extends StatelessWidget {
+  const ProfileFetchErrorDialog({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE5E5),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFD32F2F), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Error',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFFD32F2F),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Could not fetch user profile after signup.',
+              style: TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Error dialog for signup failed
+class SignupFailedDialog extends StatelessWidget {
+  const SignupFailedDialog({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE5E5),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFD32F2F), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Signup Failed',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFFD32F2F),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Failed to create account. Please try again.',
+              style: TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Error dialog for Google sign-in failed
+class SignInFailedDialog extends StatelessWidget {
+  final String error;
+  const SignInFailedDialog({Key? key, required this.error}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE5E5),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFD32F2F), size: 60),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Sign-In Failed',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFFD32F2F),
+                fontFamily: 'Lato',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              error,
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AccountCreatedDialog extends StatefulWidget {
+  final String email;
+  const AccountCreatedDialog({Key? key, required this.email}) : super(key: key);
+
+  @override
+  _AccountCreatedDialogState createState() => _AccountCreatedDialogState();
+}
+
+class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
+  late final String email;
   int secondsLeft = 10;
 
   @override
   void initState() {
     super.initState();
+    email = widget.email;
     _startCountdown();
   }
 
@@ -358,7 +708,7 @@ class _AccountCreatedDialogState extends State<_AccountCreatedDialog> {
             ),
             const SizedBox(height: 16),
             Text(
-              'You have successfully created an account with ${widget.email}. You can now access all features of TatkalPro.',
+              'You have successfully created an account with $email. You can now access all features of TatkalPro.',
               style: const TextStyle(
                   fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
               textAlign: TextAlign.center,
@@ -371,93 +721,6 @@ class _AccountCreatedDialogState extends State<_AccountCreatedDialog> {
                 color: Color(0xFF7C1EFF),
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Lato',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _UserExistsDialog extends StatelessWidget {
-  final String email;
-  const _UserExistsDialog({Key? key, required this.email}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C1EFF).withOpacity(0.10),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: Icon(Icons.info_outline_rounded,
-                  color: Color(0xFF7C1EFF), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'User Already Exists',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFF7C1EFF),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'A user already exists with this email (${email}). Please log in.',
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF7C1EFF), Color(0xFFB983FF)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    child: const Center(
-                      child: Text(
-                        'Log In',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Lato',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
           ],
