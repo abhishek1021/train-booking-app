@@ -128,6 +128,8 @@ def create_user(user: UserCreateRequest):
                     align-items: center;
                     justify-content: center;
                     margin: 0 auto 14px auto;
+                    text-align: center;
+                    vertical-align: middle;
                   }}
                   .feature-icon-bg img {{
                     width: 28px;
@@ -165,6 +167,8 @@ def create_user(user: UserCreateRequest):
                     align-items: center;
                     justify-content: center;
                     margin: 0 auto 10px auto;
+                    text-align: center;
+                    vertical-align: middle;
                   }}
                   .support-icon-bg img {{
                     width: 20px;
