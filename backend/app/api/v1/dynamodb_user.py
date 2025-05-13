@@ -106,7 +106,7 @@ def create_user(user: UserCreateRequest):
                     color: #fff;
                     border-radius: 18px 18px 0 0;
                     text-align: center;
-                    padding: 48px 0 0 0;
+                    padding: 100px 0 100px 0;
                   }}
                   .footer {{
                     border-radius: 0 0 18px 18px;
@@ -119,8 +119,8 @@ def create_user(user: UserCreateRequest):
                   h1 {{ font-size: 2em; margin: 0; font-weight: bold; }}
                   h2 {{ color: #7C1EFF; margin: 0 0 18px 0; font-size: 1.3em; }}
                   .features {{ margin: 32px 0; }}
-                  .feature-icon-bg {{ 
-                    background: #7C1EFF;
+                  .feature-icon-bg {{
+                    border: 2px solid #7C1EFF;
                     border-radius: 50%;
                     width: 56px;
                     height: 56px;
@@ -132,13 +132,13 @@ def create_user(user: UserCreateRequest):
                   .feature-icon-bg img {{
                     width: 28px;
                     height: 28px;
-                    filter: brightness(0) invert(1);
+                    filter: none;
                   }}
                   .feature-title {{ font-weight: 700; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; }}
                   .feature-desc {{ color: #444; font-size: 13px; line-height: 1.6; margin-bottom: 0; }}
                   .cta-btn {{
                     background: linear-gradient(90deg, #7C3AED, #9F7AEA);
-                    color: #fff;
+                    color: #fff !important;
                     font-weight: bold;
                     padding: 16px 0;
                     border-radius: 10px;
@@ -146,15 +146,18 @@ def create_user(user: UserCreateRequest):
                     font-size: 18px;
                     display: block;
                     width: 80%;
-                    margin: 36px auto 24px auto;
+                    margin: 36px auto 0 auto;
                     text-align: center;
                     box-shadow: 0 2px 8px #e0e0e0;
+                  }}
+                  .cta-btn-padding {{
+                    padding-bottom: 32px;
                   }}
                   .why-section {{ color: #222; font-size: 15px; margin: 24px 0 0 0; line-height: 1.8; }}
                   .support-icons {{ margin: 48px 0 36px 0; }}
                   .support-icon-block {{ display: inline-block; width: 22%; text-align: center; margin: 0 1%; vertical-align: top; }}
                   .support-icon-bg {{
-                    background: #7C1EFF;
+                    border: 2px solid #7C1EFF;
                     border-radius: 50%;
                     width: 40px;
                     height: 40px;
@@ -166,7 +169,7 @@ def create_user(user: UserCreateRequest):
                   .support-icon-bg img {{
                     width: 20px;
                     height: 20px;
-                    filter: brightness(0) invert(1);
+                    filter: none;
                   }}
                   .support-label {{ display: block; color: #7C1EFF; font-size: 13px; font-weight: 600; margin-top: 4px; }}
                 </style>
@@ -207,6 +210,7 @@ def create_user(user: UserCreateRequest):
                       </table>
                     </div> 
                     <a href='https://tatkalpro.in' class='cta-btn'>Go to TatkalPro</a>
+<div class='cta-btn-padding'></div>
                     <div class='why-section'>
                       <b>Why TatkalPro?</b><br/>
                       TatkalPro is your all-in-one platform for superfast IRCTC tatkal ticket booking, smart automation, and seamless travel management. Enjoy exclusive offers, easy account management, and peace of mind with our dedicated support team.<br/><br/>
