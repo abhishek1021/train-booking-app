@@ -90,11 +90,11 @@ def create_user(user: UserCreateRequest):
             html_body = f"""
             <html>
               <head>
-                <link href='https://fonts.googleapis.com/css?family=Lato:400,700&display=swap' rel='stylesheet' type='text/css'>
+                <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;700&display=swap" rel="stylesheet" type="text/css">
                 <style>
-                  body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div {{ font-family: 'Lato', Arial, sans-serif !important; }}
+                  body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div { font-family: 'Google Sans', 'Product Sans', Arial, sans-serif !important; }
                   .card {{
-                    max-width: 480px;
+                    max-width: 640px;
                     margin: 40px auto;
                     background: #fff;
                     border-radius: 18px;
@@ -106,12 +106,12 @@ def create_user(user: UserCreateRequest):
                     color: #fff;
                     border-radius: 18px 18px 0 0;
                     text-align: center;
-                    padding: 32px 0 0 0;
+                    padding: 48px 0 0 0;
                   }}
                   .footer {{
                     border-radius: 0 0 18px 18px;
-                    padding: 18px 0;
-                    font-size: 12px;
+                    padding: 36px 0;
+                    font-size: 13px;
                   }}
                   .main-content {{
                     padding: 32px 24px 0 24px;
@@ -119,32 +119,63 @@ def create_user(user: UserCreateRequest):
                   h1 {{ font-size: 2em; margin: 0; font-weight: bold; }}
                   h2 {{ color: #7C1EFF; margin: 0 0 18px 0; font-size: 1.3em; }}
                   .features {{ margin: 32px 0; }}
-                  .feature-icon {{ margin-bottom: 12px; }}
-                  .feature-title {{ font-weight: 600; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; }}
+                  .feature-icon-bg {{ 
+                    background: #7C1EFF;
+                    border-radius: 50%;
+                    width: 56px;
+                    height: 56px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 14px auto;
+                  }}
+                  .feature-icon-bg img {{
+                    width: 28px;
+                    height: 28px;
+                    filter: brightness(0) invert(1);
+                  }}
+                  .feature-title {{ font-weight: 700; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; }}
                   .feature-desc {{ color: #444; font-size: 13px; line-height: 1.6; margin-bottom: 0; }}
                   .cta-btn {{
                     background: linear-gradient(90deg, #7C3AED, #9F7AEA);
                     color: #fff;
                     font-weight: bold;
-                    padding: 14px 32px;
-                    border-radius: 8px;
+                    padding: 16px 0;
+                    border-radius: 10px;
                     text-decoration: none;
-                    font-size: 16px;
-                    display: inline-block;
-                    margin: 28px 0 18px 0;
+                    font-size: 18px;
+                    display: block;
+                    width: 80%;
+                    margin: 36px auto 24px auto;
+                    text-align: center;
+                    box-shadow: 0 2px 8px #e0e0e0;
                   }}
                   .why-section {{ color: #222; font-size: 15px; margin: 24px 0 0 0; line-height: 1.8; }}
-                  .support-icons {{ margin: 32px 0 0 0; }}
+                  .support-icons {{ margin: 48px 0 36px 0; }}
                   .support-icon-block {{ display: inline-block; width: 22%; text-align: center; margin: 0 1%; vertical-align: top; }}
-                  .support-icon-block img {{ display: block; margin: 0 auto 12px auto; }}
+                  .support-icon-bg {{
+                    background: #7C1EFF;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 10px auto;
+                  }}
+                  .support-icon-bg img {{
+                    width: 20px;
+                    height: 20px;
+                    filter: brightness(0) invert(1);
+                  }}
                   .support-label {{ display: block; color: #7C1EFF; font-size: 13px; font-weight: 600; margin-top: 4px; }}
                 </style>
               </head>
               <body style='background:#f6f6f6; margin:0; padding:0;'>
                 <div class='card'>
                   <div class='header'>
-                    <img src='https://tatkalpro.in/logo512.png' alt='TatkalPro' width='120' style='margin-bottom:24px;' />
-                    <h1>Welcome to TatkalPro, {display_name}!</h1>
+                    <img src='https://tatkalpro-assests-logo.s3.ap-south-1.amazonaws.com/tatkalpro-logo-white-transparent.png' alt='TatkalPro' width='120' style='margin-bottom:24px;' />
+                    <h1 style='font-size:1.4em; margin: 0 0 8px 0;'>Welcome to TatkalPro, {display_name}!</h1>
                   </div>
                   <div class='main-content'>
                     <h2>Get the best from TatkalPro</h2>
@@ -152,23 +183,29 @@ def create_user(user: UserCreateRequest):
                       <table width='100%' cellpadding='0' cellspacing='0'>
                         <tr>
                           <td align='center'>
-                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/709/709790.png' width='40' />
+                            <div class='feature-icon-bg'>
+                              <img src='https://cdn-icons-png.flaticon.com/512/709/709790.png' />
+                            </div>
                             <div class='feature-title'>Instant Tatkal Booking</div>
                             <div class='feature-desc'>Book IRCTC tatkal tickets faster than ever before.</div>
                           </td>
                           <td align='center'>
-                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/1250/1250615.png' width='40' />
+                            <div class='feature-icon-bg'>
+                              <img src='https://cdn-icons-png.flaticon.com/512/1250/1250615.png' />
+                            </div>
                             <div class='feature-title'>Smart Automation</div>
                             <div class='feature-desc'>Auto-fill, save travelers, manage bookings easily.</div>
                           </td>
                           <td align='center'>
-                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/747/747376.png' width='40' />
+                            <div class='feature-icon-bg'>
+                              <img src='https://cdn-icons-png.flaticon.com/512/747/747376.png' />
+                            </div>
                             <div class='feature-title'>24x7 Support</div>
                             <div class='feature-desc'>We’re here to help you—day or night.</div>
                           </td>
                         </tr>
                       </table>
-                    </div>
+                    </div> 
                     <a href='https://tatkalpro.in' class='cta-btn'>Go to TatkalPro</a>
                     <div class='why-section'>
                       <b>Why TatkalPro?</b><br/>
@@ -177,19 +214,27 @@ def create_user(user: UserCreateRequest):
                     </div>
                     <div class='support-icons'>
                       <div class='support-icon-block'>
-                        <img src='https://cdn-icons-png.flaticon.com/512/1828/1828817.png' width='24' />
+                        <div class='support-icon-bg'>
+                          <img src='https://cdn-icons-png.flaticon.com/512/1828/1828817.png' />
+                        </div>
                         <span class='support-label'>Online Support</span>
                       </div>
                       <div class='support-icon-block'>
-                        <img src='https://cdn-icons-png.flaticon.com/512/1384/1384035.png' width='24' />
+                        <div class='support-icon-bg'>
+                          <img src='https://cdn-icons-png.flaticon.com/512/1384/1384035.png' />
+                        </div>
                         <span class='support-label'>Live Chat</span>
                       </div>
                       <div class='support-icon-block'>
-                        <img src='https://cdn-icons-png.flaticon.com/512/597/597177.png' width='24' />
+                        <div class='support-icon-bg'>
+                          <img src='https://cdn-icons-png.flaticon.com/512/597/597177.png' />
+                        </div>
                         <span class='support-label'>Call Us</span>
                       </div>
                       <div class='support-icon-block'>
-                        <img src='https://cdn-icons-png.flaticon.com/512/561/561127.png' width='24' />
+                        <div class='support-icon-bg'>
+                          <img src='https://cdn-icons-png.flaticon.com/512/561/561127.png' />
+                        </div>
                         <span class='support-label'>Email</span>
                       </div>
                     </div>
