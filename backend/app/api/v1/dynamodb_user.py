@@ -84,92 +84,124 @@ def create_user(user: UserCreateRequest):
             username = item.get("Username", "TatkalPro User")
             to_email = item.get("Email")
             print(f"[TatkalPro][Email] to_email: {to_email}")
+            # Use full name if present, else username
+            fullname = item.get("OtherAttributes", {}).get("FullName")
+            display_name = fullname if fullname else item.get("Username", "TatkalPro User")
             html_body = f"""
             <html>
-              <body style='background:#f6f6f6; font-family:sans-serif; padding:0; margin:0;'>
-                <table width='100%' cellpadding='0' cellspacing='0' style='background:#7C1EFF; padding:0; margin:0;'>
-                  <tr>
-                    <td align='center' style='padding:32px 0 0 0;'>
-                      <img src='https://tatkalpro.in/static/tatkalpro-logo-white-transparent.png' alt='TatkalPro' width='120' style='margin-bottom:24px;' />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align='center' style='padding:0 0 36px 0;'>
-                      <h1 style='color:#fff; font-size:2em; margin:0;'>Welcome to TatkalPro, {username}!</h1>
-                    </td>
-                  </tr>
-                </table>
-                <table width='100%' cellpadding='0' cellspacing='0' style='background:#fff; border-radius:0 0 18px 18px; max-width:480px; margin:0 auto; box-shadow:0 2px 10px #e0e0e0;'>
-                  <tr>
-                    <td align='center' style='padding:32px 24px 0 24px;'>
-                      <h2 style='color:#7C1EFF; margin:0 0 12px 0;'>Get the best from TatkalPro</h2>
-                      <table width='100%' cellpadding='0' cellspacing='0' style='margin:24px 0;'>
-                        <tr>
-                          <td align='center' width='33%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/709/709790.png' width='40' style='margin-bottom:8px;' />
-                            <div style='font-weight:600; color:#7C1EFF; font-size:15px;'>Instant Tatkal Booking</div>
-                            <div style='color:#444; font-size:13px;'>Book IRCTC tatkal tickets faster than ever before.</div>
-                          </td>
-                          <td align='center' width='33%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/1250/1250615.png' width='40' style='margin-bottom:8px;' />
-                            <div style='font-weight:600; color:#7C1EFF; font-size:15px;'>Smart Automation</div>
-                            <div style='color:#444; font-size:13px;'>Auto-fill, save travelers, manage bookings easily.</div>
-                          </td>
-                          <td align='center' width='33%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/747/747376.png' width='40' style='margin-bottom:8px;' />
-                            <div style='font-weight:600; color:#7C1EFF; font-size:15px;'>24x7 Support</div>
-                            <div style='color:#444; font-size:13px;'>We’re here to help you—day or night.</div>
-                          </td>
-                        </tr>
-                      </table>
-                      <div style='margin:24px 0;'>
-                        <a href='https://tatkalpro.in' style='background:#7C1EFF; color:#fff; font-weight:bold; padding:14px 32px; border-radius:8px; text-decoration:none; font-size:16px; display:inline-block;'>Go to TatkalPro</a>
-                      </div>
-                      <div style='color:#222; font-size:15px; margin:18px 0 0 0;'>
-                        <b>Why TatkalPro?</b><br/>
-                        TatkalPro is your all-in-one platform for superfast IRCTC tatkal ticket booking, smart automation, and seamless travel management. Enjoy exclusive offers, easy account management, and peace of mind with our dedicated support team.<br/><br/>
-                        <b>Happy travels!<br/>— The TatkalPro Team</b>
-                      </div>
-                    </td>
-                  </tr>
-                </table>
-                <table width='100%' cellpadding='0' cellspacing='0' style='background:#fff; max-width:480px; margin:0 auto; border-radius:0 0 18px 18px; box-shadow:0 2px 10px #e0e0e0;'>
-                  <tr>
-                    <td align='center' style='padding:32px 24px;'>
+              <head>
+                <link href='https://fonts.googleapis.com/css?family=Lato:400,700&display=swap' rel='stylesheet' type='text/css'>
+                <style>
+                  body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div {{ font-family: 'Lato', Arial, sans-serif !important; }}
+                  .card {{
+                    max-width: 480px;
+                    margin: 40px auto;
+                    background: #fff;
+                    border-radius: 18px;
+                    box-shadow: 0 2px 16px #e0e0e0;
+                    padding: 0;
+                  }}
+                  .header, .footer {{
+                    background: #7C1EFF;
+                    color: #fff;
+                    border-radius: 18px 18px 0 0;
+                    text-align: center;
+                    padding: 32px 0 0 0;
+                  }}
+                  .footer {{
+                    border-radius: 0 0 18px 18px;
+                    padding: 18px 0;
+                    font-size: 12px;
+                  }}
+                  .main-content {{
+                    padding: 32px 24px 0 24px;
+                  }}
+                  h1 {{ font-size: 2em; margin: 0; font-weight: bold; }}
+                  h2 {{ color: #7C1EFF; margin: 0 0 18px 0; font-size: 1.3em; }}
+                  .features {{ margin: 32px 0; }}
+                  .feature-icon {{ margin-bottom: 12px; }}
+                  .feature-title {{ font-weight: 600; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; }}
+                  .feature-desc {{ color: #444; font-size: 13px; line-height: 1.6; margin-bottom: 0; }}
+                  .cta-btn {{
+                    background: linear-gradient(90deg, #7C3AED, #9F7AEA);
+                    color: #fff;
+                    font-weight: bold;
+                    padding: 14px 32px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-size: 16px;
+                    display: inline-block;
+                    margin: 28px 0 18px 0;
+                  }}
+                  .why-section {{ color: #222; font-size: 15px; margin: 24px 0 0 0; line-height: 1.8; }}
+                  .support-icons {{ margin: 32px 0 0 0; }}
+                  .support-icon-block {{ display: inline-block; width: 22%; text-align: center; margin: 0 1%; vertical-align: top; }}
+                  .support-icon-block img {{ display: block; margin: 0 auto 12px auto; }}
+                  .support-label {{ display: block; color: #7C1EFF; font-size: 13px; font-weight: 600; margin-top: 4px; }}
+                </style>
+              </head>
+              <body style='background:#f6f6f6; margin:0; padding:0;'>
+                <div class='card'>
+                  <div class='header'>
+                    <img src='https://tatkalpro.in/logo512.png' alt='TatkalPro' width='120' style='margin-bottom:24px;' />
+                    <h1>Welcome to TatkalPro, {display_name}!</h1>
+                  </div>
+                  <div class='main-content'>
+                    <h2>Get the best from TatkalPro</h2>
+                    <div class='features'>
                       <table width='100%' cellpadding='0' cellspacing='0'>
                         <tr>
-                          <td align='center' width='25%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/1828/1828817.png' width='24' style='vertical-align:middle;' />
-                            <span style='color:#7C1EFF; font-size:13px; font-weight:600; margin-left:6px;'>Online Support</span>
+                          <td align='center'>
+                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/709/709790.png' width='40' />
+                            <div class='feature-title'>Instant Tatkal Booking</div>
+                            <div class='feature-desc'>Book IRCTC tatkal tickets faster than ever before.</div>
                           </td>
-                          <td align='center' width='25%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/1384/1384035.png' width='24' style='vertical-align:middle;' />
-                            <span style='color:#7C1EFF; font-size:13px; font-weight:600; margin-left:6px;'>Live Chat</span>
+                          <td align='center'>
+                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/1250/1250615.png' width='40' />
+                            <div class='feature-title'>Smart Automation</div>
+                            <div class='feature-desc'>Auto-fill, save travelers, manage bookings easily.</div>
                           </td>
-                          <td align='center' width='25%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/597/597177.png' width='24' style='vertical-align:middle;' />
-                            <span style='color:#7C1EFF; font-size:13px; font-weight:600; margin-left:6px;'>Call Us</span>
-                          </td>
-                          <td align='center' width='25%'>
-                            <img src='https://cdn-icons-png.flaticon.com/512/561/561127.png' width='24' style='vertical-align:middle;' />
-                            <span style='color:#7C1EFF; font-size:13px; font-weight:600; margin-left:6px;'>Email</span>
+                          <td align='center'>
+                            <img class='feature-icon' src='https://cdn-icons-png.flaticon.com/512/747/747376.png' width='40' />
+                            <div class='feature-title'>24x7 Support</div>
+                            <div class='feature-desc'>We’re here to help you—day or night.</div>
                           </td>
                         </tr>
                       </table>
-                    </td>
-                  </tr>
-                </table>
-                <table width='100%' cellpadding='0' cellspacing='0' style='background:#7C1EFF; padding:18px 0 0 0; margin:0; border-radius:0 0 18px 18px;'>
-                  <tr>
-                    <td align='center' style='color:#fff; font-size:12px; padding:18px;'>
-                      &copy; {datetime.now().year} TatkalPro. All rights reserved.<br/>
-                      <a href='https://tatkalpro.in/privacy' style='color:#fff; text-decoration:underline;'>Privacy Policy</a>
-                    </td>
-                  </tr>
-                </table>
+                    </div>
+                    <a href='https://tatkalpro.in' class='cta-btn'>Go to TatkalPro</a>
+                    <div class='why-section'>
+                      <b>Why TatkalPro?</b><br/>
+                      TatkalPro is your all-in-one platform for superfast IRCTC tatkal ticket booking, smart automation, and seamless travel management. Enjoy exclusive offers, easy account management, and peace of mind with our dedicated support team.<br/><br/>
+                      <b>Happy travels!<br/>— The TatkalPro Team</b>
+                    </div>
+                    <div class='support-icons'>
+                      <div class='support-icon-block'>
+                        <img src='https://cdn-icons-png.flaticon.com/512/1828/1828817.png' width='24' />
+                        <span class='support-label'>Online Support</span>
+                      </div>
+                      <div class='support-icon-block'>
+                        <img src='https://cdn-icons-png.flaticon.com/512/1384/1384035.png' width='24' />
+                        <span class='support-label'>Live Chat</span>
+                      </div>
+                      <div class='support-icon-block'>
+                        <img src='https://cdn-icons-png.flaticon.com/512/597/597177.png' width='24' />
+                        <span class='support-label'>Call Us</span>
+                      </div>
+                      <div class='support-icon-block'>
+                        <img src='https://cdn-icons-png.flaticon.com/512/561/561127.png' width='24' />
+                        <span class='support-label'>Email</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class='footer'>
+                    &copy; {datetime.now().year} TatkalPro. All rights reserved.<br/>
+                    <a href='https://tatkalpro.in/privacy' style='color:#fff; text-decoration:underline;'>Privacy Policy</a>
+                  </div>
+                </div>
               </body>
             </html>
-            """
+            "
             if SENDGRID_API_KEY and to_email:
                 print("[TatkalPro][Email] All email vars present, attempting to send...")
                 try:
