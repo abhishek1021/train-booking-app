@@ -92,7 +92,7 @@ def create_user(user: UserCreateRequest):
               <head>
                 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;700&display=swap" rel="stylesheet" type="text/css">
                 <style>
-                  body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div { font-family: 'Google Sans', 'Product Sans', Arial, sans-serif !important; }
+                  body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div {{ font-family: 'Google Sans', 'Product Sans', Arial, sans-serif !important; }}
                   .card {{
                     max-width: 640px;
                     margin: 40px auto;
