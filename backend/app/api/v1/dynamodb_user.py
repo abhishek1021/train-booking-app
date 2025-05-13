@@ -79,7 +79,7 @@ def create_user(user: UserCreateRequest):
             from sendgrid.helpers.mail import Mail
             SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
             print(f"[TatkalPro][Email] SENDGRID_API_KEY: {SENDGRID_API_KEY}")
-            SENDER_EMAIL = "welcome@tatkalpro.in"
+            SENDER_EMAIL = "marketing@tatkalpro.in"
             print(f"[TatkalPro][Email] SENDER_EMAIL: {SENDER_EMAIL}")
             username = item.get("Username", "TatkalPro User")
             to_email = item.get("Email")
