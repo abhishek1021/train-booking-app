@@ -74,12 +74,16 @@ def create_user(user: UserCreateRequest):
         users_table.put_item(Item=item)
         # --- Welcome Email Logic ---
         try:
+            print("[TatkalPro][Email] Starting welcome email logic...")
             import sendgrid
             from sendgrid.helpers.mail import Mail
             SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
+            print(f"[TatkalPro][Email] SENDGRID_API_KEY: {SENDGRID_API_KEY}")
             SENDER_EMAIL = "welcome@tatkalpro.in"
+            print(f"[TatkalPro][Email] SENDER_EMAIL: {SENDER_EMAIL}")
             username = item.get("Username", "TatkalPro User")
             to_email = item.get("Email")
+            print(f"[TatkalPro][Email] to_email: {to_email}")
             html_body = f"""
             <html>
               <body style='background:#f6f6f6; font-family:sans-serif; padding:0; margin:0;'>
@@ -167,17 +171,21 @@ def create_user(user: UserCreateRequest):
             </html>
             """
             if SENDGRID_API_KEY and to_email:
-                sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
-                message = Mail(
-                    from_email=SENDER_EMAIL,
-                    to_emails=to_email,
-                    subject=f"Welcome to TatkalPro, {username}!",
-                    html_content=html_body
-                )
+                print("[TatkalPro][Email] All email vars present, attempting to send...")
                 try:
-                    sg.send(message)
+                    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+                    message = Mail(
+                        from_email=SENDER_EMAIL,
+                        to_emails=to_email,
+                        subject=f"Welcome to TatkalPro, {username}!",
+                        html_content=html_body
+                    )
+                    response = sg.send(message)
+                    print(f"[TatkalPro][Email] Email sent! Status code: {response.status_code}")
                 except Exception as mailerr:
                     print(f"[TatkalPro][Email] Failed to send welcome email: {mailerr}")
+            else:
+                print(f"[TatkalPro][Email] Missing SENDGRID_API_KEY or to_email. SENDGRID_API_KEY: {SENDGRID_API_KEY}, to_email: {to_email}")
         except Exception as e:
             print(f"[TatkalPro][Email] Unexpected error: {e}")
         # --- End Welcome Email Logic ---

@@ -20,6 +20,7 @@ class _CreateNewAccountEmailScreenState
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -136,95 +137,105 @@ class _CreateNewAccountEmailScreenState
                         label: 'Continue with Google',
                         iconAsset: 'assets/icons/google.svg',
                         color: Color(0xFFEA4335),
-                        onPressed: () async {
-                          try {
-                            final result =
-                                await GoogleSignInService.signInAndCheckUser();
-                            if (result['exists'] == true) {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) =>
-                                    UserExistsDialog(email: result['email']),
-                              );
-                            } else {
-                              // Proceed with registration logic for Google user
-                              final created = await GoogleSignInService
-                                  .createUserWithGoogle(
-                                email: result['email'],
-                                name: result['name'] ?? '',
-                              );
-                              if (created) {
-                                // Fetch user profile from DynamoDB and store in prefs
+                        isLoading: _isGoogleLoading,
+                        onPressed: _isGoogleLoading
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _isGoogleLoading = true;
+                                });
                                 try {
-                                  final profileResp = await http.get(
-                                    Uri.parse(
-                                        '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
-                                  );
-                                  if (profileResp.statusCode == 200) {
-                                    final userInfo =
-                                        jsonDecode(profileResp.body);
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    await prefs.setString(
-                                        'user_profile',
-                                        jsonEncode(
-                                            userInfo['user'] ?? userInfo));
+                                  final result =
+                                      await GoogleSignInService.signInAndCheckUser();
+                                  if (result['exists'] == true) {
                                     showDialog(
                                       context: context,
                                       barrierDismissible: false,
                                       builder: (context) =>
-                                          AccountCreatedDialog(
-                                              email: result['email']),
+                                          UserExistsDialog(email: result['email']),
                                     );
                                   } else {
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) =>
-                                          ProfileFetchErrorDialog(),
+                                    // Proceed with registration logic for Google user
+                                    final created = await GoogleSignInService
+                                        .createUserWithGoogle(
+                                      email: result['email'],
+                                      name: result['name'] ?? '',
                                     );
+                                    if (created) {
+                                      // Fetch user profile from DynamoDB and store in prefs
+                                      try {
+                                        final profileResp = await http.get(
+                                          Uri.parse(
+                                              '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
+                                        );
+                                        if (profileResp.statusCode == 200) {
+                                          final userInfo =
+                                              jsonDecode(profileResp.body);
+                                          final prefs =
+                                              await SharedPreferences.getInstance();
+                                          await prefs.setString(
+                                              'user_profile',
+                                              jsonEncode(
+                                                  userInfo['user'] ?? userInfo));
+                                          showDialog(
+                                            context: context,
+                                            barrierDismissible: false,
+                                            builder: (context) =>
+                                                AccountCreatedDialog(
+                                                    email: result['email']),
+                                          );
+                                        } else {
+                                          showDialog(
+                                            context: context,
+                                            barrierDismissible: false,
+                                            builder: (context) =>
+                                                ProfileFetchErrorDialog(),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) => SignupErrorDialog(
+                                              error: 'Error fetching user profile: ' +
+                                                  e.toString()),
+                                        );
+                                      }
+                                    } else {
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) => SignupFailedDialog(),
+                                      );
+                                    }
                                   }
                                 } catch (e) {
                                   showDialog(
                                     context: context,
                                     barrierDismissible: false,
-                                    builder: (context) => SignupErrorDialog(
-                                        error: 'Error fetching user profile: ' +
-                                            e.toString()),
+                                    builder: (context) => SignInFailedDialog(
+                                        error:
+                                            'Google sign-in failed: ' + e.toString()),
                                   );
+                                } finally {
+                                  setState(() {
+                                    _isGoogleLoading = false;
+                                  });
                                 }
-                              } else {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) => SignupFailedDialog(),
-                                );
-                              }
-                            }
-                          } catch (e) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => SignInFailedDialog(
-                                  error:
-                                      'Google sign-in failed: ' + e.toString()),
-                            );
-                          }
-                        },
+                              },
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 32),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Center(
                           child: RichText(
                             textAlign: TextAlign.center,
-                            text: const TextSpan(
-                              style: TextStyle(
+                            text: TextSpan(
+                              style: const TextStyle(
                                   fontFamily: 'Lato',
                                   color: Colors.black45,
                                   fontSize: 13),
-                              children: [
+                              children: const [
                                 TextSpan(
                                     text:
                                         'By using TatkalPro, you agree to the '),
@@ -650,7 +661,7 @@ class AccountCreatedDialog extends StatefulWidget {
 
 class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
   late final String email;
-  int secondsLeft = 10;
+  int secondsLeft = 3;
 
   @override
   void initState() {
@@ -733,8 +744,9 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
 class _SocialButton extends StatelessWidget {
   final String label;
   final String iconAsset;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? color;
+  final bool isLoading;
 
   const _SocialButton({
     Key? key,
@@ -742,6 +754,7 @@ class _SocialButton extends StatelessWidget {
     required this.iconAsset,
     required this.onPressed,
     this.color,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
@@ -758,19 +771,30 @@ class _SocialButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
+          onTap: isLoading ? null : onPressed,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: iconAsset.endsWith('.svg')
-                      ? SvgPicture.asset(iconAsset)
-                      : Image.asset(iconAsset, fit: BoxFit.contain),
-                ),
+                if (isLoading) ...[
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(color ?? Colors.black),
+                    ),
+                  ),
+                ] else ...[
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: iconAsset.endsWith('.svg')
+                        ? SvgPicture.asset(iconAsset)
+                        : Image.asset(iconAsset, fit: BoxFit.contain),
+                  ),
+                ],
                 const SizedBox(width: 12),
                 Text(
                   label,
