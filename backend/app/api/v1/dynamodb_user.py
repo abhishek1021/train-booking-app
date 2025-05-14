@@ -21,13 +21,15 @@ class OtherAttributes(BaseModel):
     Role: str
 
 
+from pydantic import root_validator
+
 class UserCreateRequest(BaseModel):
     PK: str = Field(..., example="USER#jane.doe@example.com")
     SK: str = Field(..., example="PROFILE")
     UserID: str
     Email: EmailStr
     Username: str
-    PasswordHash: str
+    PasswordHash: Optional[str] = None
     CreatedAt: datetime
     LastLoginAt: Optional[datetime]
     IsActive: bool
@@ -37,6 +39,15 @@ class UserCreateRequest(BaseModel):
     preferences: Optional[dict] = Field(default_factory=dict)
     recent_bookings: Optional[list] = Field(default_factory=list)
     bookings: Optional[list] = Field(default_factory=list)
+    google_signin: Optional[bool] = False
+
+    @root_validator
+    def password_required_unless_google(cls, values):
+        google_signin = values.get('google_signin', False)
+        password = values.get('PasswordHash')
+        if not google_signin and not password:
+            raise ValueError('PasswordHash is required unless google_signin is true')
+        return values
 
 
 class UserLoginRequest(BaseModel):
