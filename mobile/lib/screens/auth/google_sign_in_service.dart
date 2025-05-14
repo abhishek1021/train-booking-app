@@ -55,7 +55,7 @@ class GoogleSignInService {
           'UserID': userId,
           'Email': email,
           'Username': username,
-          'PasswordHash': 'GOOGLE_OAUTH', // Placeholder for Google users
+          // 'PasswordHash': '', // Do not send PasswordHash for Google users
           'CreatedAt': now,
           'IsActive': true,
           'kyc_status': 'pending',

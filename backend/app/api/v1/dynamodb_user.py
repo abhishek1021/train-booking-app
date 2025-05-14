@@ -12,12 +12,14 @@ import bcrypt
 
 # DynamoDB resource
 region_name = os.getenv("AWS_REGION", "ap-south-1")  # Change if needed
-dynamodb = boto3.resource('dynamodb', region_name=region_name)
+dynamodb = boto3.resource("dynamodb", region_name=region_name)
 users_table = dynamodb.Table("users")
+
 
 class OtherAttributes(BaseModel):
     FullName: str
     Role: str
+
 
 class UserCreateRequest(BaseModel):
     PK: str = Field(..., example="USER#jane.doe@example.com")
@@ -36,13 +38,16 @@ class UserCreateRequest(BaseModel):
     recent_bookings: Optional[list] = Field(default_factory=list)
     bookings: Optional[list] = Field(default_factory=list)
 
+
 class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+
 router = APIRouter()
 
 from decimal import Decimal
+
 
 def convert_floats_to_decimal(obj):
     if isinstance(obj, float):
@@ -54,27 +59,49 @@ def convert_floats_to_decimal(obj):
     else:
         return obj
 
+
 @router.post("/dynamodb/users/create", status_code=201)
 def create_user(user: UserCreateRequest):
     import random
     import string
+
     password_to_email = None
     # Check if google_signin is present and True
     google_signin = False
-    if hasattr(user, 'google_signin'):
-        google_signin = getattr(user, 'google_signin', False)
+    if hasattr(user, "google_signin"):
+        google_signin = getattr(user, "google_signin", False)
     elif isinstance(user, dict):
-        google_signin = user.get('google_signin', False)
+        google_signin = user.get("google_signin", False)
     else:
         google_signin = False
 
-    # If Google sign-in, generate a strong random password
-    if google_signin:
-        password_to_email = ''.join(random.choices(string.ascii_letters + string.digits + string.punctuation, k=12))
-        password_hash = bcrypt.hashpw(password_to_email.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # If Google sign-in and no password is provided, generate a strong random password
+    if google_signin and (
+        not hasattr(user, "PasswordHash") or not getattr(user, "PasswordHash", None)
+    ):
+        password_to_email = "".join(
+            random.choices(
+                string.ascii_letters + string.digits + string.punctuation, k=12
+            )
+        )
+        password_hash = bcrypt.hashpw(
+            password_to_email.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
+    elif (
+        google_signin
+        and hasattr(user, "PasswordHash")
+        and getattr(user, "PasswordHash", None)
+    ):
+        # Defensive: if a password is provided (should not happen), use it
+        password_to_email = user.PasswordHash
+        password_hash = bcrypt.hashpw(
+            user.PasswordHash.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
     else:
         password_to_email = user.PasswordHash
-        password_hash = bcrypt.hashpw(user.PasswordHash.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        password_hash = bcrypt.hashpw(
+            user.PasswordHash.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
 
     item = user.dict()
     item["PasswordHash"] = password_hash
@@ -89,11 +116,12 @@ def create_user(user: UserCreateRequest):
     try:
         users_table.put_item(Item=item)
         # --- Welcome Email Logic ---
-        
+
         try:
             print("[TatkalPro][Email] Starting welcome email logic...")
             import sendgrid
             from sendgrid.helpers.mail import Mail
+
             SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
             print(f"[TatkalPro][Email] SENDGRID_API_KEY: {SENDGRID_API_KEY}")
             SENDER_EMAIL = "marketing@tatkalpro.in"
@@ -103,18 +131,18 @@ def create_user(user: UserCreateRequest):
             print(f"[TatkalPro][Email] to_email: {to_email}")
             # Use full name if present, else username
             fullname = item.get("OtherAttributes", {}).get("FullName")
-            display_name = fullname if fullname else item.get("Username", "TatkalPro User")
+            display_name = (
+                fullname if fullname else item.get("Username", "TatkalPro User")
+            )
             # Add credentials to the welcome email if Google sign-in
-            credentials_html = ""
-            if google_signin:
-                credentials_html = f"""
-                <div style='margin:32px 0 24px 0; padding:24px; background:#f6f6f6; border-radius:12px; text-align:left;'>
-                  <h2 style='font-size:1.1em; color:#7C1EFF; margin-bottom:10px;'>Your Login Credentials</h2>
-                  <div><b>Username (Email):</b> {item.get('Email')}</div>
-                  <div><b>Password:</b> {password_to_email}</div>
-                  <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
-                </div>
-                """
+            credentials_html = f"""
+            <div style='margin:28px 0 32px 0; padding:24px; background:#f6f6f6; border-radius:12px; text-align:left;'>
+              <h2 style='font-size:1.1em; color:#7C1EFF; margin-bottom:10px;'>Here are your credentials to save for your future logins:</h2>
+              <div><b>Username (Email):</b> {item.get('Email')}</div>
+              <div><b>Password:</b> {password_to_email}</div>
+              <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
+            </div>
+            """
             html_body = f"""
             <html>
               <head>
@@ -192,21 +220,11 @@ def create_user(user: UserCreateRequest):
                     </div>
                     <div style='margin-top:36px; margin-bottom:10px; font-size:18px; font-weight:bold;'>Why TatkalPro?</div>
                     <div style='font-size:15px; color:#222; margin-bottom:24px;'>TatkalPro is your all-in-one platform for superfast IRCTC tatkal ticket booking, smart automation, and seamless travel management. Enjoy exclusive offers, easy account management, and peace of mind with our dedicated support team.</div>
+                   
                     <div style='margin: 28px 0 32px 0; padding: 24px; background: #f6f6f6; border-radius: 12px; text-align: left;'>
-                      <h2 style='font-size:1.1em; color:#7C1EFF; margin-bottom:10px;'>Here are your credentials to save for your future logins:</h2>
-                      <div><b>Username (Email):</b> {item.get('Email')}</div>
-                      <div><b>Password:</b> {password_to_email}</div>
-                      <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
+                    <a href='https://tatkalpro.in' style='display:inline-block; background:linear-gradient(90deg, #7C3AED, #9F7AEA); color:#fff !important; font-weight:bold; font-size:18px; border-radius:8px; padding:18px 60px; text-decoration:none;'>Go to TatkalPro</a>
                     </div>
-                  .feature-icon-bg img {{
-                    width: 28px;
-                    height: 28px;
-                    display: inline-block;
-                    vertical-align: middle;
-                    filter: none;
-                  }}
-                  .feature-title {{ font-weight: 700; color: #7C1EFF; font-size: 15px; margin-bottom: 6px; margin-top: 25px; }}
-                  .feature-desc {{ color: #444; font-size: 13px; line-height: 1.6; margin-bottom: 0; }}
+                     {credentials_html}
                   .cta-btn {{
                     background: linear-gradient(90deg, #7C3AED, #9F7AEA);
                     color: #fff !important;
@@ -325,27 +343,34 @@ def create_user(user: UserCreateRequest):
             </html>
             """
             if SENDGRID_API_KEY and to_email:
-                print("[TatkalPro][Email] All email vars present, attempting to send...")
+                print(
+                    "[TatkalPro][Email] All email vars present, attempting to send..."
+                )
                 try:
                     sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
                     message = Mail(
                         from_email=SENDER_EMAIL,
                         to_emails=to_email,
                         subject=f"Welcome to TatkalPro, {username}!",
-                        html_content=html_body
+                        html_content=html_body,
                     )
                     response = sg.send(message)
-                    print(f"[TatkalPro][Email] Email sent! Status code: {response.status_code}")
+                    print(
+                        f"[TatkalPro][Email] Email sent! Status code: {response.status_code}"
+                    )
                 except Exception as mailerr:
                     print(f"[TatkalPro][Email] Failed to send welcome email: {mailerr}")
             else:
-                print(f"[TatkalPro][Email] Missing SENDGRID_API_KEY or to_email. SENDGRID_API_KEY: {SENDGRID_API_KEY}, to_email: {to_email}")
+                print(
+                    f"[TatkalPro][Email] Missing SENDGRID_API_KEY or to_email. SENDGRID_API_KEY: {SENDGRID_API_KEY}, to_email: {to_email}"
+                )
         except Exception as e:
             print(f"[TatkalPro][Email] Unexpected error: {e}")
         # --- End Welcome Email Logic ---
         return {"message": "User created", "user": item}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/dynamodb/users/exists/{email}")
 def user_exists(email: str):
@@ -357,6 +382,7 @@ def user_exists(email: str):
             return {"exists": False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/dynamodb/users/profile/{email}")
 def get_user_profile(email: str):
@@ -372,10 +398,13 @@ def get_user_profile(email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/dynamodb/users/login")
 def login_user(login: UserLoginRequest):
     try:
-        response = users_table.get_item(Key={"PK": f"USER#{login.email}", "SK": "PROFILE"})
+        response = users_table.get_item(
+            Key={"PK": f"USER#{login.email}", "SK": "PROFILE"}
+        )
         user = response.get("Item")
         if not user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -384,10 +413,11 @@ def login_user(login: UserLoginRequest):
             raise HTTPException(status_code=401, detail="Invalid email or password")
         # Optionally, update LastLoginAt
         from datetime import datetime
+
         users_table.update_item(
             Key={"PK": f"USER#{login.email}", "SK": "PROFILE"},
             UpdateExpression="SET LastLoginAt = :now",
-            ExpressionAttributeValues={":now": datetime.utcnow().isoformat()}
+            ExpressionAttributeValues={":now": datetime.utcnow().isoformat()},
         )
         # Remove sensitive info before returning
         user.pop("PasswordHash", None)
