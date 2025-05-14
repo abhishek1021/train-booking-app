@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
+import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 import 'package:train_booking_app/utils/validators.dart';
 import '../../api_constants.dart';
 
@@ -75,14 +76,16 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
       } else {
         final error =
             jsonDecode(response.body)['detail'] ?? 'Failed to send OTP';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
+        await showDialog(
+          context: context,
+          builder: (context) => const SignupFailedDialog(),
         );
       }
     } catch (e) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      await showDialog(
+        context: context,
+        builder: (context) => const SignupFailedDialog(),
       );
     }
   }
