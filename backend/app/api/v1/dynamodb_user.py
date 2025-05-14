@@ -56,16 +56,32 @@ def convert_floats_to_decimal(obj):
 
 @router.post("/dynamodb/users/create", status_code=201)
 def create_user(user: UserCreateRequest):
-    # Hash the password before storing
-    password_hash = bcrypt.hashpw(user.PasswordHash.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    import random
+    import string
+    password_to_email = None
+    # Check if google_signin is present and True
+    google_signin = False
+    if hasattr(user, 'google_signin'):
+        google_signin = getattr(user, 'google_signin', False)
+    elif isinstance(user, dict):
+        google_signin = user.get('google_signin', False)
+    else:
+        google_signin = False
+
+    # If Google sign-in, generate a strong random password
+    if google_signin:
+        password_to_email = ''.join(random.choices(string.ascii_letters + string.digits + string.punctuation, k=12))
+        password_hash = bcrypt.hashpw(password_to_email.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    else:
+        password_to_email = user.PasswordHash
+        password_hash = bcrypt.hashpw(user.PasswordHash.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
     item = user.dict()
     item["PasswordHash"] = password_hash
-    
     # Convert datetime to ISO string for DynamoDB
     item["CreatedAt"] = item["CreatedAt"].isoformat()
     if item.get("LastLoginAt"):
         item["LastLoginAt"] = item["LastLoginAt"].isoformat()
-
     # Convert all floats to Decimal for DynamoDB compatibility
     item = convert_floats_to_decimal(item)
 
@@ -73,6 +89,7 @@ def create_user(user: UserCreateRequest):
     try:
         users_table.put_item(Item=item)
         # --- Welcome Email Logic ---
+        
         try:
             print("[TatkalPro][Email] Starting welcome email logic...")
             import sendgrid
@@ -87,6 +104,17 @@ def create_user(user: UserCreateRequest):
             # Use full name if present, else username
             fullname = item.get("OtherAttributes", {}).get("FullName")
             display_name = fullname if fullname else item.get("Username", "TatkalPro User")
+            # Add credentials to the welcome email if Google sign-in
+            credentials_html = ""
+            if google_signin:
+                credentials_html = f"""
+                <div style='margin:32px 0 24px 0; padding:24px; background:#f6f6f6; border-radius:12px; text-align:left;'>
+                  <h2 style='font-size:1.1em; color:#7C1EFF; margin-bottom:10px;'>Your Login Credentials</h2>
+                  <div><b>Username (Email):</b> {item.get('Email')}</div>
+                  <div><b>Password:</b> {password_to_email}</div>
+                  <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
+                </div>
+                """
             html_body = f"""
             <html>
               <head>
@@ -129,6 +157,7 @@ def create_user(user: UserCreateRequest):
                     text-align: center;
                     margin: 0 auto 18px auto;
                   }}
+            {credentials_html}
                   .feature-icon-bg img {{
                     width: 28px;
                     height: 28px;

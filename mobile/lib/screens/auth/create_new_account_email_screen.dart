@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
+import 'dialogs_error.dart';
 
 class CreateNewAccountEmailScreen extends StatefulWidget {
   const CreateNewAccountEmailScreen({Key? key}) : super(key: key);
@@ -278,96 +279,106 @@ class UserExistsDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C1EFF).withOpacity(0.10),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.info_outline_rounded,
-                  color: Color(0xFF7C1EFF), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'User Already Exists',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFF7C1EFF),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'A user already exists with this email ($email). Please log in.',
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.zero,
-                  
-                  
-                ).copyWith(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color?>(
-                    (states) => null,
-                  ),
-                  foregroundColor:
-                      MaterialStateProperty.all<Color>(Colors.white),
-                  shadowColor:
-                      MaterialStateProperty.all<Color>(Colors.transparent),
-                  surfaceTintColor:
-                      MaterialStateProperty.all<Color>(Colors.transparent),
-                  overlayColor: MaterialStateProperty.all<Color>(
-                    const Color(0x1A7C3AED),
-                  ),
-                ),
-                child: Ink(
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0xFF7C1EFF).withOpacity(0.10),
+                    shape: BoxShape.circle,
                   ),
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Lato',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                  padding: const EdgeInsets.all(24),
+                  child: const Icon(Icons.info_outline_rounded,
+                      color: Color(0xFF7C1EFF), size: 60),
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  'User Already Exists',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Color(0xFF7C1EFF),
+                    fontFamily: 'Lato',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'A user already exists with this email ($email). Please log in.',
+                  style: const TextStyle(
+                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ).copyWith(
+                      backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+                        (states) => null,
+                      ),
+                      foregroundColor:
+                          MaterialStateProperty.all<Color>(Colors.white),
+                      shadowColor:
+                          MaterialStateProperty.all<Color>(Colors.transparent),
+                      surfaceTintColor:
+                          MaterialStateProperty.all<Color>(Colors.transparent),
+                      overlayColor: MaterialStateProperty.all<Color>(
+                        const Color(0x1A7C3AED),
                       ),
                     ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Container(
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Log In',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Lato',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
                   ),
                 ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Color(0xFF7C1EFF)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -384,268 +395,72 @@ class SignupErrorDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE5E5),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.error_outline_rounded,
-                  color: Color(0xFFD32F2F), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Error',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFFD32F2F),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              error,
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE5E5),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: const Icon(Icons.error_outline_rounded,
+                      color: Color(0xFFD32F2F), size: 60),
                 ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Error dialog for profile fetch failure after signup
-class ProfileFetchErrorDialog extends StatelessWidget {
-  const ProfileFetchErrorDialog({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE5E5),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.error_outline_rounded,
-                  color: Color(0xFFD32F2F), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Error',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFFD32F2F),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Could not fetch user profile after signup.',
-              style: TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+                const SizedBox(height: 28),
+                const Text(
+                  'Error',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Color(0xFFD32F2F),
+                    fontFamily: 'Lato',
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Error dialog for signup failed
-class SignupFailedDialog extends StatelessWidget {
-  const SignupFailedDialog({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE5E5),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.error_outline_rounded,
-                  color: Color(0xFFD32F2F), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Signup Failed',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFFD32F2F),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Failed to create account. Please try again.',
-              style: TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+                const SizedBox(height: 16),
+                Text(
+                  error,
+                  style: const TextStyle(
+                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                  textAlign: TextAlign.center,
                 ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Error dialog for Google sign-in failed
-class SignInFailedDialog extends StatelessWidget {
-  final String error;
-  const SignInFailedDialog({Key? key, required this.error}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE5E5),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.error_outline_rounded,
-                  color: Color(0xFFD32F2F), size: 60),
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Sign-In Failed',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFFD32F2F),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              error,
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD32F2F),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
+                  ),
                 ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Color(0xFF7C1EFF)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -691,51 +506,62 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C1EFF).withOpacity(0.10),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(24),
-              child: Icon(Icons.check_circle_rounded,
-                  color: Color(0xFF7C1EFF), size: 72),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C1EFF).withOpacity(0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF7C1EFF), size: 72),
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  'Account Created Successfully!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Color(0xFF7C1EFF),
+                    fontFamily: 'Lato',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'You have successfully created an account with $email. You can now access all features of TatkalPro.',
+                  style: const TextStyle(
+                    fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Redirecting in $secondsLeft sec',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7C1EFF),
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Lato',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 28),
-            const Text(
-              'Account Created Successfully!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Color(0xFF7C1EFF),
-                fontFamily: 'Lato',
-              ),
-              textAlign: TextAlign.center,
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Color(0xFF7C1EFF)),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'You have successfully created an account with $email. You can now access all features of TatkalPro.',
-              style: const TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Redirecting in $secondsLeft sec',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF7C1EFF),
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Lato',
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -802,8 +628,9 @@ class _SocialButton extends StatelessWidget {
                     fontFamily: 'Lato',
                     color: color ?? Colors.black,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 17,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

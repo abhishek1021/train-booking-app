@@ -66,7 +66,8 @@ class GoogleSignInService {
           'updated_at': now,
           'created_at': now,
           'wallet_balance': 0,
-          'wallet_id': ''
+          'wallet_id': '',
+          'google_signin': true
         }),
       );
       return response.statusCode == 201;
