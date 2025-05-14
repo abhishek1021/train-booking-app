@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
 import 'package:train_booking_app/utils/validators.dart';
 import '../../api_constants.dart';
 
@@ -47,10 +48,9 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
     // Check if user exists first
     final exists = await _checkUserExists(email);
     if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'A user with this email already exists. Please login using your credentials.')),
+      await showDialog(
+        context: context,
+        builder: (context) => UserExistsDialog(email: email),
       );
       return;
     }
