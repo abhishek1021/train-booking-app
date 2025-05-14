@@ -146,14 +146,14 @@ class _CreateNewAccountEmailScreenState
                                   _isGoogleLoading = true;
                                 });
                                 try {
-                                  final result =
-                                      await GoogleSignInService.signInAndCheckUser();
+                                  final result = await GoogleSignInService
+                                      .signInAndCheckUser();
                                   if (result['exists'] == true) {
                                     showDialog(
                                       context: context,
                                       barrierDismissible: false,
-                                      builder: (context) =>
-                                          UserExistsDialog(email: result['email']),
+                                      builder: (context) => UserExistsDialog(
+                                          email: result['email']),
                                     );
                                   } else {
                                     // Proceed with registration logic for Google user
@@ -172,12 +172,12 @@ class _CreateNewAccountEmailScreenState
                                         if (profileResp.statusCode == 200) {
                                           final userInfo =
                                               jsonDecode(profileResp.body);
-                                          final prefs =
-                                              await SharedPreferences.getInstance();
+                                          final prefs = await SharedPreferences
+                                              .getInstance();
                                           await prefs.setString(
                                               'user_profile',
-                                              jsonEncode(
-                                                  userInfo['user'] ?? userInfo));
+                                              jsonEncode(userInfo['user'] ??
+                                                  userInfo));
                                           showDialog(
                                             context: context,
                                             barrierDismissible: false,
@@ -198,15 +198,17 @@ class _CreateNewAccountEmailScreenState
                                           context: context,
                                           barrierDismissible: false,
                                           builder: (context) => SignupErrorDialog(
-                                              error: 'Error fetching user profile: ' +
-                                                  e.toString()),
+                                              error:
+                                                  'Error fetching user profile: ' +
+                                                      e.toString()),
                                         );
                                       }
                                     } else {
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
-                                        builder: (context) => SignupFailedDialog(),
+                                        builder: (context) =>
+                                            SignupFailedDialog(),
                                       );
                                     }
                                   }
@@ -215,8 +217,8 @@ class _CreateNewAccountEmailScreenState
                                     context: context,
                                     barrierDismissible: false,
                                     builder: (context) => SignInFailedDialog(
-                                        error:
-                                            'Google sign-in failed: ' + e.toString()),
+                                        error: 'Google sign-in failed: ' +
+                                            e.toString()),
                                   );
                                 } finally {
                                   setState(() {
@@ -326,7 +328,8 @@ class UserExistsDialog extends StatelessWidget {
                       ),
                       padding: EdgeInsets.zero,
                     ).copyWith(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+                      backgroundColor:
+                          MaterialStateProperty.resolveWith<Color?>(
                         (states) => null,
                       ),
                       foregroundColor:
@@ -520,7 +523,8 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(24),
-                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF7C1EFF), size: 72),
+                  child: Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF7C1EFF), size: 72),
                 ),
                 const SizedBox(height: 28),
                 const Text(
@@ -537,7 +541,7 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                 Text(
                   'You have successfully created an account with $email. You can now access all features of TatkalPro.',
                   style: const TextStyle(
-                    fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -609,7 +613,8 @@ class _SocialButton extends StatelessWidget {
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(color ?? Colors.black),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(color ?? Colors.black),
                     ),
                   ),
                 ] else ...[

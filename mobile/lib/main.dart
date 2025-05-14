@@ -8,6 +8,7 @@ import 'package:train_booking_app/screens/welcome_screen.dart';
 import 'package:train_booking_app/screens/auth/login_with_email_screen.dart';
 import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step1_email_screen.dart';
+import 'package:train_booking_app/screens/auth/signup_step3_sendotp_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
 
@@ -65,14 +66,17 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
       themeMode: ThemeMode.system,
       home: _isLoading ? const PreSplashScreen() : const WelcomeScreen(),
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/login_email': (context) => const LoginWithEmailScreen(),
         '/create_new_account': (context) => const CreateNewAccountEmailScreen(),
+        '/create_new_account_email': (context) => const CreateNewAccountEmailScreen(),
         '/signup_step1': (context) => const SignupStep1EmailScreen(),
         '/signup_step2': (context) => const SignupStep2VerifyEmailScreen(),
         '/signup_step3': (context) => const SignupStep3PasswordScreen(),
+      '/signup_step3_mobile_otp': (context) => SignupStep3SendOtpScreen(),
       },
     );
   }

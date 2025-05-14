@@ -8,18 +8,26 @@ import os
 import time
 import boto3
 from typing import Dict
+from twilio.rest import Client
 
 router = APIRouter()
 
 SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
-SENDER_EMAIL = "admin@abhishektripathi.art"  # Sender identity remains the same
+SENDER_EMAIL = "marketing@tatkalpro.in"  # Updated sender email
 
 class OtpRequest(BaseModel):
     email: EmailStr
 
+class MobileOtpRequest(BaseModel):
+    mobile: str  # E.164 format, e.g., '+919999999999'
+
 class OtpResponse(BaseModel):
     message: str
     otp: str
+
+class MobileOtpVerifyRequest(BaseModel):
+    mobile: str  # E.164 format
+    code: str
 
 class OtpVerifyRequest(BaseModel):
     email: EmailStr
@@ -32,6 +40,40 @@ dynamodb = boto3.resource(
     region_name=os.getenv("AWS_REGION", "ap-south-1")
 )
 otp_table = dynamodb.Table(otp_table_name)
+
+# Twilio setup
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
+TWILIO_VERIFY_SERVICE_SID = os.environ.get("TWILIO_VERIFY_SERVICE_SID")
+
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+@router.post("/mobile/send-otp")
+def send_mobile_otp(request: MobileOtpRequest):
+    if not twilio_client or not TWILIO_VERIFY_SERVICE_SID:
+        raise HTTPException(status_code=500, detail="Twilio credentials not set.")
+    try:
+        verification = twilio_client.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
+        verification.verifications.create(to=request.mobile, channel="sms")
+        return {"message": f"OTP sent to {request.mobile}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/mobile/verify-otp")
+def verify_mobile_otp(request: MobileOtpVerifyRequest):
+    if not twilio_client or not TWILIO_VERIFY_SERVICE_SID:
+        raise HTTPException(status_code=500, detail="Twilio credentials not set.")
+    try:
+        verification = twilio_client.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
+        verification_check = verification.verification_checks.create(to=request.mobile, code=request.code)
+        if verification_check.status == "approved":
+            return {"status": "approved"}
+        else:
+            return {"status": verification_check.status, "detail": "Invalid OTP or expired."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/ses/send-otp", response_model=OtpResponse)
 def send_otp(request: OtpRequest):

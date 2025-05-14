@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
+import 'dialogs_error.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
   const LoginWithEmailScreen({Key? key}) : super(key: key);
@@ -56,31 +57,13 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
         final errorMsg = jsonDecode(response.body)['detail'] ?? 'Login failed';
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Login Error'),
-            content: Text(errorMsg),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+          builder: (context) => SignInFailedDialog(error: errorMsg),
         );
       }
     } catch (e) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Network Error'),
-          content: Text(e.toString()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+        builder: (context) => SignInFailedDialog(error: e.toString()),
       );
     } finally {
       setState(() {

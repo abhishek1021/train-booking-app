@@ -7,6 +7,32 @@ import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 import 'package:train_booking_app/utils/validators.dart';
 import '../../api_constants.dart';
 
+SnackBar customPurpleSnackbar(String message) {
+  return SnackBar(
+    content: Center(
+      heightFactor: 1,
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Color(0xFF7C1EFF),
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Lato',
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    ),
+    backgroundColor: Colors.white,
+    behavior: SnackBarBehavior.floating,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+    duration: const Duration(seconds: 2),
+  );
+}
+
 class SignupStep1EmailScreen extends StatefulWidget {
   const SignupStep1EmailScreen({Key? key}) : super(key: key);
 
@@ -70,7 +96,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
       Navigator.of(context).pop(); // Remove loading
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP sent to your email!')),
+          customPurpleSnackbar('OTP sent to your email!'),
         );
         Navigator.pushNamed(context, '/signup_step2');
       } else {

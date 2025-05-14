@@ -6,9 +6,17 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
+import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isGoogleLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +32,8 @@ class LoginScreen extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                      context, '/welcome', (route) => false),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -103,82 +112,64 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 _SocialButton(
-                  label: 'Continue with Google',
-                  onPressed: () async {
-                    try {
-                      final result =
-                          await GoogleSignInService.signInAndCheckUser();
-                      if (result['exists'] == false) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => _UserNotFoundDialog(
-                            email: result['email'],
-                            name: result['name'],
-                          ),
-                        );
-                      } else {
-                        // Fetch user profile and store in prefs
-                        try {
-                          final profileResp = await http.get(
-                            Uri.parse(
-                                '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
-                          );
-                          if (profileResp.statusCode == 200) {
-                            final userInfo = jsonDecode(profileResp.body);
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setString('user_profile',
-                                jsonEncode(userInfo['user'] ?? userInfo));
-                            Navigator.pushNamedAndRemoveUntil(
-                                context, '/home', (route) => false);
-                          } else {
+                  label: _isGoogleLoading
+                      ? 'Signing in...'
+                      : 'Continue with Google',
+                  onPressed: _isGoogleLoading
+                      ? null
+                      : () async {
+                          setState(() => _isGoogleLoading = true);
+                          try {
+                            final result =
+                                await GoogleSignInService.signInAndCheckUser();
+                            if (result['exists'] == false) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => _UserNotFoundDialog(
+                                  email: result['email'],
+                                  name: result['name'],
+                                ),
+                              );
+                            } else {
+                              // Fetch user profile and store in prefs
+                              try {
+                                final profileResp = await http.get(
+                                  Uri.parse(
+                                      '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
+                                );
+                                if (profileResp.statusCode == 200) {
+                                  final userInfo = jsonDecode(profileResp.body);
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setString('user_profile',
+                                      jsonEncode(userInfo['user'] ?? userInfo));
+                                  Navigator.pushNamedAndRemoveUntil(
+                                      context, '/home', (route) => false);
+                                } else {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) =>
+                                        ProfileFetchErrorDialog(),
+                                  );
+                                }
+                              } catch (e) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) =>
+                                      ProfileFetchErrorDialog(),
+                                );
+                              }
+                            }
+                          } catch (e) {
                             showDialog(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Error'),
-                                content:
-                                    const Text('Could not fetch user profile.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              ),
+                              builder: (context) => SignInFailedDialog(
+                                  error: 'Google sign-in failed: $e'),
                             );
+                          } finally {
+                            setState(() => _isGoogleLoading = false);
                           }
-                        } catch (e) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Error'),
-                              content: Text('Error fetching user profile: $e'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Sign-In Failed'),
-                          content: Text('Google sign-in failed: $e'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  },
+                        },
                   color: Colors.white,
                   borderColor: Colors.black12,
                   iconAsset: 'assets/icons/google.svg',
@@ -425,11 +416,12 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
 
 class _SocialButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color color;
   final Color borderColor;
   final Color? textColor;
   final String iconAsset;
+  final bool isLoading;
 
   const _SocialButton({
     Key? key,
@@ -439,6 +431,7 @@ class _SocialButton extends StatelessWidget {
     required this.borderColor,
     required this.iconAsset,
     this.textColor,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
@@ -455,38 +448,46 @@ class _SocialButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
+          onTap: isLoading ? null : onPressed,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Try to load SVG, fallback to Icon if asset not found
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Builder(
-                    builder: (context) {
-                      try {
-                        return SvgPicture.asset(iconAsset);
-                      } catch (e) {
-                        return const SizedBox.shrink();
-                      }
-                    },
+            child: isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF7C1EFF),
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Builder(
+                          builder: (context) {
+                            try {
+                              return SvgPicture.asset(iconAsset);
+                            } catch (e) {
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: 'Lato',
+                          color: textColor ?? Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Lato',
-                    color: textColor ?? Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
+import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
 
 class SignupStep3PasswordScreen extends StatefulWidget {
   const SignupStep3PasswordScreen({Key? key}) : super(key: key);
@@ -79,10 +80,12 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
         final userInfo = jsonDecode(response.body);
         await prefs.setString(
             'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signup complete!')),
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AccountCreatedDialog(email: email),
         );
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else {
         final error =
             jsonDecode(response.body)['detail'] ?? 'Failed to create user';

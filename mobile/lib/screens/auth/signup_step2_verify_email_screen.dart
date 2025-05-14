@@ -3,7 +3,34 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:train_booking_app/utils/validators.dart';
+import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 import '../../api_constants.dart';
+
+SnackBar customPurpleSnackbar(String message) {
+  return SnackBar(
+    content: Center(
+      heightFactor: 1,
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Color(0xFF7C1EFF),
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Lato',
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    ),
+    backgroundColor: Colors.white,
+    behavior: SnackBarBehavior.floating,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+    duration: const Duration(seconds: 2),
+  );
+}
 
 class SignupStep2VerifyEmailScreen extends StatefulWidget {
   const SignupStep2VerifyEmailScreen({Key? key}) : super(key: key);
@@ -52,24 +79,16 @@ class _SignupStep2VerifyEmailScreenState
       Navigator.of(context).pop(); // Remove loading
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP verified!')),
+          customPurpleSnackbar('OTP verified!'),
         );
-        Navigator.pushNamed(context, '/signup_step3');
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/signup_step3_mobile_otp', (route) => false);
       } else {
         final error =
             jsonDecode(response.body)['detail'] ?? 'Invalid or expired OTP';
         await showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Verification Failed'),
-            content: Text(error.toString()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+          builder: (ctx) => WrongOtpDialog(error: error.toString()),
         );
         setState(() {
           _errorText = error;
@@ -190,17 +209,65 @@ class _SignupStep2VerifyEmailScreenState
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed: () {
-                                // Simulate resend
+                              onPressed: () async {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                int resendCount =
+                                    prefs.getInt('otp_resend_count') ?? 0;
+                                if (resendCount >= 5) {
+                                  await showDialog(
+                                    context: context,
+                                    builder: (ctx) => const MaxOtpTriesDialog(),
+                                  );
+                                  return;
+                                }
+                                final email = prefs.getString('signup_email');
+                                if (email == null) return;
                                 setState(() {
                                   _errorText = null;
                                   _otpController.clear();
                                 });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content:
-                                          Text('OTP resent to your email.')),
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => const Center(
+                                      child: CircularProgressIndicator()),
                                 );
+                                try {
+                                  final url = Uri.parse(
+                                      '${ApiConstants.baseUrl}/api/v1/ses/send-otp');
+                                  final response = await http.post(
+                                    url,
+                                    headers: {
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: jsonEncode({'email': email}),
+                                  );
+                                  Navigator.of(context).pop(); // Remove loading
+                                  if (response.statusCode == 200) {
+                                    resendCount++;
+                                    await prefs.setInt(
+                                        'otp_resend_count', resendCount);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      customPurpleSnackbar(
+                                          'OTP resent to your email.'),
+                                    );
+                                  } else {
+                                    final error =
+                                        jsonDecode(response.body)['detail'] ??
+                                            'Failed to resend OTP';
+                                    await showDialog(
+                                      context: context,
+                                      builder: (ctx) => SignupFailedDialog(),
+                                    );
+                                  }
+                                } catch (e) {
+                                  Navigator.of(context).pop();
+                                  await showDialog(
+                                    context: context,
+                                    builder: (ctx) => SignupFailedDialog(),
+                                  );
+                                }
                               },
                               child: const Text('Resend Code',
                                   style: TextStyle(
