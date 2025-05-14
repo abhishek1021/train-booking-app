@@ -118,7 +118,7 @@ def create_user(user: UserCreateRequest):
             html_body = f"""
             <html>
               <head>
-                <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;700&display=swap" rel="stylesheet" type="text/css">
+                <link href=\"https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;700&display=swap\" rel=\"stylesheet\" type=\"text/css\">
                 <style>
                   body, td, th, h1, h2, h3, h4, h5, h6, p, a, span, div {{ font-family: 'Google Sans', 'Product Sans', Arial, sans-serif !important; }}
                   .card {{
@@ -157,7 +157,47 @@ def create_user(user: UserCreateRequest):
                     text-align: center;
                     margin: 0 auto 18px auto;
                   }}
-            {credentials_html}
+                </style>
+              </head>
+              <body style='background:#f6f6f6; margin:0; padding:0;'>
+                <div class='card'>
+                  <div class='header'>
+                    <h1>Welcome to TatkalPro</h1>
+                  </div>
+                  <div class='main-content'>
+                    <h2>Get the best from TatkalPro</h2>
+                    <div class='features'>
+                      <table width='100%' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td align='center'>
+                            <div class='feature-icon-bg'><img src='https://tatkalpro.in/assets/truck.svg' alt='Tatkal Booking'></div>
+                            <div style='color:#7C1EFF; font-weight:bold; margin-top:10px;'>Instant Tatkal Booking</div>
+                            <div style='font-size:14px; color:#222;'>Book IRCTC tatkal tickets faster than ever before.</div>
+                          </td>
+                          <td align='center'>
+                            <div class='feature-icon-bg'><img src='https://tatkalpro.in/assets/automation.svg' alt='Automation'></div>
+                            <div style='color:#7C1EFF; font-weight:bold; margin-top:10px;'>Smart Automation</div>
+                            <div style='font-size:14px; color:#222;'>Auto-fill, save travelers, manage bookings easily.</div>
+                          </td>
+                          <td align='center'>
+                            <div class='feature-icon-bg'><img src='https://tatkalpro.in/assets/support.svg' alt='Support'></div>
+                            <div style='color:#7C1EFF; font-weight:bold; margin-top:10px;'>24x7 Support</div>
+                            <div style='font-size:14px; color:#222;'>We’re here to help you—day or night.</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div style='margin:32px 0 24px 0; text-align:center;'>
+                      <a href='https://tatkalpro.in' style='display:inline-block; background:#7C3AED; color:#fff; font-weight:bold; font-size:18px; border-radius:8px; padding:18px 60px; text-decoration:none;'>Go to TatkalPro</a>
+                    </div>
+                    <div style='margin-top:36px; margin-bottom:10px; font-size:18px; font-weight:bold;'>Why TatkalPro?</div>
+                    <div style='font-size:15px; color:#222; margin-bottom:24px;'>TatkalPro is your all-in-one platform for superfast IRCTC tatkal ticket booking, smart automation, and seamless travel management. Enjoy exclusive offers, easy account management, and peace of mind with our dedicated support team.</div>
+                    <div style='margin: 28px 0 32px 0; padding: 24px; background: #f6f6f6; border-radius: 12px; text-align: left;'>
+                      <h2 style='font-size:1.1em; color:#7C1EFF; margin-bottom:10px;'>Here are your credentials to save for your future logins:</h2>
+                      <div><b>Username (Email):</b> {item.get('Email')}</div>
+                      <div><b>Password:</b> {password_to_email}</div>
+                      <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
+                    </div>
                   .feature-icon-bg img {{
                     width: 28px;
                     height: 28px;
