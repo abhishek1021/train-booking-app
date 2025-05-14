@@ -23,6 +23,7 @@ class OtherAttributes(BaseModel):
 
 from pydantic import root_validator
 
+
 class UserCreateRequest(BaseModel):
     PK: str = Field(..., example="USER#jane.doe@example.com")
     SK: str = Field(..., example="PROFILE")
@@ -43,10 +44,10 @@ class UserCreateRequest(BaseModel):
 
     @root_validator
     def password_required_unless_google(cls, values):
-        google_signin = values.get('google_signin', False)
-        password = values.get('PasswordHash')
+        google_signin = values.get("google_signin", False)
+        password = values.get("PasswordHash")
         if not google_signin and not password:
-            raise ValueError('PasswordHash is required unless google_signin is true')
+            raise ValueError("PasswordHash is required unless google_signin is true")
         return values
 
 
@@ -154,24 +155,35 @@ def create_user(user: UserCreateRequest):
               <div style='margin-top:10px; color:#c00; font-size:13px;'>You can change this password after logging in from your profile settings.</div>
             </div>
             """
-            
+
             # Read the email template and inject user data
-            template_path = os.path.join(os.path.dirname(__file__), '../../templates/welcome_email_template.html')
+            template_path = os.path.join(
+                os.path.dirname(__file__), "../../templates/welcome_email_template.html"
+            )
             try:
-                with open(template_path, 'r', encoding='utf-8') as f:
+                with open(template_path, "r", encoding="utf-8") as f:
                     html_body = f.read()
-                    
+
                 # Replace placeholders with actual data
-                html_body = html_body.replace('<!-- CREDENTIALS_BLOCK -->', credentials_html)
-                html_body = html_body.replace('<h1>Welcome to TatkalPro</h1>', f'<h1>Welcome to TatkalPro, {display_name}!</h1>')
-                html_body = html_body.replace('{CURRENT_YEAR}', str(datetime.now().year))
-                
-                print(f"[TatkalPro][Email] Template loaded and personalized for {display_name}")
+                html_body = html_body.replace(
+                    "<!-- CREDENTIALS_BLOCK -->", credentials_html
+                )
+                html_body = html_body.replace(
+                    "<h1>Welcome to TatkalPro</h1>",
+                    f"<h1>Welcome to TatkalPro, {display_name}!</h1>",
+                )
+                html_body = html_body.replace(
+                    "{CURRENT_YEAR}", str(datetime.now().year)
+                )
+
+                print(
+                    f"[TatkalPro][Email] Template loaded and personalized for {display_name}"
+                )
             except Exception as template_err:
                 print(f"[TatkalPro][Email] Error loading template: {template_err}")
                 # Fallback to a simple email if template fails
                 html_body = f"<html><body><h1>Welcome to TatkalPro, {display_name}!</h1><p>Your account has been created successfully.</p>{credentials_html}</body></html>"
-            
+
             if SENDGRID_API_KEY and to_email:
                 print(
                     "[TatkalPro][Email] All email vars present, attempting to send..."
