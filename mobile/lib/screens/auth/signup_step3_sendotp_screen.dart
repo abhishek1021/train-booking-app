@@ -15,7 +15,7 @@ SnackBar customPurpleSnackbar(String message) {
         style: const TextStyle(
           color: Color(0xFF7C1EFF),
           fontWeight: FontWeight.bold,
-          fontFamily: 'Lato',
+          fontFamily: 'ProductSans',
           fontSize: 16,
         ),
         textAlign: TextAlign.center,
@@ -36,7 +36,8 @@ class SignupStep3SendOtpScreen extends StatefulWidget {
   const SignupStep3SendOtpScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignupStep3SendOtpScreen> createState() => _SignupStep3SendOtpScreenState();
+  State<SignupStep3SendOtpScreen> createState() =>
+      _SignupStep3SendOtpScreenState();
 }
 
 class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
@@ -45,7 +46,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
   bool _otpSent = false;
   bool _isLoading = false;
   String? _errorText;
-  
+
   Country _selectedCountry = Country(
     phoneCode: '91',
     countryCode: 'IN',
@@ -84,7 +85,10 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile': _phoneController.text.trim()}),
+        body: jsonEncode({
+          'mobile':
+              '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}'
+        }),
       );
       Navigator.of(context).pop(); // Remove loading
       if (response.statusCode == 200) {
@@ -95,14 +99,17 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
           customPurpleSnackbar('OTP sent to your mobile number'),
         );
       } else {
-        setState(() {
-          _errorText = jsonDecode(response.body)['detail'] ?? 'Failed to send OTP';
-        });
+        final detail = jsonDecode(response.body)['detail']?.toString() ?? 'Failed to send OTP';
+        showDialog(
+          context: context,
+          builder: (context) => WrongOtpDialog(error: detail),
+        );
       }
     } catch (e) {
-      setState(() {
-        _errorText = 'Error: $e';
-      });
+        showDialog(
+        context: context,
+        builder: (context) => WrongOtpDialog(error: 'Error: $e'),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -117,7 +124,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      final mobile = prefs.getString('signup_mobile') ?? _phoneController.text.trim();
+      // Always use E.164 format for verification, matching send-otp
+      final mobile = '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}';
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -127,24 +135,36 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile': mobile, 'code': _otpController.text.trim()}),
+        body: jsonEncode({
+          'mobile': mobile,
+          'code': _otpController.text.trim(),
+        }),
       );
       Navigator.of(context).pop(); // Remove loading
-      if (response.statusCode == 200 && jsonDecode(response.body)['status'] == 'approved') {
+      if (response.statusCode == 200 &&
+          jsonDecode(response.body)['status'] == 'approved') {
         ScaffoldMessenger.of(context).showSnackBar(
           customPurpleSnackbar('Mobile number verified!'),
         );
-        // Continue to next signup step
-        Navigator.pushNamed(context, '/signup_step4');
+        Navigator.pushReplacementNamed(
+          context,
+          '/signup_step3_password',
+          arguments: {
+            'phone': mobile,
+          },
+        );
       } else {
-        setState(() {
-          _errorText = 'Invalid OTP. Please try again.';
-        });
+        final detail = jsonDecode(response.body)['detail']?.toString() ?? 'Verification failed';
+        showDialog(
+          context: context,
+          builder: (context) => WrongOtpDialog(error: detail),
+        );
       }
     } catch (e) {
-      setState(() {
-        _errorText = 'Error: $e';
-      });
+      showDialog(
+        context: context,
+        builder: (context) => WrongOtpDialog(error: 'Error: $e'),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -179,20 +199,25 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                                    context, '/create_new_account_email', (route) => false),
+                                icon: const Icon(Icons.arrow_back,
+                                    color: Colors.black),
+                                onPressed: () =>
+                                    Navigator.pushNamedAndRemoveUntil(
+                                        context,
+                                        '/create_new_account_email',
+                                        (route) => false),
                               ),
                               const SizedBox(width: 8),
                               const Text('Step 3/4',
                                   style: TextStyle(
-                                      fontFamily: 'Lato',
+                                      fontFamily: 'ProductSans',
                                       fontSize: 15,
                                       color: Colors.deepPurple)),
                               Expanded(
                                 child: Align(
                                   alignment: Alignment.centerRight,
-                                  child: _SignupProgressBar(currentStep: 3, totalSteps: 4),
+                                  child: _SignupProgressBar(
+                                      currentStep: 3, totalSteps: 4),
                                 ),
                               ),
                             ],
@@ -200,7 +225,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                           const SizedBox(height: 16),
                           const Text('Verify Your Mobile Number',
                               style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 26,
                                   color: Colors.black)),
@@ -208,7 +233,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                           const Text(
                               'A 6-digit code will be sent to your mobile. Enter it below to verify.',
                               style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontSize: 16,
                                   color: Colors.black87)),
                           const SizedBox(height: 32),
@@ -237,67 +262,129 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                               ),
                               errorText: _errorText,
                               counterText: '',
-                              prefixIcon: InkWell(
-                                onTap: () {
-                                  showCountryPicker(
-                                    context: context,
-                                    showPhoneCode: true,
-                                    onSelect: (Country country) {
-                                      setState(() {
-                                        _selectedCountry = country;
-                                      });
-                                    },
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '+${_selectedCountry.phoneCode}',
-                                        style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w600),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 4.0, right: 8.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    showCountryPicker(
+                                      context: context,
+                                      showPhoneCode: true,
+                                      countryListTheme: CountryListThemeData(
+                                        flagSize: 24,
+                                        backgroundColor: Colors.white,
+                                        textStyle: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 16,
+                                          color: Colors.black,
+                                        ),
+                                        bottomSheetHeight: 500,
+                                        borderRadius: const BorderRadius.vertical(
+                                            top: Radius.circular(18)),
+                                        inputDecoration: InputDecoration(
+                                          hintText: 'Search country',
+                                          hintStyle: const TextStyle(
+                                              fontFamily: 'ProductSans'),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                                color: Color(0xFF7C3AED),
+                                                width: 1),
+                                          ),
+                                        ),
                                       ),
-                                      const Icon(Icons.arrow_drop_down, color: Colors.black54),
-                                    ],
+                                      onSelect: (Country country) {
+                                        setState(() {
+                                          _selectedCountry = country;
+                                        });
+                                      },
+                                    );
+                                  },
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: 80,
+                                      maxWidth: 120,
+                                      minHeight: 0,
+                                      maxHeight: 52,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: const Color(0xFF7C3AED),
+                                            width: 1),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10.0, vertical: 6.0),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 2.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '+${_selectedCountry.phoneCode}',
+                                            style: const TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontSize: 16,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Container(
+                                            height: 18,
+                                            width: 1.2,
+                                            color: Color(0xFF7C3AED),
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 6),
+                                          ),
+                                          const Icon(Icons.arrow_drop_down,
+                                              color: Colors.black54, size: 20),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 18),
-                          if (_otpSent) ...[
-                            TextField(
-                              controller: _otpController,
-                              keyboardType: TextInputType.number,
-                              maxLength: 6,
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                labelText: 'OTP Code',
-                                labelStyle: const TextStyle(
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w400),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: Colors.black54, width: 1.5),
+                          if (_otpSent)
+                            Column(
+                              children: [
+                                TextField(
+                                  controller: _otpController,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      fontFamily: 'ProductSans'),
+                                  decoration: InputDecoration(
+                                    labelText: 'OTP Code',
+                                    labelStyle: const TextStyle(
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'ProductSans'),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                          color: Colors.black54, width: 1.5),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFF7C1EFF), width: 2),
+                                    ),
+                                    counterText: '',
+                                  ),
                                 ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xFF7C1EFF), width: 2),
-                                ),
-                                counterText: '',
-                              ),
+                                const SizedBox(height: 18),
+                              ],
                             ),
-                            const SizedBox(height: 18),
-                          ],
                           const Spacer(),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 24),
@@ -318,22 +405,30 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                                   padding: EdgeInsets.zero,
                                   backgroundColor: Colors.transparent,
                                 ).copyWith(
-                                  backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+                                  backgroundColor:
+                                      MaterialStateProperty.resolveWith<Color?>(
                                     (states) => null,
                                   ),
-                                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                                  overlayColor: MaterialStateProperty.all<Color>(
+                                  foregroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.white),
+                                  overlayColor:
+                                      MaterialStateProperty.all<Color>(
                                     const Color(0x1A7C3AED),
                                   ),
                                 ),
                                 child: Ink(
                                   decoration: const BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                      colors: [
+                                        Color(0xFF7C3AED),
+                                        Color(0xFF9F7AEA)
+                                      ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
                                     ),
-                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10)),
                                   ),
                                   child: Container(
                                     alignment: Alignment.center,
@@ -343,13 +438,17 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                                             height: 24,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2.5,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
                                             ),
                                           )
                                         : Text(
-                                            _otpSent ? 'Verify OTP' : 'Send OTP',
+                                            _otpSent
+                                                ? 'Verify OTP'
+                                                : 'Send OTP',
                                             style: const TextStyle(
-                                              fontFamily: 'Lato',
+                                              fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                               color: Colors.white,
@@ -377,7 +476,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
 class _SignupProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-  const _SignupProgressBar({required this.currentStep, required this.totalSteps});
+  const _SignupProgressBar(
+      {required this.currentStep, required this.totalSteps});
 
   @override
   Widget build(BuildContext context) {

@@ -35,6 +35,7 @@ class UserCreateRequest(BaseModel):
     LastLoginAt: Optional[datetime]
     IsActive: bool
     OtherAttributes: OtherAttributes
+    Phone: Optional[str] = None
     wallet_id: Optional[str] = ""
     wallet_balance: Optional[float] = 0.0
     preferences: Optional[dict] = Field(default_factory=dict)
@@ -119,6 +120,9 @@ def create_user(user: UserCreateRequest):
     item["PasswordHash"] = password_hash
     # Convert datetime to ISO string for DynamoDB
     item["CreatedAt"] = item["CreatedAt"].isoformat()
+    # Ensure Phone is present (already in item if passed)
+    if hasattr(user, 'Phone') and user.Phone:
+        item['Phone'] = user.Phone
     if item.get("LastLoginAt"):
         item["LastLoginAt"] = item["LastLoginAt"].isoformat()
     # Convert all floats to Decimal for DynamoDB compatibility

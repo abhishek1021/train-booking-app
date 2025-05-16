@@ -54,15 +54,23 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
   Future<bool> _checkUserExists(String email) async {
     final url = Uri.parse(
         '${ApiConstants.baseUrl}/api/v1/dynamodb/users/exists/$email');
+    bool exists = false;
     try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final exists = jsonDecode(response.body)['exists'] as bool;
-        return exists;
+        exists = jsonDecode(response.body)['exists'] as bool;
       }
     } catch (e) {}
-    return false;
+    Navigator.of(context, rootNavigator: true).pop(); // Remove loading
+    return exists;
   }
+
+  bool _isLoading = false;
 
   Future<void> _sendOtp() async {
     final email = _emailController.text.trim();
@@ -87,6 +95,9 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final response = await http.post(
         url,
@@ -94,6 +105,9 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
         body: jsonEncode({'email': email}),
       );
       Navigator.of(context).pop(); // Remove loading
+      setState(() {
+        _isLoading = false;
+      });
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           customPurpleSnackbar('OTP sent to your email!'),
@@ -113,6 +127,10 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
         context: context,
         builder: (context) => const SignupFailedDialog(),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -148,7 +166,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Step 1/3',
+                            const Text('Step 1/4',
                                 style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontSize: 15,
@@ -157,7 +175,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: _SignupProgressBar(
-                                    currentStep: 1, totalSteps: 3),
+                                    currentStep: 1, totalSteps: 4),
                               ),
                             ),
                           ],
@@ -249,25 +267,37 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                                 splashColor: Colors.transparent,
                                 highlightColor: Colors.transparent,
-                                onTap: _isValid
+                                onTap: (_isValid && !_isLoading)
                                     ? () {
                                         if (_formKey.currentState!.validate()) {
                                           _sendOtp();
                                         }
                                       }
                                     : null,
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   child: Center(
-                                    child: Text(
-                                      'Proceed',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                              strokeWidth: 3,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Proceed',
+                                            style: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 17,
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),

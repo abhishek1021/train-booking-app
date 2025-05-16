@@ -38,11 +38,30 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
     });
   }
 
+  String? _phone;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['phone'] != null) {
+      _phone = args['phone'] as String;
+    } else if (_phone == null) {
+      // fallback: try to get from shared preferences
+      SharedPreferences.getInstance().then((prefs) {
+        setState(() {
+          _phone = prefs.getString('signup_mobile');
+        });
+      });
+    }
+  }
+
   Future<void> _finishSignupApi() async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString('signup_email');
     final username = prefs.getString('signup_username');
     final fullName = prefs.getString('signup_fullName');
+    final phone = _phone ?? prefs.getString('signup_mobile');
     if (email == null || username == null || fullName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -72,6 +91,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
           'CreatedAt': now,
           'IsActive': true,
           'OtherAttributes': {'FullName': fullName, 'Role': 'user'},
+          'Phone': phone,
         }),
       );
       Navigator.of(context).pop();
@@ -143,7 +163,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Step 3/3',
+                            const Text('Step 4/4',
                                 style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontSize: 15,
@@ -152,7 +172,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: _SignupProgressBar(
-                                    currentStep: 3, totalSteps: 3),
+                                    currentStep: 4, totalSteps: 4),
                               ),
                             ),
                           ],

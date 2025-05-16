@@ -81,7 +81,8 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
         '/signup_step1': (context) => const SignupStep1EmailScreen(),
         '/signup_step2': (context) => const SignupStep2VerifyEmailScreen(),
         '/signup_step3': (context) => const SignupStep3PasswordScreen(),
-      '/signup_step3_mobile_otp': (context) => SignupStep3SendOtpScreen(),
+        '/signup_step3_password': (context) => const SignupStep3PasswordScreen(),
+        '/signup_step3_mobile_otp': (context) => SignupStep3SendOtpScreen(),
       },
     );
   }

@@ -105,7 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text('or',
                           style: TextStyle(
-                              fontFamily: 'ProductSans', color: Colors.black54)),
+                              fontFamily: 'ProductSans',
+                              color: Colors.black54)),
                     ),
                     Expanded(child: Divider()),
                   ],
@@ -311,7 +312,9 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
             const Text(
               'This user does not exist. You can create an account or use your Google data and we will create an account automatically for you.',
               style: TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                  fontSize: 15,
+                  color: Colors.black87,
+                  fontFamily: 'ProductSans'),
               textAlign: TextAlign.center,
             ),
             if (_error != null) ...[

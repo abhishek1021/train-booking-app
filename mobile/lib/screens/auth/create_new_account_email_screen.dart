@@ -313,7 +313,9 @@ class UserExistsDialog extends StatelessWidget {
                 Text(
                   'A user already exists with this email ($email). Please log in.',
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -430,7 +432,9 @@ class SignupErrorDialog extends StatelessWidget {
                 Text(
                   error,
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -541,7 +545,9 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                 Text(
                   'You have successfully created an account with $email. You can now access all features of TatkalPro.',
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),

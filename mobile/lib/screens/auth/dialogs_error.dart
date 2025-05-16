@@ -42,7 +42,9 @@ class ProfileFetchErrorDialog extends StatelessWidget {
                 const Text(
                   'Could not fetch user profile after signup.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -123,7 +125,9 @@ class MaxOtpTriesDialog extends StatelessWidget {
                 const Text(
                   'You have exceeded the maximum number of OTP resend attempts. Please try again later or contact support.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -205,7 +209,9 @@ class WrongOtpDialog extends StatelessWidget {
                 Text(
                   error,
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -286,7 +292,9 @@ class SignupFailedDialog extends StatelessWidget {
                 const Text(
                   'Failed to create account. Please try again.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
+                      fontSize: 15,
+                      color: Colors.black87,
+                      fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
