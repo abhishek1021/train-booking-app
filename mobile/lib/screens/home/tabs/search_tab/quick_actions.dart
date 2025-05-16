@@ -18,7 +18,7 @@ class QuickActionsSection extends StatelessWidget {
               Text(
                 'Quick Actions',
                 style: TextStyle(
-                  fontFamily: 'Lato',
+                  fontFamily: 'ProductSans',
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                   color: Color(0xFF7C3AED),
@@ -76,7 +76,7 @@ class QuickAction extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontSize: 11,
                 color: labelColor ?? Color(0xFF7C3AED),
                 fontWeight: FontWeight.bold),

@@ -57,7 +57,7 @@ class SearchCard extends StatelessWidget {
                       children: [
                         Text('One-Way',
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                               color: selectedTabIndex == 0
@@ -86,7 +86,7 @@ class SearchCard extends StatelessWidget {
                       children: [
                         Text('Round Trip',
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                               color: selectedTabIndex == 1
@@ -119,7 +119,7 @@ class SearchCard extends StatelessWidget {
                 controller: originController,
                 decoration: InputDecoration(
                   labelText: 'Origin',
-                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)),
+                  labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
                   border: OutlineInputBorder(
@@ -130,7 +130,7 @@ class SearchCard extends StatelessWidget {
                   suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black),
@@ -163,7 +163,7 @@ class SearchCard extends StatelessWidget {
                 controller: destinationController,
                 decoration: InputDecoration(
                   labelText: 'Destination',
-                  labelStyle: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)),
+                  labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF7F7FA),
                   border: OutlineInputBorder(
@@ -173,7 +173,7 @@ class SearchCard extends StatelessWidget {
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black),
@@ -190,7 +190,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
+                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -202,7 +202,7 @@ class SearchCard extends StatelessWidget {
                         Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
                   style: TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black),
@@ -218,7 +218,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
+                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -230,7 +230,7 @@ class SearchCard extends StatelessWidget {
                         Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
                   style: TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black),
@@ -246,7 +246,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Return Date',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
+                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -258,7 +258,7 @@ class SearchCard extends StatelessWidget {
                         Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
                   ),
                   style: TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black),
@@ -277,7 +277,7 @@ class SearchCard extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Passengers',
                     labelStyle:
-                        TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED)), 
+                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
                     fillColor: Color(0xFFF7F7FA),
                     border: OutlineInputBorder(
@@ -297,7 +297,7 @@ class SearchCard extends StatelessWidget {
                         ),
                         Text('$passengers',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                                 color: Color(0xFF7C3AED))),
@@ -314,7 +314,7 @@ class SearchCard extends StatelessWidget {
                   controller: TextEditingController(
                       text: '$passengers Adult${passengers > 1 ? 's' : ''}'),
                   style: const TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black),
@@ -350,7 +350,7 @@ class SearchCard extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text('Search Trains',
                         style: TextStyle(
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: Colors.white)),

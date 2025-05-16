@@ -89,7 +89,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         title: const Text(
           'Transaction Details',
           style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontSize: 20,
@@ -107,7 +107,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 const Text(
                   'Booking ID:',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                     fontSize: 16,
@@ -117,7 +117,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 Text(
                   bookingId,
                   style: const TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF7C3AED),
                     fontSize: 16,
@@ -156,7 +156,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             const Text(
               'You are obligated to present your e-boarding pass when boarding a train trip or during inspecting from passengers.',
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 color: Colors.black54,
                 fontSize: 12,
               ),
@@ -185,7 +185,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                             Text(
                               trainName,
                               style: const TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                                 color: Colors.black87,
@@ -195,7 +195,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                             Text(
                               'Class: $trainClass',
                               style: const TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
                                 color: Colors.black54,
@@ -216,7 +216,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             departureStation,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               color: Colors.black87,
@@ -226,7 +226,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             departureTime,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED),
@@ -235,7 +235,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             departureDate,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontSize: 12,
                               color: Colors.black45,
                             ),
@@ -248,7 +248,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             duration,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontSize: 12,
                               color: Colors.black54,
                             ),
@@ -261,7 +261,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             arrivalStation,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               color: Colors.black87,
@@ -271,7 +271,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             arrivalTime,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED),
@@ -280,7 +280,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             arrivalDate,
                             style: const TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontSize: 12,
                               color: Colors.black45,
                             ),
@@ -345,7 +345,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                               Text(
                                 'Passenger ${i + 1}',
                                 style: const TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                   color: Colors.black87,
@@ -384,7 +384,7 @@ class TransactionDetailsScreen extends StatelessWidget {
       child: Text(
         title,
         style: const TextStyle(
-          fontFamily: 'Lato',
+          fontFamily: 'ProductSans',
           fontWeight: FontWeight.bold,
           color: Color(0xFF7C3AED),
           fontSize: 16,
@@ -402,7 +402,7 @@ class TransactionDetailsScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
               color: Colors.black87,
               fontSize: 15,
@@ -411,7 +411,7 @@ class TransactionDetailsScreen extends StatelessWidget {
           Text(
             '\u20B9${value.toStringAsFixed(2)}',
             style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
               color: bold ? Color(0xFF7C3AED) : Colors.black87,
               fontSize: 15,
@@ -428,7 +428,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         const Text(
           'Status:',
           style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             color: Colors.black54,
             fontSize: 14,
           ),
@@ -437,7 +437,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         Text(
           status,
           style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             color: status == 'Paid' ? Color(0xFF059669) : Color(0xFFB91C1C),
             fontSize: 14,
@@ -456,7 +456,7 @@ class TransactionDetailsScreen extends StatelessWidget {
           Text(
             label + ':',
             style: const TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               color: Colors.black54,
               fontSize: 14,
             ),
@@ -466,7 +466,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 color: Colors.black87,
                 fontSize: 14,
               ),
@@ -511,7 +511,7 @@ class TransactionDetailsScreen extends StatelessWidget {
           label: Text(
             label,
             style: const TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontWeight: FontWeight.bold,
               fontSize: 16,
               color: Colors.white,

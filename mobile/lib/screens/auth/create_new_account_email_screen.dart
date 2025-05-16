@@ -57,7 +57,7 @@ class _CreateNewAccountEmailScreenState
                           const Text(
                             'Create new account',
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
                               color: Colors.black,
@@ -70,7 +70,7 @@ class _CreateNewAccountEmailScreenState
                         'Create your free TatkalPro account to book IRCTC Tatkal tickets instantly. Save traveler details, manage bookings, and get faster access to trains—all in one place.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'Lato',
+                          fontFamily: 'ProductSans',
                           fontWeight: FontWeight.normal,
                           fontSize: 16,
                           color: Colors.black87,
@@ -111,7 +111,7 @@ class _CreateNewAccountEmailScreenState
                                   'Continue with email',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 17,
                                   ),
@@ -235,7 +235,7 @@ class _CreateNewAccountEmailScreenState
                             textAlign: TextAlign.center,
                             text: TextSpan(
                               style: const TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   color: Colors.black45,
                                   fontSize: 13),
                               children: const [
@@ -305,7 +305,7 @@ class UserExistsDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFF7C1EFF),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -313,7 +313,7 @@ class UserExistsDialog extends StatelessWidget {
                 Text(
                   'A user already exists with this email ($email). Please log in.',
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -357,7 +357,7 @@ class UserExistsDialog extends StatelessWidget {
                           'Log In',
                           style: TextStyle(
                             color: Colors.white,
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -422,7 +422,7 @@ class SignupErrorDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFFD32F2F),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -430,7 +430,7 @@ class SignupErrorDialog extends StatelessWidget {
                 Text(
                   error,
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -533,7 +533,7 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFF7C1EFF),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -541,7 +541,7 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                 Text(
                   'You have successfully created an account with $email. You can now access all features of TatkalPro.',
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -551,7 +551,7 @@ class _AccountCreatedDialogState extends State<AccountCreatedDialog> {
                     fontSize: 16,
                     color: Color(0xFF7C1EFF),
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                 ),
               ],
@@ -630,7 +630,7 @@ class _SocialButton extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     color: color ?? Colors.black,
                     fontWeight: FontWeight.bold,
                     fontSize: 17,

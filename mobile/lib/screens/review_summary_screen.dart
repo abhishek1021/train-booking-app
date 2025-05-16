@@ -54,7 +54,7 @@ class ReviewSummaryScreen extends StatelessWidget {
         title: Text(
           'Review Summary',
           style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontSize: 20,
@@ -99,7 +99,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 Text(
                                   train['train_name'] ?? '',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
                                     color: Colors.black87,
@@ -109,7 +109,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 Text(
                                   train['train_number'] != null ? 'Train No: ${train['train_number']}' : '',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -119,7 +119,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 Text(
                                   'From $originName → $destinationName',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
                                     fontSize: 14,
                                     color: Colors.black87,
@@ -129,7 +129,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 Text(
                                   'Class: $selectedClass',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -144,7 +144,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 'Available',
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green,
                                   fontSize: 13,
@@ -154,7 +154,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 '₹${price.toStringAsFixed(2)}',
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF7C3AED),
                                   fontSize: 16,
@@ -174,7 +174,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 originName,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontSize: 14,
                                   color: Colors.black87,
                                   fontWeight: FontWeight.bold,
@@ -184,7 +184,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 depTime,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: Color(0xFF7C3AED),
@@ -193,7 +193,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 date,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontSize: 12,
                                   color: Colors.black45,
                                 ),
@@ -207,7 +207,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 destinationName,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontSize: 14,
                                   color: Colors.black87,
                                   fontWeight: FontWeight.bold,
@@ -217,7 +217,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 arrTime,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: Color(0xFF7C3AED),
@@ -226,7 +226,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               Text(
                                 date,
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontSize: 12,
                                   color: Colors.black45,
                                 ),
@@ -254,7 +254,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                     children: [
                       Text('Contact Details',
                           style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
@@ -281,7 +281,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                     children: [
                       Text('Passenger(s)',
                           style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
@@ -302,18 +302,18 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 children: [
                                   Text('Passenger ${idx + 1}',
                                       style: TextStyle(
-                                          fontFamily: 'Lato',
+                                          fontFamily: 'ProductSans',
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
                                           color: Colors.black87)),
                                 ],
                               ),
                               SizedBox(height: 6),
-                              Text('Name: ${p['name'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
-                              Text('Gender: ${p['gender'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
-                              Text('Age: ${p['age'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
-                              Text('ID Type: ${p['idType'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
-                              Text('ID Number: ${p['idNumber'] ?? ''}', style: TextStyle(fontFamily: 'Lato', fontSize: 14, color: Colors.black87)),
+                              Text('Name: ${p['name'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
+                              Text('Gender: ${p['gender'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
+                              Text('Age: ${p['age'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
+                              Text('ID Type: ${p['idType'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
+                              Text('ID Number: ${p['idNumber'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
                             ],
                           ),
                         );
@@ -341,7 +341,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                           SizedBox(width: 10),
                           Text('My Wallet',
                               style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                   color: Colors.black87)),
@@ -381,7 +381,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                               );
                             },
-                            child: Text('Change', style: TextStyle(fontFamily: 'Lato', color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
+                            child: Text('Change', style: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -408,7 +408,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                           SizedBox(width: 10),
                           Text('Discount / Voucher',
                               style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                   color: Colors.black87)),
@@ -421,7 +421,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                             child: TextField(
                               decoration: InputDecoration(
                                 hintText: 'Enter Code',
-                                hintStyle: TextStyle(fontFamily: 'Lato', color: Colors.black38),
+                                hintStyle: TextStyle(fontFamily: 'ProductSans', color: Colors.black38),
                                 filled: true,
                                 fillColor: Color(0xFFF7F7FA),
                                 border: OutlineInputBorder(
@@ -430,7 +430,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               ),
-                              style: TextStyle(fontFamily: 'Lato', fontSize: 15),
+                              style: TextStyle(fontFamily: 'ProductSans', fontSize: 15),
                             ),
                           ),
                           SizedBox(width: 12),
@@ -494,7 +494,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                   constraints: BoxConstraints(minWidth: 90, minHeight: 42),
                                   child: Text('Redeem',
                                     style: TextStyle(
-                                      fontFamily: 'Lato',
+                                      fontFamily: 'ProductSans',
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
                                       color: Colors.white,
@@ -515,7 +515,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                             child: Text(
                               'You have 25 coins',
                               style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                                 fontSize: 15,
@@ -542,7 +542,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                       Text(
                         'Use coins for your payments. You will get 5 coins after this order.',
                         style: TextStyle(
-                          fontFamily: 'Lato',
+                          fontFamily: 'ProductSans',
                           color: Colors.black54,
                           fontSize: 13,
                         ),
@@ -566,7 +566,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                     children: [
                       Text('Price Details',
                           style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
@@ -638,7 +638,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                     ),
                     child: Text('Confirm Booking',
                         style: TextStyle(
-                          fontFamily: 'Lato',
+                          fontFamily: 'ProductSans',
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           color: Colors.white,
@@ -659,15 +659,15 @@ class ReviewSummaryScreen extends StatelessWidget {
       children: [
         SizedBox(
             width: 110,
-            child: Text(label, style: TextStyle(fontFamily: 'Lato', color: Colors.black54, fontSize: 13))),
+            child: Text(label, style: TextStyle(fontFamily: 'ProductSans', color: Colors.black54, fontSize: 13))),
         Expanded(
-            child: Text(value, style: TextStyle(fontFamily: 'Lato', color: Colors.black87, fontSize: 14))),
+            child: Text(value, style: TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 14))),
       ],
     );
   }
 
-  TextStyle _headerStyle() => TextStyle(fontFamily: 'Lato', fontWeight: FontWeight.bold, color: Color(0xFF7C3AED), fontSize: 13);
-  TextStyle _cellStyle() => TextStyle(fontFamily: 'Lato', color: Colors.black87, fontSize: 13);
+  TextStyle _headerStyle() => TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, color: Color(0xFF7C3AED), fontSize: 13);
+  TextStyle _cellStyle() => TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
 
   Widget _priceRow(String label, num value, {bool bold = false}) {
     return Padding(
@@ -678,7 +678,7 @@ class ReviewSummaryScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontSize: 15,
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
               color: Colors.black87,

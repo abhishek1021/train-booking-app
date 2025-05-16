@@ -34,7 +34,7 @@ class ProfileFetchErrorDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFFD32F2F),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -42,7 +42,7 @@ class ProfileFetchErrorDialog extends StatelessWidget {
                 const Text(
                   'Could not fetch user profile after signup.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -115,7 +115,7 @@ class MaxOtpTriesDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFFD32F2F),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -123,7 +123,7 @@ class MaxOtpTriesDialog extends StatelessWidget {
                 const Text(
                   'You have exceeded the maximum number of OTP resend attempts. Please try again later or contact support.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -197,7 +197,7 @@ class WrongOtpDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFFD32F2F),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -205,7 +205,7 @@ class WrongOtpDialog extends StatelessWidget {
                 Text(
                   error,
                   style: const TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -278,7 +278,7 @@ class SignupFailedDialog extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Color(0xFFD32F2F),
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -286,7 +286,7 @@ class SignupFailedDialog extends StatelessWidget {
                 const Text(
                   'Failed to create account. Please try again.',
                   style: TextStyle(
-                      fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                      fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -351,7 +351,7 @@ class SignInFailedDialog extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
                 color: Colors.black,
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
               ),
               textAlign: TextAlign.center,
             ),
@@ -361,7 +361,7 @@ class SignInFailedDialog extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 15,
                 color: Colors.black87,
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.normal,
               ),
               textAlign: TextAlign.center,
@@ -406,7 +406,7 @@ class SignInFailedDialog extends StatelessWidget {
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                       ),
                     ),
                   ),

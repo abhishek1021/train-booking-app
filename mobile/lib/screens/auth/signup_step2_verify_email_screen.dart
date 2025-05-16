@@ -15,7 +15,7 @@ SnackBar customPurpleSnackbar(String message) {
         style: const TextStyle(
           color: Color(0xFF7C1EFF),
           fontWeight: FontWeight.bold,
-          fontFamily: 'Lato',
+          fontFamily: 'ProductSans',
           fontSize: 16,
         ),
         textAlign: TextAlign.center,
@@ -149,7 +149,7 @@ class _SignupStep2VerifyEmailScreenState
                             const SizedBox(width: 8),
                             const Text('Step 2/3',
                                 style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontSize: 15,
                                     color: Colors.deepPurple)),
                             Expanded(
@@ -164,7 +164,7 @@ class _SignupStep2VerifyEmailScreenState
                         const SizedBox(height: 16),
                         const Text('Verify Your Email',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 26,
                                 color: Colors.black)),
@@ -172,7 +172,7 @@ class _SignupStep2VerifyEmailScreenState
                         const Text(
                             'A 6-digit code has been sent to your email. Enter it below to verify.',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontSize: 16,
                                 color: Colors.black87)),
                         const SizedBox(height: 32),
@@ -319,7 +319,7 @@ class _SignupStep2VerifyEmailScreenState
                                     child: Text(
                                       'Verify',
                                       style: TextStyle(
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 17,
                                         color: Colors.white,

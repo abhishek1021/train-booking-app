@@ -260,7 +260,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                               'Sun'
                             ][date.weekday - 1],
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               color: isSelected ? Colors.white : Colors.black87,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -270,7 +270,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           Text(
                             '${date.day}',
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               color: isSelected ? Colors.white : Colors.black54,
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -289,7 +289,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                 ? Center(
                     child: Text('No trains found.',
                         style: TextStyle(
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontSize: 18,
                             color: Colors.black54)))
                 : ListView.separated(
@@ -374,7 +374,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                 child: Text(
                                                   'Train No: $trainNumber',
                                                   style: TextStyle(
-                                                    fontFamily: 'Lato',
+                                                    fontFamily: 'ProductSans',
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 13,
                                                     color: Color(0xFF7C3AED),
@@ -394,7 +394,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           'Available',
                                           style: TextStyle(
                                               color: Colors.green,
-                                              fontFamily: 'Lato',
+                                              fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w500,
                                               fontSize: 11),
                                         ),
@@ -402,7 +402,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         Text(
                                           '₹${train['price'] ?? 0}',
                                           style: TextStyle(
-                                              fontFamily: 'Lato',
+                                              fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                               color: Color(0xFF7C3AED)),
@@ -439,7 +439,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           Text(
                                             depTime,
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
                                                 color: Color(0xFF7C3AED)),
@@ -452,7 +452,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                     : null,
                                                 selectedDate),
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontSize: 13,
                                                 color: Colors.black,
                                                 fontWeight: FontWeight.w500),
@@ -473,7 +473,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           Text(
                                             'Duration',
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontSize: 13,
                                                 color: Colors.black,
                                                 fontWeight: FontWeight.bold),
@@ -482,7 +482,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           Text(
                                             _getDuration(depTime, arrTime),
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontSize: 13,
                                                 color: Colors.black,
                                                 fontWeight: FontWeight.bold),
@@ -503,7 +503,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           Text(
                                             arrTime,
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
                                                 color: Color(0xFF7C3AED)),
@@ -516,7 +516,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                     : null,
                                                 selectedDate),
                                             style: TextStyle(
-                                                fontFamily: 'Lato',
+                                                fontFamily: 'ProductSans',
                                                 fontSize: 13,
                                                 color: Colors.black,
                                                 fontWeight: FontWeight.w500),
@@ -573,7 +573,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                             Text(
                                               'Availability Details',
                                               style: TextStyle(
-                                                  fontFamily: 'Lato',
+                                                  fontFamily: 'ProductSans',
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 15,
                                                   color: Color(0xFF7C3AED)),
@@ -989,7 +989,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
         child: Marquee(
           text: text,
           style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontWeight: FontWeight.w600,
               fontSize: 13,
               color: Colors.black),
@@ -1009,7 +1009,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
       return Text(
         text,
         style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.w600,
             fontSize: 13,
             color: Colors.black),
@@ -1028,7 +1028,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
         child: Marquee(
           text: text,
           style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               fontWeight: FontWeight.bold,
               fontSize: 18,
               color: Colors.white),
@@ -1048,7 +1048,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
       return Text(
         text,
         style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: Colors.white),
@@ -1105,7 +1105,7 @@ class __PriceBounceState extends State<PriceBounce>
             '₹${widget.price}',
             key: ValueKey(widget.price),
             style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.bold,
                 fontSize: widget.fontSize,
                 color: Color(0xFF7C3AED)),

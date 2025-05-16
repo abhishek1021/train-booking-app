@@ -6,6 +6,7 @@ python-dotenv
 passlib[bcrypt]
 PyJWT
 annotated-types==0.7.0
+twilio
 anyio==4.9.0
 asyncpg==0.30.0
 bcrypt==4.3.0

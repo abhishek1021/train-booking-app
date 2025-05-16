@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Log into account',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     color: Colors.black,
@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Welcome back!\nLet\'s continue your taktal journey',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontSize: 16,
                     color: Colors.black54,
                   ),
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             'Continue with email',
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text('or',
                           style: TextStyle(
-                              fontFamily: 'Lato', color: Colors.black54)),
+                              fontFamily: 'ProductSans', color: Colors.black54)),
                     ),
                     Expanded(child: Divider()),
                   ],
@@ -183,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       text: const TextSpan(
                         style: TextStyle(
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             color: Colors.black45,
                             fontSize: 13),
                         children: [
@@ -303,7 +303,7 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
                 color: Color(0xFF7C1EFF),
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
               ),
               textAlign: TextAlign.center,
             ),
@@ -311,7 +311,7 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
             const Text(
               'This user does not exist. You can create an account or use your Google data and we will create an account automatically for you.',
               style: TextStyle(
-                  fontSize: 15, color: Colors.black87, fontFamily: 'Lato'),
+                  fontSize: 15, color: Colors.black87, fontFamily: 'ProductSans'),
               textAlign: TextAlign.center,
             ),
             if (_error != null) ...[
@@ -347,7 +347,7 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
                         'Sign Up',
                         style: TextStyle(
                           color: Colors.white,
-                          fontFamily: 'Lato',
+                          fontFamily: 'ProductSans',
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
                         ),
@@ -398,7 +398,7 @@ class _UserNotFoundDialogState extends State<_UserNotFoundDialog> {
                             'Create Account with Google Data',
                             style: TextStyle(
                               color: Colors.white,
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -480,7 +480,7 @@ class _SocialButton extends StatelessWidget {
                       Text(
                         label,
                         style: TextStyle(
-                          fontFamily: 'Lato',
+                          fontFamily: 'ProductSans',
                           color: textColor ?? Colors.black,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

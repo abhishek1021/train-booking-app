@@ -36,12 +36,35 @@ flutter:
     - assets/logos/
 
   fonts:
-    - family: Lato
+    - family: ProductSans
       fonts:
-        - asset: assets/fonts/Lato-Regular.ttf
-        - asset: assets/fonts/Lato-Bold.ttf
+        - asset: assets/fonts/ProductSans-Regular.ttf
+        - asset: assets/fonts/ProductSans-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Lato-Italic.ttf
+        - asset: assets/fonts/ProductSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/ProductSans-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/ProductSans-Light.ttf
+          weight: 300
+        - asset: assets/fonts/ProductSans-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/ProductSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/ProductSans-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/ProductSans-Black.ttf
+          weight: 900
+        - asset: assets/fonts/ProductSans-BlackItalic.ttf
+          weight: 900
+          style: italic
+        - asset: assets/fonts/ProductSans-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/ProductSans-ThinItalic.ttf
+          weight: 100
           style: italic
     - family: NotoColorEmoji
       fonts:

@@ -61,7 +61,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     Text(
                       'Account',
                       style: const TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
@@ -101,7 +101,7 @@ class _ProfileTabState extends State<ProfileTab> {
                             Text(
                               fullName,
                               style: const TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
                                 color: Colors.black,
@@ -111,7 +111,7 @@ class _ProfileTabState extends State<ProfileTab> {
                             Text(
                               email,
                               style: const TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.normal,
                                 fontSize: 15,
                                 color: Colors.black54,
@@ -182,7 +182,7 @@ class _ProfileTabState extends State<ProfileTab> {
         child: Text(
           title,
           style: const TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             color: Colors.black54,
             fontWeight: FontWeight.bold,
             fontSize: 15,
@@ -205,7 +205,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     color: Colors.black,
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
@@ -222,7 +222,7 @@ class _ProfileTabState extends State<ProfileTab> {
       );
 
   TextStyle get _trailingStyle => const TextStyle(
-        fontFamily: 'Lato',
+        fontFamily: 'ProductSans',
         color: Colors.black54,
         fontWeight: FontWeight.normal,
         fontSize: 15,

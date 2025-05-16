@@ -16,7 +16,7 @@ SnackBar customPurpleSnackbar(String message) {
         style: const TextStyle(
           color: Color(0xFF7C1EFF),
           fontWeight: FontWeight.bold,
-          fontFamily: 'Lato',
+          fontFamily: 'ProductSans',
           fontSize: 16,
         ),
         textAlign: TextAlign.center,
@@ -150,7 +150,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                             const SizedBox(width: 8),
                             const Text('Step 1/3',
                                 style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontSize: 15,
                                     color: Colors.deepPurple)),
                             Expanded(
@@ -165,14 +165,14 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                         const SizedBox(height: 16),
                         const Text('Add Your Email',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 26,
                                 color: Colors.black)),
                         const SizedBox(height: 12),
                         const Text('Enter your email address to begin signup.',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontSize: 16,
                                 color: Colors.black87)),
                         const SizedBox(height: 32),
@@ -262,7 +262,7 @@ class _SignupStep1EmailScreenState extends State<SignupStep1EmailScreen> {
                                     child: Text(
                                       'Proceed',
                                       style: TextStyle(
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 17,
                                         color: Colors.white,

@@ -45,7 +45,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
         elevation: 0,
         title: Text('Sort & Filter',
             style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
                 color: Colors.white)),
@@ -61,7 +61,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
           children: [
             Text('Sort By',
                 style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Color(0xFF7C3AED))),
@@ -82,7 +82,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
               children: [
                 Text('Show Only Available',
                     style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.w600,
                         fontSize: 14)),
                 Switch(
@@ -95,7 +95,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
             SizedBox(height: 28),
             Text('Days of Run',
                 style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Color(0xFF7C3AED))),
@@ -107,7 +107,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
             SizedBox(height: 28),
             Text('Price Range',
                 style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Color(0xFF7C3AED))),
@@ -159,7 +159,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
                     alignment: Alignment.center,
                     child: Text('Apply',
                         style: TextStyle(
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: Colors.white)),
@@ -178,7 +178,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
     return ChoiceChip(
       label: Text(label,
           style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               color: selected ? Colors.white : Color(0xFF7C3AED),
               fontWeight: FontWeight.bold)),
       selected: selected,
@@ -194,7 +194,7 @@ class _SortFilterScreenState extends State<SortFilterScreen> {
     return FilterChip(
       label: Text(d,
           style: TextStyle(
-              fontFamily: 'Lato',
+              fontFamily: 'ProductSans',
               color: selected ? Colors.white : Color(0xFF7C3AED),
               fontWeight: FontWeight.bold)),
       selected: selected,

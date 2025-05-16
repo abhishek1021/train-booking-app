@@ -90,7 +90,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         child: Marquee(
           text: text,
           style: const TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: Colors.black,
@@ -111,7 +111,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       return Text(
         text,
         style: const TextStyle(
-          fontFamily: 'Lato',
+          fontFamily: 'ProductSans',
           fontWeight: FontWeight.bold,
           fontSize: 18,
           color: Colors.black,
@@ -145,7 +145,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                   Text(
                     '($code)',
                     style: const TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: Color(0xFF7C3AED),
@@ -159,7 +159,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
               Text(
                 state,
                 style: const TextStyle(
-                  fontFamily: 'Lato',
+                  fontFamily: 'ProductSans',
                   fontSize: 15,
                   color: Colors.black87,
                 ),
@@ -202,7 +202,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                     Text(
                       widget.isOrigin ? 'Select Origin' : 'Select Destination',
                       style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 22,
                         color: Colors.white,
@@ -227,7 +227,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               ),
-              style: const TextStyle(fontFamily: 'Lato', fontSize: 16),
+              style: const TextStyle(fontFamily: 'ProductSans', fontSize: 16),
             ),
           ),
           if (_loading)
@@ -237,7 +237,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 child: Center(
                     child: Text('No cities found',
                         style: TextStyle(
-                            fontFamily: 'Lato', fontWeight: FontWeight.w600)))),
+                            fontFamily: 'ProductSans', fontWeight: FontWeight.w600)))),
           if (!_loading && _filteredCities.isNotEmpty)
             Expanded(
               child: ListView.builder(

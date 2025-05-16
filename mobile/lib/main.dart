@@ -13,7 +13,12 @@ import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.
 import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
 
 void main() {
-  runApp(TrainBookingApp());
+  runApp(
+    Theme(
+      data: ThemeData(fontFamily: 'ProductSans'),
+      child: TrainBookingApp(),
+    ),
+  );
 }
 
 class TrainBookingApp extends StatefulWidget {

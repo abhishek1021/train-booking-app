@@ -40,7 +40,7 @@ class SearchHeader extends StatelessWidget {
                   child: Text(
                     greeting,
                     style: const TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontFamilyFallback: [
                         'NotoColorEmoji',
                         'Segoe UI Emoji',
@@ -72,7 +72,7 @@ class SearchHeader extends StatelessWidget {
             Text(
               username,
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontFamilyFallback: ['NotoColorEmoji'],
                 fontWeight: FontWeight.w600,
                 fontSize: 18,

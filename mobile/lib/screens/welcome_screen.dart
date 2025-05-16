@@ -12,12 +12,12 @@ class WelcomeScreen extends StatelessWidget {
         children: [
           // Background image with purple gradient overlay
           Image.network(
-            'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=800&q=80',
+            'https://tatkalpro-assests-logo.s3.ap-south-1.amazonaws.com/images/train-splash-screen.jpg',
             fit: BoxFit.cover,
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.45),
+              color: Colors.black.withOpacity(0.65),
             ),
           ),
           SafeArea(
@@ -38,7 +38,7 @@ class WelcomeScreen extends StatelessWidget {
                       shadowDarkColor: Colors.transparent,
                     ),
                     textStyle: NeumorphicTextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -49,7 +49,7 @@ class WelcomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                       decoration: TextDecoration.none,
@@ -89,7 +89,7 @@ class WelcomeScreen extends StatelessWidget {
                               'Create an account',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                               ),
@@ -107,7 +107,7 @@ class WelcomeScreen extends StatelessWidget {
                         'Already have an account? ',
                         style: TextStyle(
                             color: Colors.white70,
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontSize: 16,
                             decoration: TextDecoration.none),
                       ),
@@ -119,7 +119,7 @@ class WelcomeScreen extends StatelessWidget {
                           'Log in',
                           style: TextStyle(
                             color: Colors.white,
-                            fontFamily: 'Lato',
+                            fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             decoration: TextDecoration.none,

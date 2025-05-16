@@ -145,7 +145,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                             const SizedBox(width: 8),
                             const Text('Step 3/3',
                                 style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontSize: 15,
                                     color: Colors.deepPurple)),
                             Expanded(
@@ -160,14 +160,14 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                         const SizedBox(height: 16),
                         const Text('Create Your Password',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 26,
                                 color: Colors.black)),
                         const SizedBox(height: 12),
                         const Text('Set a secure password for your account.',
                             style: TextStyle(
-                                fontFamily: 'Lato',
+                                fontFamily: 'ProductSans',
                                 fontSize: 16,
                                 color: Colors.black87)),
                         const SizedBox(height: 32),
@@ -177,12 +177,14 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                           style: const TextStyle(
                               color: Colors.black,
                               fontSize: 16,
-                              fontWeight: FontWeight.w500),
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'ProductSans'),
                           decoration: InputDecoration(
                             labelText: 'Password',
                             labelStyle: const TextStyle(
                                 color: Colors.black87,
-                                fontWeight: FontWeight.w400),
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'ProductSans'),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
@@ -249,7 +251,7 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
                                     child: Text(
                                       'Finish Signup',
                                       style: TextStyle(
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 17,
                                         color: Colors.white,
@@ -301,7 +303,7 @@ class _PasswordCriteriaChecklist extends StatelessWidget {
           const SizedBox(width: 8),
           Text(text,
               style: TextStyle(
-                  fontFamily: 'Lato',
+                  fontFamily: 'ProductSans',
                   fontSize: 14,
                   color: met ? Colors.green : Colors.black54)),
         ],
