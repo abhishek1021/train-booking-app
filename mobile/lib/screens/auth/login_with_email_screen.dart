@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'dialogs_error.dart';
+import 'package:train_booking_app/widgets/success_animation_dialog.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
   const LoginWithEmailScreen({Key? key}) : super(key: key);
@@ -49,10 +50,23 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
             'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
-        Navigator.of(context).pushReplacementNamed('/home');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
+            
+        // Show success animation before navigating
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => SuccessAnimationDialog(
+            message: 'Login Successful',
+            onAnimationComplete: () {
+              // Navigate to home screen after animation
+              Navigator.of(context).pushReplacementNamed('/home');
+            },
+          ),
         );
+        // Remove the snackbar since we're showing the animation dialog
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Login successful!')),
+        // );
       } else {
         final errorMsg = jsonDecode(response.body)['detail'] ?? 'Login failed';
         showDialog(

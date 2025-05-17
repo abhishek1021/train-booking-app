@@ -328,84 +328,102 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           key: ValueKey(idx),
                           color: Colors.white,
                           margin:
-                              EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
-                          elevation: 3,
+                          elevation: 4,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 18.0, vertical: 22.0),
+                                horizontal: 18.0, vertical: 24.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                Stack(
                                   children: [
+                                    // Expansion arrow indicator
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Icon(
+                                        expandedCardIdx == idx
+                                            ? Icons.keyboard_arrow_up_rounded
+                                            : Icons.keyboard_arrow_down_rounded,
+                                        color: Color(0xFF7C3AED),
+                                        size: 28,
+                                      ),
+                                    ),
+                                    // Main content row
                                     Row(
-                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: train['logo'] != null
-                                              ? Image.network(train['logo'],
-                                                  fit: BoxFit.contain)
-                                              : Icon(Icons.train,
-                                                  color: Color(0xFF7C3AED),
-                                                  size: 24),
-                                        ),
-                                        SizedBox(width: 10),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            _stationTextMarquee(trainName),
-                                            if (trainNumber.isNotEmpty)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 2.0, bottom: 2.0),
-                                                child: Text(
-                                                  'Train No: $trainNumber',
-                                                  style: TextStyle(
-                                                    fontFamily: 'ProductSans',
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                    color: Color(0xFF7C3AED),
-                                                  ),
-                                                ),
+                                            Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade200,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
+                                              child: train['logo'] != null
+                                                  ? Image.network(train['logo'],
+                                                      fit: BoxFit.contain)
+                                                  : Icon(Icons.train,
+                                                      color: Color(0xFF7C3AED),
+                                                      size: 24),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                _stationTextMarquee(trainName),
+                                                if (trainNumber.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
+                                                        top: 2.0, bottom: 2.0),
+                                                    child: Text(
+                                                      'Train No: $trainNumber',
+                                                      style: TextStyle(
+                                                        fontFamily: 'ProductSans',
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 15,
+                                                        color: Color(0xFF7C3AED),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            SizedBox(width: 4),
                                           ],
                                         ),
-                                        SizedBox(width: 4),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          'Available',
-                                          style: TextStyle(
-                                              color: Colors.green,
-                                              fontFamily: 'ProductSans',
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 11),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          '₹${train['price'] ?? 0}',
-                                          style: TextStyle(
-                                              fontFamily: 'ProductSans',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Color(0xFF7C3AED)),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              'Available',
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              '₹${train['price'] ?? 0}',
+                                              style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20,
+                                                  color: Color(0xFF7C3AED)),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -436,13 +454,23 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           _stationTextMarquee(widget.originName,
                                               align: TextAlign.left),
                                           SizedBox(height: 6),
-                                          Text(
-                                            depTime,
-                                            style: TextStyle(
-                                                fontFamily: 'ProductSans',
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                                color: Color(0xFF7C3AED)),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.access_time_rounded,
+                                                color: Color(0xFF7C3AED),
+                                                size: 18,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                depTime,
+                                                style: TextStyle(
+                                                    fontFamily: 'ProductSans',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                    color: Color(0xFF7C3AED)),
+                                              ),
+                                            ],
                                           ),
                                           SizedBox(height: 6),
                                           Text(
@@ -500,13 +528,25 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                               widget.destinationName,
                                               align: TextAlign.right),
                                           SizedBox(height: 6),
-                                          Text(
-                                            arrTime,
-                                            style: TextStyle(
-                                                fontFamily: 'ProductSans',
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                                color: Color(0xFF7C3AED)),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Icon(
+                                                Icons.access_time_rounded,
+                                                color: Color(0xFF7C3AED),
+                                                size: 18,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                arrTime,
+                                                style: TextStyle(
+                                                    fontFamily: 'ProductSans',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                    color: Color(0xFF7C3AED)),
+                                              ),
+                                            ],
                                           ),
                                           SizedBox(height: 6),
                                           Text(
@@ -526,9 +566,15 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                     ),
                                   ],
                                 ),
-                                if (expandedCardIdx == idx) ...[
-                                  SizedBox(height: 12),
-                                  Builder(
+                                // Animated accordion section
+                                if (expandedCardIdx == idx)
+                                  AnimatedContainer(
+                                    duration: Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                    child: Column(
+                                      children: [
+                                        SizedBox(height: 12),
+                                        Builder(
                                     builder: (context) {
                                       final ScrollController? controller =
                                           classScrollControllers[idx];
@@ -558,14 +604,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                       return Container(
                                         width: double.infinity,
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: Colors.grey.shade50,
                                           borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                              color: Color(0xFF7C3AED),
-                                              width: 1),
+                                              BorderRadius.circular(12),
                                         ),
-                                        padding: const EdgeInsets.all(18.0),
+                                        padding: const EdgeInsets.all(20.0),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -575,12 +618,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                               style: TextStyle(
                                                   fontFamily: 'ProductSans',
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 15,
+                                                  fontSize: 18,
                                                   color: Color(0xFF7C3AED)),
                                             ),
-                                            SizedBox(height: 10),
+                                            SizedBox(height: 16),
                                             SizedBox(
-                                              height: 64,
+                                              height: 72,
                                               child: Stack(
                                                 children: [
                                                   ListView.separated(
@@ -932,8 +975,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         ),
                                       );
                                     },
-                                  ),
-                                ]
+                                  )
+                                ],
+                              ),
+                            )
                               ],
                             ),
                           ),

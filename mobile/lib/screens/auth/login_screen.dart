@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
 import 'package:train_booking_app/screens/auth/dialogs_error.dart';
+import 'package:train_booking_app/widgets/success_animation_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -142,10 +143,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final userInfo = jsonDecode(profileResp.body);
                                   final prefs =
                                       await SharedPreferences.getInstance();
-                                  await prefs.setString('user_profile',
-                                      jsonEncode(userInfo['user'] ?? userInfo));
-                                  Navigator.pushNamedAndRemoveUntil(
-                                      context, '/home', (route) => false);
+                                  // Store the complete user profile data
+                                  await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+                                  // Also store token if available
+                                  if (result['token'] != null) {
+                                    await prefs.setString('auth_token', result['token']);
+                                  }
+
+                                  // Show success animation before navigating
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => SuccessAnimationDialog(
+                                      message: 'Login Successful',
+                                      onAnimationComplete: () {
+                                        // Navigate to home screen after animation
+                                        Navigator.pushReplacementNamed(
+                                            context, '/home');
+                                      },
+                                    ),
+                                  );
                                 } else {
                                   showDialog(
                                     context: context,

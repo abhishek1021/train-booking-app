@@ -83,7 +83,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   }
 
   Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
-    if (text.length > 14) {
+    if (text.length > 20) {
       return SizedBox(
         width: 120,
         height: 22,
@@ -141,7 +141,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
               children: [
                 _stationTextMarquee(cityName),
                 if (code.isNotEmpty) ...[
-                  SizedBox(width: 8),
+                  SizedBox(width: 10),
                   Text(
                     '($code)',
                     style: const TextStyle(
@@ -227,7 +227,10 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               ),
-              style: const TextStyle(fontFamily: 'ProductSans', fontSize: 16),
+              style: const TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontSize: 16,
+                  color: Color.fromARGB(255, 0, 0, 0)),
             ),
           ),
           if (_loading)

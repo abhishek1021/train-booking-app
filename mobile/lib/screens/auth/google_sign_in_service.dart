@@ -13,10 +13,24 @@ class GoogleSignInService {
         )
       : GoogleSignIn();
 
+  /// Force sign out to clear any cached credentials
+  static Future<void> forceSignOut() async {
+    try {
+      await _googleSignIn.signOut();
+      await _googleSignIn.disconnect();
+    } catch (e) {
+      // Ignore errors during sign out
+    }
+  }
+
   /// Performs Google Sign-In and checks if user exists in DynamoDB.
   /// Returns a map { 'exists': bool, 'email': String, 'name': String }
   static Future<Map<String, dynamic>> signInAndCheckUser() async {
     try {
+      // Sign out first to ensure the account picker dialog shows every time
+      await forceSignOut();
+      
+      // Now initiate a new sign-in
       final account = await _googleSignIn.signIn();
       if (account == null) {
         // User cancelled the sign-in

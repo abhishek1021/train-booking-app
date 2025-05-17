@@ -16,6 +16,7 @@ class SearchCard extends StatelessWidget {
   final VoidCallback onReturnDateTap;
   final String departureDateText;
   final String returnDateText;
+  final bool isLoading;
 
   const SearchCard({
     Key? key,
@@ -34,6 +35,7 @@ class SearchCard extends StatelessWidget {
     required this.onReturnDateTap,
     required this.departureDateText,
     required this.returnDateText,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
@@ -327,7 +329,7 @@ class SearchCard extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: onSearch,
+                onPressed: isLoading ? null : onSearch,
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all(RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10))),
@@ -348,12 +350,21 @@ class SearchCard extends StatelessWidget {
                   ),
                   child: Container(
                     alignment: Alignment.center,
-                    child: Text('Search Trains',
-                        style: TextStyle(
-                            fontFamily: 'ProductSans',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white)),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 3.0,
+                            ),
+                          )
+                        : Text('Search Trains',
+                            style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.white)),
                   ),
                 ),
               ),

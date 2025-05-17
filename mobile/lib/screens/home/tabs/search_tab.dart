@@ -32,6 +32,7 @@ class _SearchTabState extends State<SearchTab> {
   double _searchCardHeight = 0;
   int passengers = 1;
   String? selectedClass;
+  bool _isSearching = false; // Track when a search is in progress
 
   final String citiesEndpoint = "${ApiConstants.baseUrl}/api/v1/cities";
 
@@ -257,6 +258,7 @@ class _SearchTabState extends State<SearchTab> {
                   },
                   departureDateText: formatDate(selectedDate),
                   returnDateText: formatDate(returnDate),
+                  isLoading: _isSearching,
                   onSearch: () async {
                     // Compose API query parameters
                     final origin = selectedOrigin;
@@ -272,6 +274,12 @@ class _SearchTabState extends State<SearchTab> {
                       );
                       return;
                     }
+                    
+                    // Set loading state to true before API call
+                    setState(() {
+                      _isSearching = true;
+                    });
+                    
                     try {
                       final dio = Dio();
                       final response = await dio.get(
@@ -283,6 +291,12 @@ class _SearchTabState extends State<SearchTab> {
                           'date': date,
                         },
                       );
+                      
+                      // Set loading state to false after API call
+                      setState(() {
+                        _isSearching = false;
+                      });
+                      
                       final List<dynamic> trains = response.data;
                       Navigator.push(
                         context,
@@ -300,6 +314,11 @@ class _SearchTabState extends State<SearchTab> {
                         ),
                       );
                     } catch (e) {
+                      // Reset loading state on error
+                      setState(() {
+                        _isSearching = false;
+                      });
+                      
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to fetch trains: $e')),
                       );
@@ -329,7 +348,7 @@ class _SearchTabState extends State<SearchTab> {
                     child: Text(
                       'Quick Actions',
                       style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                         color: Color(0xFF7C3AED),
