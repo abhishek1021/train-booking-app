@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
 import 'dialogs_error.dart';
 
@@ -42,8 +39,9 @@ class _CreateNewAccountEmailScreenState
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: IntrinsicHeight(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 50),
                       Row(
@@ -156,61 +154,50 @@ class _CreateNewAccountEmailScreenState
                                           email: result['email']),
                                     );
                                   } else {
-                                    // Proceed with registration logic for Google user
-                                    final created = await GoogleSignInService
-                                        .createUserWithGoogle(
-                                      email: result['email'],
-                                      name: result['name'] ?? '',
+                                    // Store Google user info in prefs for later account creation
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('signup_email', result['email']);
+                                    await prefs.setString('signup_fullName', result['name'] ?? '');
+                                    await prefs.setString('signup_username', result['email'].split('@')[0]);
+                                    
+                                    // Show success snackbar
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Center(
+                                          heightFactor: 1,
+                                          child: Text(
+                                            'Google sign-in successful',
+                                            style: const TextStyle(
+                                              color: Color(0xFF7C1EFF),
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'ProductSans',
+                                              fontSize: 16,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                        backgroundColor: Colors.white,
+                                        behavior: SnackBarBehavior.floating,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                        duration: const Duration(seconds: 2),
+                                      ),
                                     );
-                                    if (created) {
-                                      // Fetch user profile from DynamoDB and store in prefs
-                                      try {
-                                        final profileResp = await http.get(
-                                          Uri.parse(
-                                              '${ApiConstants.baseUrl}/api/v1/dynamodb/users/profile/${result['email']}'),
-                                        );
-                                        if (profileResp.statusCode == 200) {
-                                          final userInfo =
-                                              jsonDecode(profileResp.body);
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          await prefs.setString(
-                                              'user_profile',
-                                              jsonEncode(userInfo['user'] ??
-                                                  userInfo));
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) =>
-                                                AccountCreatedDialog(
-                                                    email: result['email']),
-                                          );
-                                        } else {
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) =>
-                                                ProfileFetchErrorDialog(),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        showDialog(
-                                          context: context,
-                                          barrierDismissible: false,
-                                          builder: (context) => SignupErrorDialog(
-                                              error:
-                                                  'Error fetching user profile: ' +
-                                                      e.toString()),
-                                        );
-                                      }
-                                    } else {
-                                      showDialog(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (context) =>
-                                            SignupFailedDialog(),
-                                      );
-                                    }
+                                    
+                                    // Navigate to phone number/OTP screen
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/signup_step3_sendotp',
+                                      arguments: {
+                                        'fromGoogle': true,
+                                        'email': result['email'],
+                                        'name': result['name'] ?? '',
+                                      },
+                                    );
+                                    return;
                                   }
                                 } catch (e) {
                                   showDialog(

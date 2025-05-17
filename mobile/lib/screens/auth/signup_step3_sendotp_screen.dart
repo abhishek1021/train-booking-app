@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 import '../../api_constants.dart';
+import 'create_new_account_email_screen.dart';
+import 'google_sign_in_service.dart';
 
 SnackBar customPurpleSnackbar(String message) {
   return SnackBar(
@@ -40,7 +42,20 @@ class SignupStep3SendOtpScreen extends StatefulWidget {
       _SignupStep3SendOtpScreenState();
 }
 
+
 class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
+  bool _fromGoogle = false;
+  String? _googleEmail;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['fromGoogle'] == true) {
+      _fromGoogle = true;
+      _googleEmail = args['email'] as String?;
+    }
+  }
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _otpSent = false;
@@ -146,13 +161,70 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           customPurpleSnackbar('Mobile number verified!'),
         );
-        Navigator.pushReplacementNamed(
-          context,
-          '/signup_step3_password',
-          arguments: {
-            'phone': mobile,
-          },
-        );
+        if (_fromGoogle) {
+          // Store the verified phone number in SharedPreferences for later use
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('signup_mobile', mobile);
+          final email = _googleEmail ?? prefs.getString('signup_email') ?? '';
+          final name = prefs.getString('signup_fullName') ?? '';
+          final verifiedMobile = prefs.getString('signup_mobile') ?? mobile;
+          
+          // Show loading indicator
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const Center(child: CircularProgressIndicator()),
+          );
+          
+          try {
+            // Call the API to create the user with Google credentials
+            final created = await GoogleSignInService.createUserWithGoogle(
+              email: email,
+              name: name,
+              mobile: verifiedMobile, // Always pass the verified phone number
+            );
+            
+            // Remove loading indicator
+            Navigator.of(context).pop();
+            
+            if (created) {
+              // Show account created dialog
+              await showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) => AccountCreatedDialog(email: email),
+              );
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            } else {
+              // Show error dialog if account creation failed
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => SignupErrorDialog(
+                  error: 'Failed to create account. Please try again.',
+                ),
+              );
+            }
+          } catch (e) {
+            // Remove loading indicator and show error
+            Navigator.of(context).pop();
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => SignupErrorDialog(
+                error: 'Error creating account: ${e.toString()}',
+              ),
+            );
+          }
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            '/signup_step3_password',
+            arguments: {
+              'phone': mobile,
+            },
+          );
+        }
       } else {
         final detail = jsonDecode(response.body)['detail']?.toString() ?? 'Verification failed';
         showDialog(

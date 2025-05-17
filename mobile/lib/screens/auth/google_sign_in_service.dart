@@ -41,7 +41,7 @@ class GoogleSignInService {
 
   /// Creates a new user in DynamoDB for Google sign-in
   static Future<bool> createUserWithGoogle(
-      {required String email, required String name}) async {
+      {required String email, required String name, String? mobile}) async {
     final userId = const Uuid().v4();
     final now = DateTime.now().toIso8601String();
     final username = email.split('@')[0];
@@ -55,6 +55,7 @@ class GoogleSignInService {
           'UserID': userId,
           'Email': email,
           'Username': username,
+          'Phone': mobile, // Add mobile number if provided
           // 'PasswordHash': '', // Do not send PasswordHash for Google users
           'CreatedAt': now,
           'IsActive': true,
