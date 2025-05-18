@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'sort_filter_screen.dart';
 import '../../api_constants.dart';
+import '../../screens/city_search_screen.dart';
+import 'passenger_details_screen.dart';
 
 class TrainSearchResultsScreen extends StatefulWidget {
   final List<dynamic> trains;
@@ -33,16 +34,19 @@ class TrainSearchResultsScreen extends StatefulWidget {
 }
 
 class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
+  late String origin;
+  late String destination;
+  late String originName;
+  late String destinationName;
+
   late DateTime selectedDate;
   late List<DateTime> dateOptions;
   late List<dynamic> trains;
   int? expandedCardIdx;
   Map<int, String?> selectedClassByCard = {};
   Map<int, Map<String, int>> seatCountsByCard = {};
-  Map<int, Map<String, int>> backendSeatCountsByCard =
-      {}; // {cardIdx: {class: seatCount}}
-  Map<int, Map<String, int>> backendPricesByCard =
-      {}; // {cardIdx: {class: price}}
+  Map<int, Map<String, int>> backendSeatCountsByCard = {};
+  Map<int, Map<String, int>> backendPricesByCard = {};
   Map<int, GlobalKey<PriceBounceState>> priceKeys = {};
   ScrollController dateScrollController = ScrollController();
   Map<int, ScrollController> classScrollControllers = {};
@@ -52,6 +56,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
   @override
   void initState() {
     super.initState();
+    origin = widget.origin;
+    destination = widget.destination;
+    originName = widget.originName;
+    destinationName = widget.destinationName;
     selectedDate = _parseDate(widget.date);
     dateOptions =
         List.generate(11, (i) => selectedDate.subtract(Duration(days: 5 - i)));
@@ -76,12 +84,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     });
   }
 
-  Future<void> fetchTrainsForDate(DateTime date) async {
+  Future<void> fetchTrainsForDate(DateTime date, {String? originOverride, String? destinationOverride}) async {
     final formattedDate =
         '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    // Ensure we always use station code, not name
-    String originCode = widget.origin;
-    String destinationCode = widget.destination;
+    // Use overrides if provided, else fall back to widget values
+    String originCode = originOverride ?? widget.origin;
+    String destinationCode = destinationOverride ?? widget.destination;
     // If the value contains both code and name (e.g. "BKSC - BOKARO STEEL CITY"), split and take the code
     if (originCode.contains(' - ')) originCode = originCode.split(' - ')[0];
     if (destinationCode.contains(' - '))
@@ -187,37 +195,235 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
             SizedBox(width: 8),
             Expanded(
               child: _headerStationMarquee(
-                  widget.originName, widget.destinationName),
+                  originName, destinationName),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.sort, color: Colors.white),
+           IconButton(
+            icon: Icon(Icons.edit, color: Colors.white),
+            tooltip: 'Edit Search',
             onPressed: () async {
-              final apiFilters = {
-                'sortBy':
-                    'Relevance', // Replace with actual value from your API response/state
-                'onlyAvailable': false, // Replace with actual value
-                'minPrice': minPrice,
-                'maxPrice': maxPrice,
-                'selectedDays': [], // Replace with actual value
-              };
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => SortFilterScreen(
-                    apiFilters: apiFilters,
-                    minPrice: minPrice,
-                    maxPrice: maxPrice,
-                    daysOfRun: allDays.toList(),
-                  ),
+              final TextEditingController originController = TextEditingController(text: widget.originName);
+              final TextEditingController destinationController = TextEditingController(text: widget.destinationName);
+              DateTime tempSelectedDate = selectedDate;
+              await showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
+                builder: (context) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                      left: 24, right: 24, top: 32,
+                    ),
+                    child: StatefulBuilder(
+                      builder: (context, setModalState) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Edit Search', style: TextStyle(
+                              fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF7C3AED))),
+                            SizedBox(height: 24),
+                            TextFormField(
+                              controller: originController,
+                              readOnly: true,
+                              onTap: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CitySearchScreen(
+                                      isOrigin: true,
+                                      onCitySelected: (city) {
+                                        Navigator.pop(context, city);
+                                      },
+                                    ),
+                                  ),
+                                );
+                                if (result != null && result is Map<String, dynamic>) {
+                                  setModalState(() {
+                                    originController.text = '${result['station_code']} - ${result['station_name']}';
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Origin',
+                                labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                                filled: true,
+                                fillColor: Color(0xFFF7F7FA),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none),
+                                prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
+                              ),
+                              style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                            ),
+                            SizedBox(height: 16),
+                            TextFormField(
+                              controller: destinationController,
+                              readOnly: true,
+                              onTap: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CitySearchScreen(
+                                      isOrigin: false,
+                                      onCitySelected: (city) {
+                                        Navigator.pop(context, city);
+                                      },
+                                    ),
+                                  ),
+                                );
+                                if (result != null && result is Map<String, dynamic>) {
+                                  setModalState(() {
+                                    destinationController.text = '${result['station_code']} - ${result['station_name']}';
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Destination',
+                                labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                                filled: true,
+                                fillColor: Color(0xFFF7F7FA),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none),
+                                prefixIcon: Icon(Icons.flag, color: Color(0xFF7C3AED)),
+                              ),
+                              style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                            ),
+                            SizedBox(height: 16),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: tempSelectedDate,
+                                  firstDate: DateTime.now().subtract(Duration(days: 1)),
+                                  lastDate: DateTime.now().add(Duration(days: 365)),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: ColorScheme.light(
+                                          primary: Color(0xFF7C3AED),
+                                          onPrimary: Colors.white,
+                                          onSurface: Colors.black,
+                                        ),
+                                        textButtonTheme: TextButtonThemeData(
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Color(0xFF7C3AED),
+                                          ),
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (picked != null) {
+                                  setModalState(() {
+                                    tempSelectedDate = picked;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF7F7FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      '${tempSelectedDate.day}/${tempSelectedDate.month}/${tempSelectedDate.year}',
+                                      style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 32),
+                            Container(
+                              width: double.infinity,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () async {
+                                    String newOrigin = originController.text;
+                                    String newDestination = destinationController.text;
+                                    if (newOrigin.isEmpty || newDestination.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Please select both origin and destination.', style: TextStyle(fontFamily: 'ProductSans'))),
+                                      );
+                                      return;
+                                    }
+                                    // Parse station codes
+                                    String newOriginCode = newOrigin.contains(' - ') ? newOrigin.split(' - ')[0] : newOrigin;
+                                    String newOriginName = newOrigin.contains(' - ') ? newOrigin.split(' - ')[1] : newOrigin;
+                                    String newDestinationCode = newDestination.contains(' - ') ? newDestination.split(' - ')[0] : newDestination;
+                                    String newDestinationName = newDestination.contains(' - ') ? newDestination.split(' - ')[1] : newDestination;
+                                    
+                                    // Update state fields
+                                    setState(() {
+                                      originName = newOriginName;
+                                      destinationName = newDestinationName;
+                                      origin = newOriginCode;
+                                      destination = newDestinationCode;
+                                      selectedDate = tempSelectedDate;
+                                    });
+                                    
+                                    // Close the modal
+                                    Navigator.pop(context);
+                                    
+                                    // Fetch trains with the new parameters
+                                    await fetchTrainsForDate(
+                                      tempSelectedDate,
+                                      originOverride: newOriginCode,
+                                      destinationOverride: newDestinationCode,
+                                    );
+                                    // Show loading indicator or feedback
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Searching for trains...', style: TextStyle(fontFamily: 'ProductSans'))),
+                                    );
+                                  },
+                                  child: Center(
+                                    child: Text(
+                                      'Search',
+                                      style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
               );
-              if (result != null && result is Map) {
-                // TODO: Apply the updated sort/filter to your train search logic
-              }
             },
-            tooltip: 'Sort/Filter',
           ),
         ],
       ),
@@ -303,8 +509,6 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           train['train_name'] ?? train['name'] ?? '';
                       final String trainNumber =
                           train['train_number']?.toString() ?? '';
-                      final List<dynamic> days = train['days_of_run'] ?? [];
-                      final List<dynamic> route = train['route'] ?? [];
                       final List<dynamic> schedule = train['schedule'] ?? [];
                       final String depTime = schedule.isNotEmpty
                           ? (schedule.first['departure'] ?? '')
@@ -606,7 +810,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                             final int seatCount = train['seat_availability']?[className] ?? 0;
                                                             final int price = train['class_prices']?[className] ?? 0;
                                                             final bool isSelected = selectedClassByCard[idx] == className;
-                                                            final Color textColor = seatCount > 0 ? Colors.green : Colors.red;
+                                                            
                                                             final String seatText = seatCount > 0 ? "$seatCount Seats" : "Not Available";
                                                             return GestureDetector(
                                                               onTap: () {
@@ -692,6 +896,60 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                               ),
                                             );
                                           },
+                                        ),
+                                        SizedBox(height: 18),
+                                        // Book Now button
+                                        Container(
+                                          width: double.infinity,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(10),
+                                              onTap: (train['seat_availability']?[selectedClassByCard[idx]] ?? 0) > 0
+                                                  ? () {
+                                                      // Navigate to passenger details screen
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => PassengerDetailsScreen(
+                                                            train: train,
+                                                            origin: origin,
+                                                            destination: destination,
+                                                            originName: originName,
+                                                            destinationName: destinationName,
+                                                            date: selectedDate.toString().split(' ')[0],
+                                                            selectedClass: selectedClassByCard[idx] ?? '',
+                                                            price: train['class_prices']?[selectedClassByCard[idx]] ?? 0,
+                                                            seatCount: train['seat_availability']?[selectedClassByCard[idx]] ?? 0,
+                                                            passengers: widget.passengers,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  : null,
+                                              child: Center(
+                                                child: Text(
+                                                  'Book Now',
+                                                  style: TextStyle(
+                                                    fontFamily: 'ProductSans',
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
