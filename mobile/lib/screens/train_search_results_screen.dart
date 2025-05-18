@@ -84,12 +84,13 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
     });
   }
 
-  Future<void> fetchTrainsForDate(DateTime date, {String? originOverride, String? destinationOverride}) async {
+  Future<void> fetchTrainsForDate(DateTime date,
+      {String? originOverride, String? destinationOverride}) async {
     final formattedDate =
         '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     // Use overrides if provided, else fall back to widget values
-    String originCode = originOverride ?? widget.origin;
-    String destinationCode = destinationOverride ?? widget.destination;
+    String originCode = originOverride ?? origin;
+    String destinationCode = destinationOverride ?? destination;
     // If the value contains both code and name (e.g. "BKSC - BOKARO STEEL CITY"), split and take the code
     if (originCode.contains(' - ')) originCode = originCode.split(' - ')[0];
     if (destinationCode.contains(' - '))
@@ -194,18 +195,19 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
             Icon(Icons.train, color: Colors.white, size: 22),
             SizedBox(width: 8),
             Expanded(
-              child: _headerStationMarquee(
-                  originName, destinationName),
+              child: _headerStationMarquee(originName, destinationName),
             ),
           ],
         ),
         actions: [
-           IconButton(
+          IconButton(
             icon: Icon(Icons.edit, color: Colors.white),
             tooltip: 'Edit Search',
             onPressed: () async {
-              final TextEditingController originController = TextEditingController(text: widget.originName);
-              final TextEditingController destinationController = TextEditingController(text: widget.destinationName);
+              final TextEditingController originController =
+                  TextEditingController(text: originName);
+              final TextEditingController destinationController =
+                  TextEditingController(text: destinationName);
               DateTime tempSelectedDate = selectedDate;
               await showModalBottomSheet(
                 context: context,
@@ -218,7 +220,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(context).viewInsets.bottom,
-                      left: 24, right: 24, top: 32,
+                      left: 24,
+                      right: 24,
+                      top: 32,
                     ),
                     child: StatefulBuilder(
                       builder: (context, setModalState) {
@@ -226,8 +230,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Edit Search', style: TextStyle(
-                              fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF7C3AED))),
+                            Text('Edit Search',
+                                style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                    color: Color(0xFF7C3AED))),
                             SizedBox(height: 24),
                             TextFormField(
                               controller: originController,
@@ -244,23 +252,32 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                     ),
                                   ),
                                 );
-                                if (result != null && result is Map<String, dynamic>) {
+                                if (result != null &&
+                                    result is Map<String, dynamic>) {
                                   setModalState(() {
-                                    originController.text = '${result['station_code']} - ${result['station_name']}';
+                                    originController.text =
+                                        '${result['station_code']} - ${result['station_name']}';
                                   });
                                 }
                               },
                               decoration: InputDecoration(
                                 labelText: 'Origin',
-                                labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                                labelStyle: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    color: Color(0xFF7C3AED)),
                                 filled: true,
                                 fillColor: Color(0xFFF7F7FA),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none),
-                                prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none),
+                                prefixIcon: Icon(Icons.location_on,
+                                    color: Color(0xFF7C3AED)),
                               ),
-                              style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                              style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black),
                             ),
                             SizedBox(height: 16),
                             TextFormField(
@@ -278,23 +295,32 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                     ),
                                   ),
                                 );
-                                if (result != null && result is Map<String, dynamic>) {
+                                if (result != null &&
+                                    result is Map<String, dynamic>) {
                                   setModalState(() {
-                                    destinationController.text = '${result['station_code']} - ${result['station_name']}';
+                                    destinationController.text =
+                                        '${result['station_code']} - ${result['station_name']}';
                                   });
                                 }
                               },
                               decoration: InputDecoration(
                                 labelText: 'Destination',
-                                labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                                labelStyle: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    color: Color(0xFF7C3AED)),
                                 filled: true,
                                 fillColor: Color(0xFFF7F7FA),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none),
-                                prefixIcon: Icon(Icons.flag, color: Color(0xFF7C3AED)),
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none),
+                                prefixIcon:
+                                    Icon(Icons.flag, color: Color(0xFF7C3AED)),
                               ),
-                              style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                              style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black),
                             ),
                             SizedBox(height: 16),
                             GestureDetector(
@@ -302,8 +328,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 final picked = await showDatePicker(
                                   context: context,
                                   initialDate: tempSelectedDate,
-                                  firstDate: DateTime.now().subtract(Duration(days: 1)),
-                                  lastDate: DateTime.now().add(Duration(days: 365)),
+                                  firstDate: DateTime.now()
+                                      .subtract(Duration(days: 1)),
+                                  lastDate:
+                                      DateTime.now().add(Duration(days: 365)),
                                   builder: (context, child) {
                                     return Theme(
                                       data: Theme.of(context).copyWith(
@@ -329,18 +357,24 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 }
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 18, horizontal: 16),
                                 decoration: BoxDecoration(
                                   color: Color(0xFFF7F7FA),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.calendar_today, color: Color(0xFF7C3AED)),
+                                    Icon(Icons.calendar_today,
+                                        color: Color(0xFF7C3AED)),
                                     SizedBox(width: 12),
                                     Text(
                                       '${tempSelectedDate.day}/${tempSelectedDate.month}/${tempSelectedDate.year}',
-                                      style: TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                                      style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.black),
                                     ),
                                   ],
                                 ),
@@ -352,7 +386,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                               height: 52,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                  colors: [
+                                    Color(0xFF7C3AED),
+                                    Color(0xFF9F7AEA)
+                                  ],
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                 ),
@@ -365,19 +402,39 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () async {
                                     String newOrigin = originController.text;
-                                    String newDestination = destinationController.text;
-                                    if (newOrigin.isEmpty || newDestination.isEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Please select both origin and destination.', style: TextStyle(fontFamily: 'ProductSans'))),
+                                    String newDestination =
+                                        destinationController.text;
+                                    if (newOrigin.isEmpty ||
+                                        newDestination.isEmpty) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                'Please select both origin and destination.',
+                                                style: TextStyle(
+                                                    fontFamily:
+                                                        'ProductSans'))),
                                       );
                                       return;
                                     }
                                     // Parse station codes
-                                    String newOriginCode = newOrigin.contains(' - ') ? newOrigin.split(' - ')[0] : newOrigin;
-                                    String newOriginName = newOrigin.contains(' - ') ? newOrigin.split(' - ')[1] : newOrigin;
-                                    String newDestinationCode = newDestination.contains(' - ') ? newDestination.split(' - ')[0] : newDestination;
-                                    String newDestinationName = newDestination.contains(' - ') ? newDestination.split(' - ')[1] : newDestination;
-                                    
+                                    String newOriginCode =
+                                        newOrigin.contains(' - ')
+                                            ? newOrigin.split(' - ')[0]
+                                            : newOrigin;
+                                    String newOriginName =
+                                        newOrigin.contains(' - ')
+                                            ? newOrigin.split(' - ')[1]
+                                            : newOrigin;
+                                    String newDestinationCode =
+                                        newDestination.contains(' - ')
+                                            ? newDestination.split(' - ')[0]
+                                            : newDestination;
+                                    String newDestinationName =
+                                        newDestination.contains(' - ')
+                                            ? newDestination.split(' - ')[1]
+                                            : newDestination;
+
                                     // Update state fields
                                     setState(() {
                                       originName = newOriginName;
@@ -386,10 +443,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                       destination = newDestinationCode;
                                       selectedDate = tempSelectedDate;
                                     });
-                                    
+
                                     // Close the modal
                                     Navigator.pop(context);
-                                    
+
                                     // Fetch trains with the new parameters
                                     await fetchTrainsForDate(
                                       tempSelectedDate,
@@ -398,7 +455,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                     );
                                     // Show loading indicator or feedback
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Searching for trains...', style: TextStyle(fontFamily: 'ProductSans'))),
+                                      SnackBar(
+                                          content: Text(
+                                              'Searching for trains...',
+                                              style: TextStyle(
+                                                  fontFamily: 'ProductSans'))),
                                     );
                                   },
                                   child: Center(
@@ -586,15 +647,20 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                 _stationTextMarquee(trainName),
                                                 if (trainNumber.isNotEmpty)
                                                   Padding(
-                                                    padding: const EdgeInsets.only(
-                                                        top: 2.0, bottom: 2.0),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 2.0,
+                                                            bottom: 2.0),
                                                     child: Text(
                                                       'Train No: $trainNumber',
                                                       style: TextStyle(
-                                                        fontFamily: 'ProductSans',
-                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily:
+                                                            'ProductSans',
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         fontSize: 15,
-                                                        color: Color(0xFF7C3AED),
+                                                        color:
+                                                            Color(0xFF7C3AED),
                                                       ),
                                                     ),
                                                   ),
@@ -603,7 +669,6 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                             SizedBox(width: 4),
                                           ],
                                         ),
-
                                       ],
                                     ),
                                   ],
@@ -630,7 +695,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          _stationTextMarquee(widget.originName,
+                                          _stationTextMarquee(originName,
                                               align: TextAlign.left),
                                           SizedBox(height: 6),
                                           Row(
@@ -703,8 +768,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: [
-                                          _stationTextMarquee(
-                                              widget.destinationName,
+                                          _stationTextMarquee(destinationName,
                                               align: TextAlign.right),
                                           SizedBox(height: 6),
                                           Row(
@@ -758,7 +822,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                             final ScrollController? controller =
                                                 classScrollControllers[idx];
                                             final int classCount =
-                                                (train['classes_available'] as List?)
+                                                (train['classes_available']
+                                                            as List?)
                                                         ?.length ??
                                                     0;
                                             final double boxWidth = 142;
@@ -766,9 +831,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                     (boxWidth + 12) +
                                                 76; // 12 is separator, 76 is padding
                                             final double viewWidth =
-                                                MediaQuery.of(context).size.width -
+                                                MediaQuery.of(context)
+                                                        .size
+                                                        .width -
                                                     72; // 38 left + 38 right
-                                            if (controller != null && controller.hasClients) {
+                                            if (controller != null &&
+                                                controller.hasClients) {
                                               // Optionally, you can implement scroll arrow logic here if needed in the future
                                             }
                                             if (totalWidth <= viewWidth) {
@@ -781,7 +849,8 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                 borderRadius:
                                                     BorderRadius.circular(12),
                                               ),
-                                              padding: const EdgeInsets.all(20.0),
+                                              padding:
+                                                  const EdgeInsets.all(20.0),
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -789,10 +858,13 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                   Text(
                                                     'Availability Details',
                                                     style: TextStyle(
-                                                        fontFamily: 'ProductSans',
-                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily:
+                                                            'ProductSans',
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         fontSize: 18,
-                                                        color: Color(0xFF7C3AED)),
+                                                        color:
+                                                            Color(0xFF7C3AED)),
                                                   ),
                                                   SizedBox(height: 16),
                                                   SizedBox(
@@ -800,62 +872,135 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                     child: Stack(
                                                       children: [
                                                         ListView.separated(
-                                                          controller: controller,
-                                                          scrollDirection: Axis.horizontal,
+                                                          controller:
+                                                              controller,
+                                                          scrollDirection:
+                                                              Axis.horizontal,
                                                           itemCount: classCount,
-                                                          physics: BouncingScrollPhysics(),
-                                                          padding: EdgeInsets.symmetric(horizontal: 38),
-                                                          itemBuilder: (context, i) {
-                                                            final String className = train['classes_available'][i];
-                                                            final int seatCount = train['seat_availability']?[className] ?? 0;
-                                                            final int price = train['class_prices']?[className] ?? 0;
-                                                            final bool isSelected = selectedClassByCard[idx] == className;
-                                                            
-                                                            final String seatText = seatCount > 0 ? "$seatCount Seats" : "Not Available";
+                                                          physics:
+                                                              BouncingScrollPhysics(),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      38),
+                                                          itemBuilder:
+                                                              (context, i) {
+                                                            final String
+                                                                className =
+                                                                train['classes_available']
+                                                                    [i];
+                                                            final int
+                                                                seatCount =
+                                                                train['seat_availability']
+                                                                        ?[
+                                                                        className] ??
+                                                                    0;
+                                                            final int price =
+                                                                train['class_prices']
+                                                                        ?[
+                                                                        className] ??
+                                                                    0;
+                                                            final bool
+                                                                isSelected =
+                                                                selectedClassByCard[
+                                                                        idx] ==
+                                                                    className;
+
+                                                            final String
+                                                                seatText =
+                                                                seatCount > 0
+                                                                    ? "$seatCount Seats"
+                                                                    : "Not Available";
                                                             return GestureDetector(
                                                               onTap: () {
                                                                 setState(() {
-                                                                  selectedClassByCard[idx] = className;
-                                                                  if (train['class_prices'] != null) {
-                                                                    train['price'] = train['class_prices'][className];
-                                                                    if (priceKeys.containsKey(idx)) {
-                                                                      priceKeys[idx]!.currentState?.bounce();
+                                                                  selectedClassByCard[
+                                                                          idx] =
+                                                                      className;
+                                                                  if (train[
+                                                                          'class_prices'] !=
+                                                                      null) {
+                                                                    train[
+                                                                        'price'] = train[
+                                                                            'class_prices']
+                                                                        [
+                                                                        className];
+                                                                    if (priceKeys
+                                                                        .containsKey(
+                                                                            idx)) {
+                                                                      priceKeys[
+                                                                              idx]!
+                                                                          .currentState
+                                                                          ?.bounce();
                                                                     }
                                                                   }
                                                                 });
                                                               },
                                                               child: Container(
-                                                                width: 150, // Increased width to prevent overflow
-                                                                margin: EdgeInsets.only(right: 12),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.white, // Always white background
-                                                                  borderRadius: BorderRadius.circular(10),
+                                                                width:
+                                                                    150, // Increased width to prevent overflow
+                                                                margin: EdgeInsets
+                                                                    .only(
+                                                                        right:
+                                                                            12),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .white, // Always white background
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              10),
                                                                   boxShadow: [
                                                                     if (isSelected)
                                                                       BoxShadow(
-                                                                        color: Color(0x337C3AED),
-                                                                        blurRadius: 8,
-                                                                        offset: Offset(0, 2),
+                                                                        color: Color(
+                                                                            0x337C3AED),
+                                                                        blurRadius:
+                                                                            8,
+                                                                        offset: Offset(
+                                                                            0,
+                                                                            2),
                                                                       ),
                                                                   ],
                                                                   border: isSelected
-                                                                      ? Border.all(color: Color(0xFF7C3AED), width: 2)
+                                                                      ? Border.all(
+                                                                          color: Color(
+                                                                              0xFF7C3AED),
+                                                                          width:
+                                                                              2)
                                                                       : null,
                                                                 ),
-                                                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        horizontal:
+                                                                            12,
+                                                                        vertical:
+                                                                            10),
                                                                 child: Column(
-                                                                  mainAxisSize: MainAxisSize.min,
-                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
                                                                   children: [
                                                                     Row(
-                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
                                                                       children: [
                                                                         Flexible(
-                                                                          child: Text(
+                                                                          child:
+                                                                              Text(
                                                                             className,
-                                                                            overflow: TextOverflow.ellipsis,
-                                                                            style: TextStyle(
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
+                                                                            style:
+                                                                                TextStyle(
                                                                               fontFamily: 'ProductSans',
                                                                               fontWeight: FontWeight.bold,
                                                                               fontSize: 16,
@@ -864,21 +1009,33 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                                           ),
                                                                         ),
                                                                         PriceBounce(
-                                                                          price: price,
-                                                                          fontSize: 16,
+                                                                          price:
+                                                                              price,
+                                                                          fontSize:
+                                                                              16,
                                                                         ),
                                                                       ],
                                                                     ),
-                                                                    SizedBox(height: 6),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            6),
                                                                     Flexible(
-                                                                      child: Text(
+                                                                      child:
+                                                                          Text(
                                                                         seatText,
-                                                                        overflow: TextOverflow.ellipsis,
-                                                                        style: TextStyle(
-                                                                          fontFamily: 'ProductSans',
-                                                                          fontSize: 16,
-                                                                          color: seatCount > 100 ? Colors.green : Colors.red,
-                                                                          fontWeight: FontWeight.bold,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontFamily:
+                                                                              'ProductSans',
+                                                                          fontSize:
+                                                                              16,
+                                                                          color: seatCount > 100
+                                                                              ? Colors.green
+                                                                              : Colors.red,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
                                                                         ),
                                                                       ),
                                                                     ),
@@ -887,7 +1044,10 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                               ),
                                                             );
                                                           },
-                                                          separatorBuilder: (_, __) => SizedBox(width: 12),
+                                                          separatorBuilder: (_,
+                                                                  __) =>
+                                                              SizedBox(
+                                                                  width: 12),
                                                         ),
                                                       ],
                                                     ),
@@ -904,34 +1064,65 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                           height: 52,
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
-                                              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                              colors: [
+                                                Color(0xFF7C3AED),
+                                                Color(0xFF9F7AEA)
+                                              ],
                                               begin: Alignment.centerLeft,
                                               end: Alignment.centerRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                           ),
                                           child: Material(
                                             color: Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                             child: InkWell(
-                                              borderRadius: BorderRadius.circular(10),
-                                              onTap: (train['seat_availability']?[selectedClassByCard[idx]] ?? 0) > 0
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              onTap: (train['seat_availability']
+                                                              ?[
+                                                              selectedClassByCard[
+                                                                  idx]] ??
+                                                          0) >
+                                                      0
                                                   ? () {
                                                       // Navigate to passenger details screen
                                                       Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
-                                                          builder: (context) => PassengerDetailsScreen(
+                                                          builder: (context) =>
+                                                              PassengerDetailsScreen(
                                                             train: train,
                                                             origin: origin,
-                                                            destination: destination,
-                                                            originName: originName,
-                                                            destinationName: destinationName,
-                                                            date: selectedDate.toString().split(' ')[0],
-                                                            selectedClass: selectedClassByCard[idx] ?? '',
-                                                            price: train['class_prices']?[selectedClassByCard[idx]] ?? 0,
-                                                            seatCount: train['seat_availability']?[selectedClassByCard[idx]] ?? 0,
-                                                            passengers: widget.passengers,
+                                                            destination:
+                                                                destination,
+                                                            originName:
+                                                                originName,
+                                                            destinationName:
+                                                                destinationName,
+                                                            date: selectedDate
+                                                                .toString()
+                                                                .split(' ')[0],
+                                                            selectedClass:
+                                                                selectedClassByCard[
+                                                                        idx] ??
+                                                                    '',
+                                                            price: train[
+                                                                        'class_prices']
+                                                                    ?[
+                                                                    selectedClassByCard[
+                                                                        idx]] ??
+                                                                0,
+                                                            seatCount: train[
+                                                                        'seat_availability']
+                                                                    ?[
+                                                                    selectedClassByCard[
+                                                                        idx]] ??
+                                                                0,
+                                                            passengers: widget
+                                                                .passengers,
                                                           ),
                                                         ),
                                                       );
@@ -961,128 +1152,129 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                       );
                     },
                   ),
-                ),
-              ],
-            ),
-          );
-        }
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  String _getDuration(String dep, String arr) {
-    try {
-      final depParts = dep.split(':').map((e) => int.tryParse(e) ?? 0).toList();
-      final arrParts = arr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
-      final depTime = Duration(hours: depParts[0], minutes: depParts[1]);
-      final arrTime = Duration(hours: arrParts[0], minutes: arrParts[1]);
-      Duration duration = arrTime - depTime;
-      if (duration.isNegative) {
-        duration += Duration(days: 1);
-      }
-      final hours = duration.inHours;
-      final minutes = duration.inMinutes % 60;
-      return '${hours}h ${minutes}m';
-    } catch (_) {
-      return '';
+String _getDuration(String dep, String arr) {
+  try {
+    final depParts = dep.split(':').map((e) => int.tryParse(e) ?? 0).toList();
+    final arrParts = arr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
+    final depTime = Duration(hours: depParts[0], minutes: depParts[1]);
+    final arrTime = Duration(hours: arrParts[0], minutes: arrParts[1]);
+    Duration duration = arrTime - depTime;
+    if (duration.isNegative) {
+      duration += Duration(days: 1);
     }
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    return '${hours}h ${minutes}m';
+  } catch (_) {
+    return '';
   }
+}
 
-  String _getScheduleDate(dynamic scheduleEntry, DateTime baseDate) {
-    if (scheduleEntry == null || scheduleEntry['day_offset'] == null) {
-      return _formatDate(baseDate);
-    }
-    int offset = 0;
-    try {
-      offset = int.tryParse(scheduleEntry['day_offset'].toString()) ?? 0;
-    } catch (_) {}
-    final date = baseDate.add(Duration(days: offset));
-    return _formatDate(date);
+String _getScheduleDate(dynamic scheduleEntry, DateTime baseDate) {
+  if (scheduleEntry == null || scheduleEntry['day_offset'] == null) {
+    return _formatDate(baseDate);
   }
+  int offset = 0;
+  try {
+    offset = int.tryParse(scheduleEntry['day_offset'].toString()) ?? 0;
+  } catch (_) {}
+  final date = baseDate.add(Duration(days: offset));
+  return _formatDate(date);
+}
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
+String _formatDate(DateTime date) {
+  return '${date.day}/${date.month}/${date.year}';
+}
 
-  Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
-    if (text.length > 14) {
-      return SizedBox(
-        width: 90,
-        height: 20,
-        child: Marquee(
-          text: text,
-          style: TextStyle(
-              fontFamily: 'ProductSans',
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: Colors.black),
-          scrollAxis: Axis.horizontal,
-          blankSpace: 30.0,
-          velocity: 25.0,
-          pauseAfterRound: Duration(milliseconds: 800),
-          startAfter: Duration(milliseconds: 800),
-          fadingEdgeStartFraction: 0.1,
-          fadingEdgeEndFraction: 0.1,
-          showFadingOnlyWhenScrolling: false,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          textDirection: TextDirection.ltr,
-        ),
-      );
-    } else {
-      return Text(
-        text,
+Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
+  if (text.length > 14) {
+    return SizedBox(
+      width: 90,
+      height: 20,
+      child: Marquee(
+        text: text,
         style: TextStyle(
             fontFamily: 'ProductSans',
             fontWeight: FontWeight.w600,
             fontSize: 13,
             color: Colors.black),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: align,
-      );
-    }
+        scrollAxis: Axis.horizontal,
+        blankSpace: 30.0,
+        velocity: 25.0,
+        pauseAfterRound: Duration(milliseconds: 800),
+        startAfter: Duration(milliseconds: 800),
+        fadingEdgeStartFraction: 0.1,
+        fadingEdgeEndFraction: 0.1,
+        showFadingOnlyWhenScrolling: false,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        textDirection: TextDirection.ltr,
+      ),
+    );
+  } else {
+    return Text(
+      text,
+      style: TextStyle(
+          fontFamily: 'ProductSans',
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          color: Colors.black),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: align,
+    );
   }
+}
 
-  Widget _headerStationMarquee(String origin, String destination) {
-    final String text = '$origin → $destination';
-    if (text.length > 20) {
-      return SizedBox(
-        height: 22,
-        child: Marquee(
-          text: text,
-          style: TextStyle(
-              fontFamily: 'ProductSans',
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.white),
-          scrollAxis: Axis.horizontal,
-          blankSpace: 32.0,
-          velocity: 25.0,
-          pauseAfterRound: Duration(milliseconds: 900),
-          startAfter: Duration(milliseconds: 900),
-          fadingEdgeStartFraction: 0.06,
-          fadingEdgeEndFraction: 0.06,
-          showFadingOnlyWhenScrolling: false,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          textDirection: TextDirection.ltr,
-        ),
-      );
-    } else {
-      return Text(
-        text,
+Widget _headerStationMarquee(String origin, String destination) {
+  final String text = '$origin → $destination';
+  if (text.length > 20) {
+    return SizedBox(
+      height: 22,
+      child: Marquee(
+        text: text,
         style: TextStyle(
             fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: Colors.white),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
+        scrollAxis: Axis.horizontal,
+        blankSpace: 32.0,
+        velocity: 25.0,
+        pauseAfterRound: Duration(milliseconds: 900),
+        startAfter: Duration(milliseconds: 900),
+        fadingEdgeStartFraction: 0.06,
+        fadingEdgeEndFraction: 0.06,
+        showFadingOnlyWhenScrolling: false,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        textDirection: TextDirection.ltr,
+      ),
+    );
+  } else {
+    return Text(
+      text,
+      style: TextStyle(
+          fontFamily: 'ProductSans',
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: Colors.white),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
   }
+}
 
 class PriceBounce extends StatefulWidget {
   final int price;
   final double fontSize;
-  PriceBounce({Key? key, required this.price, this.fontSize = 16}) : super(key: key);
+  PriceBounce({Key? key, required this.price, this.fontSize = 16})
+      : super(key: key);
   @override
   PriceBounceState createState() => PriceBounceState();
 }
