@@ -49,70 +49,20 @@ class SearchCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Tabs for One-Way and Round Trip
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => onTabChange(0),
-                    child: Column(
-                      children: [
-                        Text('One-Way',
-                            style: TextStyle(
-                              fontFamily: 'ProductSans',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: selectedTabIndex == 0
-                                  ? Color(0xFF7C3AED)
-                                  : Colors.black26,
-                            )),
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 200),
-                          height: 3,
-                          width: 56,
-                          margin: const EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                              color: selectedTabIndex == 0
-                                  ? Color(0xFF7C3AED)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(2)),
-                        ),
-                      ],
-                    ),
-                  ),
+            // Only One-Way tab (no tab switch)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Text(
+                'One-Way',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF7C3AED),
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => onTabChange(1),
-                    child: Column(
-                      children: [
-                        Text('Round Trip',
-                            style: TextStyle(
-                              fontFamily: 'ProductSans',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: selectedTabIndex == 1
-                                  ? Color(0xFF7C3AED)
-                                  : Colors.black26,
-                            )),
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 200),
-                          height: 3,
-                          width: 56,
-                          margin: const EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                              color: selectedTabIndex == 1
-                                  ? Color(0xFF7C3AED)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(2)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                textAlign: TextAlign.left,
+              ),
             ),
-            const SizedBox(height: 20),
             // Origin and Destination fields stacked vertically with interchange arrow
             Padding(
               padding: const EdgeInsets.only(bottom: 10),

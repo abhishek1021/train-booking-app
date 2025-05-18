@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'sort_filter_screen.dart';
-import 'passenger_details_screen.dart';
 import '../../api_constants.dart';
 
 class TrainSearchResultsScreen extends StatefulWidget {
@@ -45,7 +43,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
       {}; // {cardIdx: {class: seatCount}}
   Map<int, Map<String, int>> backendPricesByCard =
       {}; // {cardIdx: {class: price}}
-  Map<int, GlobalKey<__PriceBounceState>> priceKeys = {};
+  Map<int, GlobalKey<PriceBounceState>> priceKeys = {};
   ScrollController dateScrollController = ScrollController();
   Map<int, ScrollController> classScrollControllers = {};
   Map<int, bool> showLeftArrow = {};
@@ -333,8 +331,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                               borderRadius: BorderRadius.circular(16)),
                           elevation: 4,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18.0, vertical: 24.0),
+                            padding: const EdgeInsets.all(18.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -402,29 +399,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                             SizedBox(width: 4),
                                           ],
                                         ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                              'Available',
-                                              style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontFamily: 'ProductSans',
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14),
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              '₹${train['price'] ?? 0}',
-                                              style: TextStyle(
-                                                  fontFamily: 'ProductSans',
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20,
-                                                  color: Color(0xFF7C3AED)),
-                                            ),
-                                          ],
-                                        ),
+
                                       ],
                                     ),
                                   ],
@@ -575,410 +550,152 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                       children: [
                                         SizedBox(height: 12),
                                         Builder(
-                                    builder: (context) {
-                                      final ScrollController? controller =
-                                          classScrollControllers[idx];
-                                      final int classCount =
-                                          (train['classes_available'] as List?)
-                                                  ?.length ??
-                                              0;
-                                      final double boxWidth = 142;
-                                      final double totalWidth = classCount *
-                                              (boxWidth + 12) +
-                                          76; // 12 is separator, 76 is padding
-                                      final double viewWidth =
-                                          MediaQuery.of(context).size.width -
-                                              72; // 38 left + 38 right
-                                      bool rightArrow = false;
-                                      bool leftArrow = false;
-                                      if (controller != null &&
-                                          controller.hasClients) {
-                                        rightArrow = controller.offset <
-                                            controller.position.maxScrollExtent;
-                                        leftArrow = controller.offset > 0;
-                                      }
-                                      if (totalWidth <= viewWidth) {
-                                        rightArrow = false;
-                                        leftArrow = false;
-                                      }
-                                      return Container(
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        padding: const EdgeInsets.all(20.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Availability Details',
-                                              style: TextStyle(
-                                                  fontFamily: 'ProductSans',
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 18,
-                                                  color: Color(0xFF7C3AED)),
-                                            ),
-                                            SizedBox(height: 16),
-                                            SizedBox(
-                                              height: 72,
-                                              child: Stack(
+                                          builder: (context) {
+                                            final ScrollController? controller =
+                                                classScrollControllers[idx];
+                                            final int classCount =
+                                                (train['classes_available'] as List?)
+                                                        ?.length ??
+                                                    0;
+                                            final double boxWidth = 142;
+                                            final double totalWidth = classCount *
+                                                    (boxWidth + 12) +
+                                                76; // 12 is separator, 76 is padding
+                                            final double viewWidth =
+                                                MediaQuery.of(context).size.width -
+                                                    72; // 38 left + 38 right
+                                            if (controller != null && controller.hasClients) {
+                                              // Optionally, you can implement scroll arrow logic here if needed in the future
+                                            }
+                                            if (totalWidth <= viewWidth) {
+                                              // No scroll arrows needed
+                                            }
+                                            return Container(
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              padding: const EdgeInsets.all(20.0),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  ListView.separated(
-                                                    controller: controller,
-                                                    scrollDirection:
-                                                        Axis.horizontal,
-                                                    itemCount: classCount,
-                                                    physics:
-                                                        BouncingScrollPhysics(),
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            horizontal: 38),
-                                                    itemBuilder: (context, i) {
-                                                      final String className =
-                                                          train['classes_available']
-                                                              [i];
-                                                      final int seatCount =
-                                                          train['seat_availability']
-                                                                  ?[
-                                                                  className] ??
-                                                              0;
-                                                      final int price =
-                                                          train['class_prices']
-                                                                  ?[
-                                                                  className] ??
-                                                              0;
-                                                      final bool isSelected =
-                                                          selectedClassByCard[
-                                                                  idx] ==
-                                                              className;
-                                                      String seatMsg = '';
-                                                      Color seatMsgColor =
-                                                          Colors.green;
-                                                      if (seatCount == 0) {
-                                                        seatMsg =
-                                                            'Not Available';
-                                                        seatMsgColor =
-                                                            Colors.red;
-                                                      } else if (seatCount <
-                                                          100) {
-                                                        seatMsg =
-                                                            'Filling up Fast';
-                                                        seatMsgColor =
-                                                            Colors.red;
-                                                      } else {
-                                                        seatMsg = 'Available';
-                                                        seatMsgColor =
-                                                            Colors.green;
-                                                      }
-                                                      return GestureDetector(
-                                                        onTap: () async {
-                                                          setState(() {
-                                                            selectedClassByCard[
-                                                                    idx] =
-                                                                className;
-                                                            train['price'] =
-                                                                price; // Dynamically update price
-                                                          });
-                                                        },
-                                                        child: Container(
-                                                          width: 142,
-                                                          height: 56,
-                                                          padding: EdgeInsets
-                                                              .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 8),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: isSelected
-                                                                ? Color(
-                                                                    0xFFF6F3FF)
-                                                                : Colors.white,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        10),
-                                                            border: Border.all(
-                                                                color: isSelected
-                                                                    ? Color(
-                                                                        0xFF7C3AED)
-                                                                    : Colors
-                                                                        .grey
-                                                                        .shade300,
-                                                                width: 1.5),
-                                                            boxShadow: [
-                                                              if (isSelected)
-                                                                BoxShadow(
-                                                                  color: Color(
-                                                                      0x337C3AED),
-                                                                  blurRadius: 8,
-                                                                  offset:
-                                                                      Offset(
-                                                                          0, 2),
-                                                                ),
-                                                            ],
-                                                          ),
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .center,
-                                                                children: [
-                                                                  Text(
-                                                                    className,
-                                                                    style: TextStyle(
-                                                                        fontFamily:
-                                                                            'Lato',
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .bold,
-                                                                        fontSize:
-                                                                            13,
-                                                                        color: Color(
-                                                                            0xFF7C3AED)),
-                                                                  ),
-                                                                  SizedBox(
-                                                                      width: 7),
-                                                                  Icon(
-                                                                      Icons
-                                                                          .event_seat,
-                                                                      color: Color(
-                                                                          0xFF7C3AED),
-                                                                      size: 16),
-                                                                  SizedBox(
-                                                                      width: 2),
-                                                                  Text(
-                                                                    seatCount
-                                                                        .toString(),
-                                                                    style: TextStyle(
-                                                                        fontFamily:
-                                                                            'Lato',
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .w600,
-                                                                        fontSize:
-                                                                            13,
-                                                                        color: Colors
-                                                                            .black),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              SizedBox(
-                                                                  height: 4),
-                                                              Text(
-                                                                seatMsg,
-                                                                style: TextStyle(
-                                                                    fontFamily:
-                                                                        'Lato',
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                    fontSize:
-                                                                        12,
-                                                                    color:
-                                                                        seatMsgColor),
-                                                                maxLines: 1,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    separatorBuilder: (_, __) =>
-                                                        SizedBox(width: 12),
+                                                  Text(
+                                                    'Availability Details',
+                                                    style: TextStyle(
+                                                        fontFamily: 'ProductSans',
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 18,
+                                                        color: Color(0xFF7C3AED)),
                                                   ),
-                                                  if (rightArrow)
-                                                    Positioned(
-                                                      right: 0,
-                                                      top: 0,
-                                                      bottom: 0,
-                                                      child: IgnorePointer(
-                                                        child: Container(
-                                                          width: 38,
-                                                          alignment:
-                                                              Alignment.center,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            gradient:
-                                                                LinearGradient(
-                                                              begin: Alignment
-                                                                  .centerLeft,
-                                                              end: Alignment
-                                                                  .centerRight,
-                                                              colors: [
-                                                                Colors
-                                                                    .transparent,
-                                                                Color(
-                                                                    0x117C3AED)
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          child: Icon(
-                                                              Icons
-                                                                  .arrow_forward_ios,
-                                                              color: Color(
-                                                                      0xFF7C3AED)
-                                                                  .withOpacity(
-                                                                      0.6),
-                                                              size: 22),
+                                                  SizedBox(height: 16),
+                                                  SizedBox(
+                                                    height: 72,
+                                                    child: Stack(
+                                                      children: [
+                                                        ListView.separated(
+                                                          controller: controller,
+                                                          scrollDirection: Axis.horizontal,
+                                                          itemCount: classCount,
+                                                          physics: BouncingScrollPhysics(),
+                                                          padding: EdgeInsets.symmetric(horizontal: 38),
+                                                          itemBuilder: (context, i) {
+                                                            final String className = train['classes_available'][i];
+                                                            final int seatCount = train['seat_availability']?[className] ?? 0;
+                                                            final int price = train['class_prices']?[className] ?? 0;
+                                                            final bool isSelected = selectedClassByCard[idx] == className;
+                                                            final Color textColor = seatCount > 0 ? Colors.green : Colors.red;
+                                                            final String seatText = seatCount > 0 ? "$seatCount Seats" : "Not Available";
+                                                            return GestureDetector(
+                                                              onTap: () {
+                                                                setState(() {
+                                                                  selectedClassByCard[idx] = className;
+                                                                  if (train['class_prices'] != null) {
+                                                                    train['price'] = train['class_prices'][className];
+                                                                    if (priceKeys.containsKey(idx)) {
+                                                                      priceKeys[idx]!.currentState?.bounce();
+                                                                    }
+                                                                  }
+                                                                });
+                                                              },
+                                                              child: Container(
+                                                                width: 150, // Increased width to prevent overflow
+                                                                margin: EdgeInsets.only(right: 12),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.white, // Always white background
+                                                                  borderRadius: BorderRadius.circular(10),
+                                                                  boxShadow: [
+                                                                    if (isSelected)
+                                                                      BoxShadow(
+                                                                        color: Color(0x337C3AED),
+                                                                        blurRadius: 8,
+                                                                        offset: Offset(0, 2),
+                                                                      ),
+                                                                  ],
+                                                                  border: isSelected
+                                                                      ? Border.all(color: Color(0xFF7C3AED), width: 2)
+                                                                      : null,
+                                                                ),
+                                                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                                                child: Column(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Flexible(
+                                                                          child: Text(
+                                                                            className,
+                                                                            overflow: TextOverflow.ellipsis,
+                                                                            style: TextStyle(
+                                                                              fontFamily: 'ProductSans',
+                                                                              fontWeight: FontWeight.bold,
+                                                                              fontSize: 16,
+                                                                              color: Color(0xFF7C3AED),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        PriceBounce(
+                                                                          price: price,
+                                                                          fontSize: 16,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    SizedBox(height: 6),
+                                                                    Flexible(
+                                                                      child: Text(
+                                                                        seatText,
+                                                                        overflow: TextOverflow.ellipsis,
+                                                                        style: TextStyle(
+                                                                          fontFamily: 'ProductSans',
+                                                                          fontSize: 16,
+                                                                          color: seatCount > 100 ? Colors.green : Colors.red,
+                                                                          fontWeight: FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                          separatorBuilder: (_, __) => SizedBox(width: 12),
                                                         ),
-                                                      ),
+                                                      ],
                                                     ),
-                                                  if (leftArrow)
-                                                    Positioned(
-                                                      left: 0,
-                                                      top: 0,
-                                                      bottom: 0,
-                                                      child: IgnorePointer(
-                                                        child: Container(
-                                                          width: 38,
-                                                          alignment:
-                                                              Alignment.center,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            gradient:
-                                                                LinearGradient(
-                                                              begin: Alignment
-                                                                  .centerRight,
-                                                              end: Alignment
-                                                                  .centerLeft,
-                                                              colors: [
-                                                                Colors
-                                                                    .transparent,
-                                                                Color(
-                                                                    0x117C3AED)
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          child: Icon(
-                                                              Icons
-                                                                  .arrow_back_ios_new,
-                                                              color: Color(
-                                                                      0xFF7C3AED)
-                                                                  .withOpacity(
-                                                                      0.6),
-                                                              size: 22),
-                                                        ),
-                                                      ),
-                                                    ),
+                                                  ),
                                                 ],
                                               ),
-                                            ),
-                                            SizedBox(height: 16),
-                                            if (selectedClassByCard[idx] !=
-                                                null)
-                                              Container(
-                                                width: double.infinity,
-                                                height: 52,
-                                                child: ElevatedButton(
-                                                  style: ButtonStyle(
-                                                    shape: MaterialStateProperty
-                                                        .all(
-                                                            RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    )),
-                                                    padding:
-                                                        MaterialStateProperty
-                                                            .all(EdgeInsets
-                                                                .zero),
-                                                    backgroundColor:
-                                                        MaterialStateProperty
-                                                            .resolveWith(
-                                                                (states) {
-                                                      return null;
-                                                    }),
-                                                    elevation:
-                                                        MaterialStateProperty
-                                                            .all(0),
-                                                    overlayColor:
-                                                        MaterialStateProperty
-                                                            .all(Color(
-                                                                    0xFF9F7AEA)
-                                                                .withOpacity(
-                                                                    0.08)),
-                                                  ),
-                                                  onPressed: () {
-                                                    Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            PassengerDetailsScreen(
-                                                          train: train,
-                                                          origin: widget.origin,
-                                                          destination: widget
-                                                              .destination,
-                                                          originName:
-                                                              widget.originName,
-                                                          destinationName: widget
-                                                              .destinationName,
-                                                          date: selectedDate
-                                                              .toString()
-                                                              .split(' ')[0],
-                                                          passengers:
-                                                              widget.passengers,
-                                                          selectedClass:
-                                                              selectedClassByCard[
-                                                                      idx] ??
-                                                                  '',
-                                                          price:
-                                                              train['price'] ??
-                                                                  0,
-                                                          seatCount: train[
-                                                                      'seat_availability']
-                                                                  ?[
-                                                                  selectedClassByCard[
-                                                                      idx]] ??
-                                                              0,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: Ink(
-                                                    decoration: BoxDecoration(
-                                                      gradient: LinearGradient(
-                                                          colors: [
-                                                            Color(0xFF7C3AED),
-                                                            Color(0xFF9F7AEA)
-                                                          ]),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    ),
-                                                    child: Container(
-                                                      alignment:
-                                                          Alignment.center,
-                                                      child: Text('Book Now',
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  'Lato',
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 16,
-                                                              color: Colors
-                                                                  .white)),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
-                                  )
-                                ],
-                              ),
-                            )
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -986,10 +703,11 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                       );
                     },
                   ),
-          ),
-        ],
-      ),
-    );
+                ),
+              ],
+            ),
+          );
+        }
   }
 
   String _getDuration(String dep, String arr) {
@@ -1102,21 +820,20 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
       );
     }
   }
-}
 
 class PriceBounce extends StatefulWidget {
   final int price;
   final double fontSize;
-  const PriceBounce({Key? key, required this.price, this.fontSize = 16})
-      : super(key: key);
+  PriceBounce({Key? key, required this.price, this.fontSize = 16}) : super(key: key);
   @override
-  __PriceBounceState createState() => __PriceBounceState();
+  PriceBounceState createState() => PriceBounceState();
 }
 
-class __PriceBounceState extends State<PriceBounce>
+class PriceBounceState extends State<PriceBounce>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
+
   @override
   void initState() {
     super.initState();
