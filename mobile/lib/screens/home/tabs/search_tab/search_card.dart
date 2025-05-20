@@ -73,7 +73,7 @@ class SearchCard extends StatelessWidget {
                   labelText: 'Origin',
                   labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
-                  fillColor: Color(0xFFF7F7FA),
+                  fillColor: Color(0xFFF5F5F5), // Light gray background
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
@@ -117,7 +117,7 @@ class SearchCard extends StatelessWidget {
                   labelText: 'Destination',
                   labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
-                  fillColor: Color(0xFFF7F7FA),
+                  fillColor: Color(0xFFF5F5F5), // Light gray background
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
@@ -144,7 +144,7 @@ class SearchCard extends StatelessWidget {
                     labelStyle:
                         TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
-                    fillColor: Color(0xFFF7F7FA),
+                    fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -172,7 +172,7 @@ class SearchCard extends StatelessWidget {
                     labelStyle:
                         TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
-                    fillColor: Color(0xFFF7F7FA),
+                    fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -200,7 +200,7 @@ class SearchCard extends StatelessWidget {
                     labelStyle:
                         TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
-                    fillColor: Color(0xFFF7F7FA),
+                    fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),
@@ -231,7 +231,7 @@ class SearchCard extends StatelessWidget {
                     labelStyle:
                         TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
                     filled: true,
-                    fillColor: Color(0xFFF7F7FA),
+                    fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none),

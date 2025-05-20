@@ -235,6 +235,41 @@ class _SearchTabState extends State<SearchTab> {
                       initialDate: selectedDate ?? DateTime.now(),
                       firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(Duration(days: 365)),
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            dialogBackgroundColor: Colors.white,
+                            colorScheme: ColorScheme.light(
+                              primary:
+                                  Color(0xFF7C3AED), // Purple for selected day
+                              onPrimary:
+                                  Colors.white, // Text color on selected day
+                              onSurface: Colors
+                                  .black, // Text color for unselected days
+                              surface: Colors.white, // Background color
+                            ),
+                            textTheme: Theme.of(context).textTheme.copyWith(
+                                  bodyLarge: TextStyle(
+                                      color: Colors.black), // Calendar text
+                                  bodyMedium: TextStyle(
+                                      color: Colors.black), // Month/year text
+                                ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    Color(0xFF7C3AED), // Button text color
+                              ),
+                            ),
+                            dialogTheme: DialogTheme(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
@@ -249,6 +284,41 @@ class _SearchTabState extends State<SearchTab> {
                           returnDate ?? (selectedDate ?? DateTime.now()),
                       firstDate: selectedDate ?? DateTime.now(),
                       lastDate: DateTime.now().add(Duration(days: 365)),
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            dialogBackgroundColor: Colors.white,
+                            colorScheme: ColorScheme.light(
+                              primary:
+                                  Color(0xFF7C3AED), // Purple for selected day
+                              onPrimary:
+                                  Colors.white, // Text color on selected day
+                              onSurface: Colors
+                                  .black, // Text color for unselected days
+                              surface: Colors.white, // Background color
+                            ),
+                            textTheme: Theme.of(context).textTheme.copyWith(
+                                  bodyLarge: TextStyle(
+                                      color: Colors.black), // Calendar text
+                                  bodyMedium: TextStyle(
+                                      color: Colors.black), // Month/year text
+                                ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    Color(0xFF7C3AED), // Button text color
+                              ),
+                            ),
+                            dialogTheme: DialogTheme(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
@@ -274,12 +344,12 @@ class _SearchTabState extends State<SearchTab> {
                       );
                       return;
                     }
-                    
+
                     // Set loading state to true before API call
                     setState(() {
                       _isSearching = true;
                     });
-                    
+
                     try {
                       final dio = Dio();
                       final response = await dio.get(
@@ -291,12 +361,12 @@ class _SearchTabState extends State<SearchTab> {
                           'date': date,
                         },
                       );
-                      
+
                       // Set loading state to false after API call
                       setState(() {
                         _isSearching = false;
                       });
-                      
+
                       final List<dynamic> trains = response.data;
                       Navigator.push(
                         context,
@@ -318,7 +388,7 @@ class _SearchTabState extends State<SearchTab> {
                       setState(() {
                         _isSearching = false;
                       });
-                      
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to fetch trains: $e')),
                       );
