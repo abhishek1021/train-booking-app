@@ -444,23 +444,31 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                       selectedDate = tempSelectedDate;
                                     });
 
+                                    // Show loading indicator first
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Searching for trains...',
+                                            style: TextStyle(fontFamily: 'ProductSans'),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
                                     // Close the modal
-                                    Navigator.pop(context);
+                                    if (context.mounted) {
+                                      Navigator.pop(context);
+                                    }
 
                                     // Fetch trains with the new parameters
-                                    await fetchTrainsForDate(
-                                      tempSelectedDate,
-                                      originOverride: newOriginCode,
-                                      destinationOverride: newDestinationCode,
-                                    );
-                                    // Show loading indicator or feedback
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'Searching for trains...',
-                                              style: TextStyle(
-                                                  fontFamily: 'ProductSans'))),
-                                    );
+                                    if (context.mounted) {
+                                      await fetchTrainsForDate(
+                                        tempSelectedDate,
+                                        originOverride: newOriginCode,
+                                        destinationOverride: newDestinationCode,
+                                      );
+                                    }
                                   },
                                   child: Center(
                                     child: Text(
@@ -658,7 +666,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                             'ProductSans',
                                                         fontWeight:
                                                             FontWeight.bold,
-                                                        fontSize: 15,
+                                                        fontSize: 16,
                                                         color:
                                                             Color(0xFF7C3AED),
                                                       ),
@@ -1203,7 +1211,7 @@ Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
         style: TextStyle(
             fontFamily: 'ProductSans',
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: 16,
             color: Colors.black),
         scrollAxis: Axis.horizontal,
         blankSpace: 30.0,
@@ -1223,7 +1231,7 @@ Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
       style: TextStyle(
           fontFamily: 'ProductSans',
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: 16,
           color: Colors.black),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
