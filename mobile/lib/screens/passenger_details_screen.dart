@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/passenger_service.dart';
 import 'review_summary_screen.dart';
+import 'dart:convert';
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -44,7 +47,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _gstNumberController = TextEditingController();
-  final TextEditingController _gstCompanyNameController = TextEditingController();
+  final TextEditingController _gstCompanyNameController =
+      TextEditingController();
   String _gender = 'Male';
   bool _isSenior = false;
   bool _termsAccepted = false;
@@ -52,10 +56,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   bool _showTravelInsurance = false;
   bool _optForInsurance = false;
 
+  // Passenger service and related state
+  PassengerService? _passengerService;
+  List<dynamic> _savedPassengers = [];
+  bool _isLoadingSavedPassengers = false;
+
   @override
   void initState() {
     super.initState();
-    // Initialize the passenger list with the correct number of passengers
     _passengerList = [];
     _nameControllers = [];
     _ageControllers = [];
@@ -63,11 +71,114 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _idTypeValues = [];
     _genderValues = [];
     _favouritePassengers = [];
-    
+
     // Initialize with the number of passengers from the widget
     for (int i = 0; i < widget.passengers; i++) {
       _addPassenger();
     }
+
+    // Initialize passenger service and load saved passengers
+    _initPassengerService();
+  }
+
+  // Initialize passenger service
+  Future<void> _initPassengerService() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Check if user object is present in prefs (logged in)
+      final userJson = prefs.getString('user');
+      if (userJson != null && userJson.isNotEmpty) {
+        setState(() {
+          _passengerService = PassengerService(prefs);
+          _isLoadingSavedPassengers = true;
+        });
+        await _loadSavedPassengers();
+      } else {
+        setState(() {
+          _savedPassengers = [];
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    } catch (e) {
+      print('Error initializing passenger service: $e');
+      setState(() {
+        _savedPassengers = [];
+        _isLoadingSavedPassengers = false;
+      });
+    }
+  }
+
+  // Load saved passengers from database
+  Future<void> _loadSavedPassengers() async {
+    if (_passengerService == null) return;
+
+    try {
+      final passengers = await _passengerService!.getFavoritePassengers();
+
+      if (mounted) {
+        setState(() {
+          _savedPassengers = passengers;
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading saved passengers: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load saved passengers'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    }
+  }
+
+  // Use a saved passenger
+  void _useSavedPassenger(Map<String, dynamic> passenger) {
+    if (_passengerList.length >= 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Maximum 6 passengers allowed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final name = passenger['name'] ?? '';
+    final age = passenger['age']?.toString() ?? '';
+    final gender = passenger['gender'] ?? 'Male';
+    final idType = passenger['id_type'] ?? 'Aadhar';
+    final idNumber = passenger['id_number'] ?? '';
+
+    setState(() {
+      _nameControllers.add(TextEditingController(text: name));
+      _ageControllers.add(TextEditingController(text: age));
+      _idNumberControllers.add(TextEditingController(text: idNumber));
+      _idTypeValues.add(idType);
+      _genderValues.add(gender);
+      _favouritePassengers.add(false);
+
+      _passengerList.add({
+        'name': name,
+        'age': age,
+        'gender': gender,
+        'id_type': idType,
+        'id_number': idNumber,
+        'is_senior': (int.tryParse(age) ?? 0) >= 60,
+      });
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Added $name to passengers'),
+        backgroundColor: Color(0xFF7C3AED),
+      ),
+    );
   }
 
   /// Validates all passenger and contact fields.
@@ -80,7 +191,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       final gender = _genderValues[i];
       final idNum = _idNumberControllers[i].text.trim();
       final idType = _idTypeValues[i];
-      
+
       if (name.isEmpty) {
         return 'Please enter full name for passenger ${i + 1}';
       }
@@ -100,11 +211,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         return 'Please select ID type for passenger ${i + 1}';
       }
     }
-    
+
     // Validate contact details
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
-    
+
     if (email.isEmpty) {
       return 'Please enter your email address';
     }
@@ -118,18 +229,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (phone.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(phone)) {
       return 'Please enter a valid 10-digit mobile number';
     }
-    
+
     // Validate terms and conditions
     if (!_termsAccepted) {
       return 'Please accept the terms and conditions to continue';
     }
-    
+
     return null;
   }
 
   void _addPassenger() {
     if (_passengerList.length >= 6) return; // Safety check
-    
+
     setState(() {
       _passengerList.add({});
       _nameControllers.add(TextEditingController());
@@ -154,6 +265,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     }
     _emailController.dispose();
     _phoneController.dispose();
+    _gstNumberController.dispose();
+    _gstCompanyNameController.dispose();
     super.dispose();
   }
 
@@ -290,11 +403,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 Row(
                                   children: [
                                     _stationTextMarquee(widget.originName,
-                                        fontWeight: FontWeight.bold, fontSize: 15),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15),
                                     Icon(Icons.arrow_forward,
                                         color: Color(0xFF7C3AED), size: 20),
                                     _stationTextMarquee(widget.destinationName,
-                                        fontWeight: FontWeight.bold, fontSize: 15),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15),
                                   ],
                                 ),
                               ],
@@ -452,7 +567,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         children: [
                           TextFormField(
                             controller: _nameControllers[index],
-                            style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                            style: TextStyle(
+                                color: Color(0xFF222222),
+                                fontFamily: 'ProductSans'),
                             decoration: InputDecoration(
                               labelText: 'Full Name',
                               labelStyle: TextStyle(
@@ -480,7 +597,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _ageControllers[index],
-                                  style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                                  style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans'),
                                   decoration: InputDecoration(
                                     labelText: 'Age',
                                     labelStyle: TextStyle(
@@ -508,7 +627,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   value: _idTypeValues[index],
-                                  style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                                  style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans'),
                                   onChanged: (v) {
                                     setState(() {
                                       _idTypeValues[index] = v ?? 'Aadhar';
@@ -550,7 +671,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   value: _genderValues[index],
-                                  style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                                  style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans'),
                                   onChanged: (v) {
                                     setState(() {
                                       _genderValues[index] = v ?? 'Male';
@@ -589,7 +712,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           SizedBox(height: 10),
                           TextFormField(
                             controller: _idNumberControllers[index],
-                            style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                            style: TextStyle(
+                                color: Color(0xFF222222),
+                                fontFamily: 'ProductSans'),
                             decoration: InputDecoration(
                               labelText: 'ID Number',
                               labelStyle: TextStyle(
@@ -615,9 +740,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           Row(
                             children: [
                               Checkbox(
-                                value: _ageControllers[index].text.isNotEmpty 
-                                  ? (int.tryParse(_ageControllers[index].text) ?? 0) >= 60 
-                                  : false,
+                                value: _ageControllers[index].text.isNotEmpty
+                                    ? (int.tryParse(
+                                                _ageControllers[index].text) ??
+                                            0) >=
+                                        60
+                                    : false,
                                 onChanged: (value) {
                                   setState(() {
                                     if (value == true) {
@@ -634,20 +762,22 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               ),
                               Text('Senior Citizen (60+)',
                                   style: TextStyle(
-                                    fontFamily: 'ProductSans', 
+                                    fontFamily: 'ProductSans',
                                     color: Color(0xFF222222),
                                     fontSize: 14,
-                                  )
-                              ),
+                                  )),
                             ],
                           ),
                           Row(
                             children: [
                               Checkbox(
-                                value: (_favouritePassengers.length > index ? _favouritePassengers[index] : false),
+                                value: (_favouritePassengers.length > index
+                                    ? _favouritePassengers[index]
+                                    : false),
                                 onChanged: (v) {
                                   setState(() {
-                                    while (_favouritePassengers.length <= index) {
+                                    while (
+                                        _favouritePassengers.length <= index) {
                                       _favouritePassengers.add(false);
                                     }
                                     if (index < _favouritePassengers.length) {
@@ -657,7 +787,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 },
                               ),
                               Text('Add to Passenger List - For Tatkal Mode',
-                                  style: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF222222))),
+                                  style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      color: Color(0xFF222222))),
                             ],
                           ),
                         ],
@@ -667,7 +799,272 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                 },
               ),
               SizedBox(height: 16),
-              // Add Passenger Button - Single implementation
+
+              // Saved Passengers Section
+              // --- SAVED PASSENGERS SECTION ---
+              if (_isLoadingSavedPassengers)
+                Container(
+                  margin: EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                      ),
+                    ),
+                  ),
+                )
+              else if (_savedPassengers.isEmpty)
+                Container(
+                  margin: EdgeInsets.only(bottom: 18),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 18.0),
+                    child: Center(
+                      child: Text(
+                        'No favourite passenger stored',
+                        style: TextStyle(
+                          fontFamily: 'ProductSans',
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  margin: EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(18),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Saved Passengers',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7C3AED),
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (!_isLoadingSavedPassengers)
+                              IconButton(
+                                icon: Icon(Icons.refresh,
+                                    color: Color(0xFF7C3AED)),
+                                onPressed: _loadSavedPassengers,
+                                tooltip: 'Refresh saved passengers',
+                              ),
+                          ],
+                        ),
+                      ),
+                      _isLoadingSavedPassengers
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF7C3AED)),
+                                ),
+                              ),
+                            )
+                          : _savedPassengers.isEmpty
+                              ? Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: Text(
+                                      'No saved passengers found',
+                                      style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  height: 150,
+                                  padding:
+                                      EdgeInsets.only(bottom: 16, left: 16),
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _savedPassengers.length,
+                                    itemBuilder: (context, index) {
+                                      final passenger = _savedPassengers[index];
+                                      return Container(
+                                        width: 220,
+                                        margin: EdgeInsets.only(right: 12),
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFF3E8FF),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: Color(0xFF7C3AED),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Stack(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.all(14),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.person,
+                                                        color:
+                                                            Color(0xFF7C3AED),
+                                                        size: 18,
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: Text(
+                                                          passenger['name'] ??
+                                                              '',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'ProductSans',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 15,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.info_outline,
+                                                        color: Colors.grey[600],
+                                                        size: 16,
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text(
+                                                        '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'ProductSans',
+                                                          fontSize: 14,
+                                                          color:
+                                                              Colors.grey[800],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.badge_outlined,
+                                                        color: Colors.grey[600],
+                                                        size: 16,
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'ProductSans',
+                                                            fontSize: 14,
+                                                            color: Colors
+                                                                .grey[800],
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 12),
+                                                  Expanded(
+                                                    child: Align(
+                                                      alignment: Alignment
+                                                          .bottomCenter,
+                                                      child: ElevatedButton(
+                                                        onPressed: () =>
+                                                            _useSavedPassenger(
+                                                                passenger),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Color(0xFF7C3AED),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      12),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          'Use This Passenger',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'ProductSans',
+                                                            fontSize: 13,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                    ],
+                  ),
+                ),
+
               SizedBox(height: 24),
               // Add Passenger Button
               Container(
@@ -676,39 +1073,46 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _passengerList.length >= 6 ? null : _addPassenger,
+                    onPressed:
+                        _passengerList.length >= 6 ? null : _addPassenger,
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all(RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       )),
                       padding: MaterialStateProperty.all(EdgeInsets.zero),
                       elevation: MaterialStateProperty.all(0),
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                          (Set<MaterialState> states) {
                         if (states.contains(MaterialState.disabled)) {
                           return Colors.grey[300]!;
                         }
                         return Color(0xFF7C3AED);
                       }),
-                      overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.1)),
+                      overlayColor: MaterialStateProperty.all(
+                          Color(0xFF9F7AEA).withOpacity(0.1)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.person_add_rounded,
-                          color: _passengerList.length >= 6 ? Colors.grey[600] : Colors.white,
+                          color: _passengerList.length >= 6
+                              ? Colors.grey[600]
+                              : Colors.white,
                           size: 20,
                         ),
                         SizedBox(width: 10),
                         Text(
-                          _passengerList.length >= 6 
-                              ? 'Maximum 6 passengers' 
+                          _passengerList.length >= 6
+                              ? 'Maximum 6 passengers'
                               : 'Add Passenger (${_passengerList.length}/6)',
                           style: TextStyle(
                             fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: _passengerList.length >= 6 ? Colors.grey[600] : Colors.white,
+                            color: _passengerList.length >= 6
+                                ? Colors.grey[600]
+                                : Colors.white,
                           ),
                         ),
                       ],
@@ -755,7 +1159,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     children: [
                       TextFormField(
                         controller: _emailController,
-                        style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                        style: TextStyle(
+                            color: Color(0xFF222222),
+                            fontFamily: 'ProductSans'),
                         decoration: InputDecoration(
                           labelText: 'Email (for ticket & alerts)',
                           labelStyle: TextStyle(
@@ -781,7 +1187,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       SizedBox(height: 10),
                       TextFormField(
                         controller: _phoneController,
-                        style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                        style: TextStyle(
+                            color: Color(0xFF222222),
+                            fontFamily: 'ProductSans'),
                         decoration: InputDecoration(
                           labelText: 'Mobile Number',
                           labelStyle: TextStyle(
@@ -808,7 +1216,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ),
                 ),
               ),
-              
+
               // Additional Preferences Section
               Container(
                 margin: EdgeInsets.only(bottom: 18),
@@ -824,12 +1232,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ],
                 ),
                 child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(context)
+                      .copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
-                    tilePadding: EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-                    childrenPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    tilePadding:
+                        EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                    childrenPadding:
+                        EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    collapsedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                     backgroundColor: Colors.white,
                     title: Text(
                       'Additional Preferences',
@@ -849,10 +1262,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Theme(
-                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
-                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            tilePadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             title: Text(
                               'Travel Insurance',
                               style: TextStyle(
@@ -866,12 +1282,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               _optForInsurance ? 'Selected: Yes' : 'Optional',
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
-                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[600],
+                                color: _optForInsurance
+                                    ? Color(0xFF7C3AED)
+                                    : Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
-                              _showTravelInsurance ? Icons.expand_less : Icons.expand_more,
+                              _showTravelInsurance
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
                               color: Color(0xFF7C3AED),
                             ),
                             onExpansionChanged: (bool expanded) {
@@ -893,7 +1313,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   ),
                                   SizedBox(height: 16),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
@@ -903,20 +1324,28 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                             });
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: _optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            backgroundColor: _optForInsurance
+                                                ? Color(0xFF7C3AED)
+                                                : Color(0xFFF7F7FA),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               side: BorderSide(
-                                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                color: _optForInsurance
+                                                    ? Color(0xFF7C3AED)
+                                                    : Colors.grey[300]!,
                                                 width: 1,
                                               ),
                                             ),
-                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10),
                                           ),
                                           child: Text(
                                             'Yes, I want insurance',
                                             style: TextStyle(
-                                              color: _optForInsurance ? Colors.white : Colors.grey[700],
+                                              color: _optForInsurance
+                                                  ? Colors.white
+                                                  : Colors.grey[700],
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 12,
@@ -933,20 +1362,28 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                             });
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: !_optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            backgroundColor: !_optForInsurance
+                                                ? Color(0xFF7C3AED)
+                                                : Color(0xFFF7F7FA),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               side: BorderSide(
-                                                color: !_optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                color: !_optForInsurance
+                                                    ? Color(0xFF7C3AED)
+                                                    : Colors.grey[300]!,
                                                 width: 1,
                                               ),
                                             ),
-                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10),
                                           ),
                                           child: Text(
                                             'No, thanks',
                                             style: TextStyle(
-                                              color: !_optForInsurance ? Color(0xFF7C3AED) : Colors.grey[700],
+                                              color: !_optForInsurance
+                                                  ? Color(0xFF7C3AED)
+                                                  : Colors.grey[700],
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 12,
@@ -962,7 +1399,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           ),
                         ),
                       ),
-                      
+
                       // GST Details Option
                       Container(
                         decoration: BoxDecoration(
@@ -970,10 +1407,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Theme(
-                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
-                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            tilePadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             title: Text(
                               'GST Details (Optional)',
                               style: TextStyle(
@@ -984,15 +1424,21 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              _gstNumberController.text.isNotEmpty ? 'GSTIN: ${_gstNumberController.text}' : 'Add GST details for business travel',
+                              _gstNumberController.text.isNotEmpty
+                                  ? 'GSTIN: ${_gstNumberController.text}'
+                                  : 'Add GST details for business travel',
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
-                                color: _gstNumberController.text.isNotEmpty ? Color(0xFF7C3AED) : Colors.grey[600],
+                                color: _gstNumberController.text.isNotEmpty
+                                    ? Color(0xFF7C3AED)
+                                    : Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
-                              _showGstDetails ? Icons.expand_less : Icons.expand_more,
+                              _showGstDetails
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
                               color: Color(0xFF7C3AED),
                             ),
                             onExpansionChanged: (bool expanded) {
@@ -1005,7 +1451,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 children: [
                                   TextFormField(
                                     controller: _gstNumberController,
-                                    style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                                    style: TextStyle(
+                                        color: Color(0xFF222222),
+                                        fontFamily: 'ProductSans'),
                                     decoration: InputDecoration(
                                       labelText: 'GSTIN',
                                       hintText: '22AAAAA0000A1Z5',
@@ -1021,13 +1469,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
                                     ),
                                   ),
                                   SizedBox(height: 12),
                                   TextFormField(
                                     controller: _gstCompanyNameController,
-                                    style: TextStyle(color: Color(0xFF222222), fontFamily: 'ProductSans'),
+                                    style: TextStyle(
+                                        color: Color(0xFF222222),
+                                        fontFamily: 'ProductSans'),
                                     decoration: InputDecoration(
                                       labelText: 'Company Name',
                                       labelStyle: TextStyle(
@@ -1042,7 +1493,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
                                     ),
                                   ),
                                 ],
@@ -1055,7 +1507,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ),
                 ),
               ),
-              
+
               // Terms and Conditions Checkbox
               Container(
                 margin: EdgeInsets.only(bottom: 18),
@@ -1101,7 +1553,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               height: 1.4,
                             ),
                             children: [
-                              TextSpan(text: 'By proceeding, I confirm that I have read and agree to the '),
+                              TextSpan(
+                                  text:
+                                      'By proceeding, I confirm that I have read and agree to the '),
                               TextSpan(
                                 text: 'Terms of Service',
                                 style: TextStyle(
@@ -1137,7 +1591,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ],
                 ),
               ),
-              
+
               SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -1149,12 +1603,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     )),
                     padding: MaterialStateProperty.all(EdgeInsets.zero),
                     elevation: MaterialStateProperty.all(0),
-                    backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
                       return Colors.transparent;
                     }),
-                    overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
+                    overlayColor: MaterialStateProperty.all(
+                        Color(0xFF9F7AEA).withOpacity(0.08)),
                   ),
-                  onPressed: () {
+                   onPressed: () async {
                     final error = _validateAllFields();
                     if (error != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1165,7 +1621,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'ProductSans',
                               )),
-                          backgroundColor: Color(0xFFF3E8FF), // Light purple/white
+                          backgroundColor:
+                              Color(0xFFF3E8FF), // Light purple/white
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1175,18 +1632,74 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       );
                       return;
                     }
-                    // Gather passenger data
-                    final passengers = List.generate(_passengerList.length, (i) => {
-                      'name': _nameControllers[i].text.trim(),
-                      'age': _ageControllers[i].text.trim(),
-                      'gender': _genderValues[i],
-                      'idType': _idTypeValues[i],
-                      'idNumber': _idNumberControllers[i].text.trim(),
-                      'carriage': '-', // Placeholder, update if carriage info is available
-                      'seat': '-', // Placeholder, update if seat info is available
-                    });
+
+                    // Gather all passengers for navigation, and only checked for saving
+                    final passengers = <Map<String, dynamic>>[];
+                    final passengersToSave = <Map<String, dynamic>>[];
+                    for (int i = 0; i < _passengerList.length; i++) {
+                      final passengerMap = {
+                        'name': _nameControllers[i].text.trim(),
+                        'age': int.tryParse(_ageControllers[i].text.trim()) ?? 0,
+                        'gender': _genderValues[i],
+                        'id_type': _idTypeValues[i],
+                        'id_number': _idNumberControllers[i].text.trim(),
+                        'is_senior': (int.tryParse(_ageControllers[i].text.trim()) ?? 0) >= 60,
+                        'carriage': '-', // Placeholder
+                        'seat': '-', // Placeholder
+                      };
+                      passengers.add(passengerMap);
+                      if (_favouritePassengers.length > i && _favouritePassengers[i]) {
+                        passengersToSave.add(passengerMap);
+                      }
+                    }
+
+                    if (passengersToSave.isNotEmpty && _passengerService != null) {
+                      try {
+                        // Ensure network call for each passenger
+                        await _passengerService!.saveMultiplePassengers(passengersToSave);
+                        // Optionally reload saved passengers after save
+                        await _loadSavedPassengers();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Selected passengers saved to your list!',
+                                style: TextStyle(
+                                  color: Color(0xFF388E3C),
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'ProductSans',
+                                )),
+                            backgroundColor: Color(0xFFE8F5E9),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        );
+                      } catch (e) {
+                        print('Error saving passengers: $e');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to save passengers',
+                                style: TextStyle(
+                                  color: Color(0xFFD32F2F),
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'ProductSans',
+                                )),
+                            backgroundColor: Color(0xFFF3E8FF),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        );
+                      }
+                    }
+
                     // Gather contact details
-                    final contactName = _nameControllers.isNotEmpty ? _nameControllers[0].text.trim() : '';
+                    final contactName = _nameControllers.isNotEmpty
+                        ? _nameControllers[0].text.trim()
+                        : '';
                     final contactEmail = _emailController.text.trim();
                     final contactPhone = _phoneController.text.trim();
                     Navigator.push(
@@ -1196,8 +1709,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           train: widget.train,
                           originName: widget.originName,
                           destinationName: widget.destinationName,
-                          depTime: (widget.train['schedule'] != null && widget.train['schedule'].isNotEmpty) ? (widget.train['schedule'].first['departure'] ?? '') : '',
-                          arrTime: (widget.train['schedule'] != null && widget.train['schedule'].isNotEmpty) ? (widget.train['schedule'].last['arrival'] ?? '') : '',
+                          depTime: (widget.train['schedule'] != null &&
+                                  widget.train['schedule'].isNotEmpty)
+                              ? (widget.train['schedule'].first['departure'] ??
+                                  '')
+                              : '',
+                          arrTime: (widget.train['schedule'] != null &&
+                                  widget.train['schedule'].isNotEmpty)
+                              ? (widget.train['schedule'].last['arrival'] ?? '')
+                              : '',
                           date: widget.date,
                           selectedClass: widget.selectedClass,
                           price: widget.price,
@@ -1212,16 +1732,21 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)]),
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
-                    child: Text('Continue',
+                    child: Text(
+                      'Continue',
                       style: TextStyle(
                         fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.white)),
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
