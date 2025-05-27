@@ -103,14 +103,45 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   void _loadUserProfileData() {
     try {
       final userProfileJson = _prefs.getString('user_profile');
+      print('Loading user profile: $userProfileJson');
+      
       if (userProfileJson != null && userProfileJson.isNotEmpty) {
         final userProfile = jsonDecode(userProfileJson);
-        // Pre-populate email and phone if available
+        
+        // Check for email in different possible fields
         if (userProfile.containsKey('email') && userProfile['email'] != null) {
-          _emailController.text = userProfile['email'];
+          setState(() {
+            _emailController.text = userProfile['email'];
+          });
+          print('Pre-populated email: ${userProfile['email']}');
+        } else if (userProfile.containsKey('Email') && userProfile['Email'] != null) {
+          setState(() {
+            _emailController.text = userProfile['Email'];
+          });
+          print('Pre-populated email: ${userProfile['Email']}');
         }
+        
+        // Check for phone in different possible fields
         if (userProfile.containsKey('phone') && userProfile['phone'] != null) {
-          _phoneController.text = userProfile['phone'];
+          setState(() {
+            _phoneController.text = userProfile['phone'];
+          });
+          print('Pre-populated phone: ${userProfile['phone']}');
+        } else if (userProfile.containsKey('Phone') && userProfile['Phone'] != null) {
+          setState(() {
+            _phoneController.text = userProfile['Phone'];
+          });
+          print('Pre-populated phone: ${userProfile['Phone']}');
+        } else if (userProfile.containsKey('mobile') && userProfile['mobile'] != null) {
+          setState(() {
+            _phoneController.text = userProfile['mobile'];
+          });
+          print('Pre-populated phone: ${userProfile['mobile']}');
+        } else if (userProfile.containsKey('Mobile') && userProfile['Mobile'] != null) {
+          setState(() {
+            _phoneController.text = userProfile['Mobile'];
+          });
+          print('Pre-populated phone: ${userProfile['Mobile']}');
         }
       }
     } catch (e) {
