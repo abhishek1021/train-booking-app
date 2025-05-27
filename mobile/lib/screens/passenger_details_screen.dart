@@ -64,6 +64,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   PassengerService? _passengerService;
   List<dynamic> _savedPassengers = [];
   bool _isLoadingSavedPassengers = false;
+  
+  // Track which saved passengers are already used in passenger list
+  // Key is ID number, value is true if used
+  Map<String, bool> _usedSavedPassengers = {};
+  
+  // Track expansion state of passenger accordions
+  List<bool> _customTileExpanded = [];
 
   @override
   void initState() {
@@ -76,13 +83,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _genderValues = [];
     _favouritePassengers = [];
     _addToPassengerList = []; // Initialize _addToPassengerList as an empty list
+    _customTileExpanded = []; // Initialize expansion state list
     _savedPassengers = []; // Initialize saved passengers list
     _isLoadingSavedPassengers = true; // Set loading state to true
-
-    // Initialize with the number of passengers from the widget
-    for (int i = 0; i < widget.passengers; i++) {
-      _addPassenger();
-    }
 
     // Initialize SharedPreferences first, then passenger service
     _initSharedPreferences();
@@ -195,11 +198,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   // Use a saved passenger
   void _useSavedPassenger(Map<String, dynamic> passenger) {
     if (_passengerList.length >= 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Maximum 6 passengers allowed'),
-          backgroundColor: Colors.red,
-        ),
+      _showCustomSnackBar(
+        message: 'Maximum 6 passengers allowed',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
       );
       return;
     }
@@ -210,18 +212,21 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final idType = passenger['id_type'] ?? 'Aadhar';
     final idNumber = passenger['id_number'] ?? '';
     
-    // Find the next available passenger index
-    int targetIndex = 0;
-    
-    // If there are existing passengers, place the new one at the next position
-    if (_passengerList.isNotEmpty) {
-      // If we're replacing an existing passenger, use its index
-      // Otherwise add to the end
-      targetIndex = _passengerList.length;
+    // Check if this passenger is already in use
+    if (_usedSavedPassengers.containsKey(idNumber) && _usedSavedPassengers[idNumber] == true) {
+      _showCustomSnackBar(
+        message: 'This passenger is already in your list',
+        icon: Icons.warning,
+        backgroundColor: Colors.orange,
+      );
+      return;
     }
     
+    // Find the next available passenger index - always populate in order
+    int targetIndex = _passengerList.length;
+    
     setState(() {
-      // If we're adding to the end
+      // Add the passenger to the list
       if (targetIndex >= _passengerList.length) {
         _nameControllers.add(TextEditingController(text: name));
         _ageControllers.add(TextEditingController(text: age));
@@ -230,6 +235,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         _genderValues.add(gender);
         _favouritePassengers.add(true); // Mark as a favorite since it came from saved list
         _addToPassengerList.add(false); // Disable checkbox since it's already saved
+        _customTileExpanded.add(true); // Expand the new passenger accordion
         
         _passengerList.add({
           'name': name,
@@ -239,43 +245,64 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           'id_number': idNumber,
           'is_senior': (int.tryParse(age) ?? 0) >= 60,
           'from_saved_list': true, // Mark that this passenger came from saved list
+          'saved_passenger_index': _findSavedPassengerIndex(idNumber), // Store the index for reference
         });
-      } else {
-        // If we're replacing an existing passenger
-        _nameControllers[targetIndex].text = name;
-        _ageControllers[targetIndex].text = age;
-        _idNumberControllers[targetIndex].text = idNumber;
-        _idTypeValues[targetIndex] = idType;
-        _genderValues[targetIndex] = gender;
-        _favouritePassengers[targetIndex] = true; // Mark as a favorite
-        _addToPassengerList[targetIndex] = false; // Disable checkbox
-        
-        _passengerList[targetIndex] = {
-          'name': name,
-          'age': age,
-          'gender': gender,
-          'id_type': idType,
-          'id_number': idNumber,
-          'is_senior': (int.tryParse(age) ?? 0) >= 60,
-          'from_saved_list': true, // Mark that this passenger came from saved list
-        };
       }
+      
+      // Mark this passenger as used
+      _usedSavedPassengers[idNumber] = true;
     });
     
-    // Show a confirmation message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Passenger details applied to Passenger ${targetIndex + 1}'),
-        backgroundColor: Color(0xFF7C3AED),
-        duration: Duration(seconds: 2),
-      ),
+    // Show a custom confirmation message
+    _showCustomSnackBar(
+      message: 'Passenger ${name} added as Passenger ${targetIndex + 1}',
+      icon: Icons.person_add,
+      backgroundColor: Color(0xFF7C3AED),
     );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $name to passengers'),
-        backgroundColor: Color(0xFF7C3AED),
-      ),
+  }
+  
+  // Find the index of a saved passenger by ID number
+  int _findSavedPassengerIndex(String idNumber) {
+    for (int i = 0; i < _savedPassengers.length; i++) {
+      if (_savedPassengers[i]['id_number'] == idNumber) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  
+  // Remove a passenger from the list
+  void _removePassenger(int index) {
+    if (index < 0 || index >= _passengerList.length) return;
+    
+    // Get the passenger's ID number before removing
+    final idNumber = _idNumberControllers[index].text;
+    final fromSavedList = _passengerList[index].containsKey('from_saved_list') && 
+                         _passengerList[index]['from_saved_list'] == true;
+    
+    setState(() {
+      // Remove the passenger from the list
+      _nameControllers.removeAt(index);
+      _ageControllers.removeAt(index);
+      _idNumberControllers.removeAt(index);
+      _idTypeValues.removeAt(index);
+      _genderValues.removeAt(index);
+      _favouritePassengers.removeAt(index);
+      _addToPassengerList.removeAt(index);
+      _customTileExpanded.removeAt(index); // Remove expansion state
+      
+      // If the passenger came from saved list, mark it as available again
+      if (fromSavedList && idNumber.isNotEmpty) {
+        _usedSavedPassengers[idNumber] = false;
+      }
+      
+      _passengerList.removeAt(index);
+    });
+    
+    _showCustomSnackBar(
+      message: 'Passenger removed',
+      icon: Icons.person_remove,
+      backgroundColor: Color(0xFF7C3AED),
     );
   }
 
@@ -304,6 +331,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       // PAN format: AAAAA1234A (5 letters, 4 numbers, 1 letter)
       if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(idNumber.toUpperCase())) {
         return 'Invalid PAN format';
+      }
+    } else if (idType == 'Driving License') {
+      // Driving License should be between 13-16 characters
+      if (idNumber.length < 13 || idNumber.length > 16) {
+        return 'Driving License must be 13-16 characters';
+      }
+      
+      // Driving License format: Usually alphanumeric
+      // Format varies by state but generally follows a pattern
+      // Most have 2 letters (state code) + 2 digits (RTO code) + 10 digits (unique number)
+      if (!RegExp(r'^[A-Z0-9]{13,16}$').hasMatch(idNumber.toUpperCase())) {
+        return 'Invalid Driving License format';
       }
     }
     
@@ -374,8 +413,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   void _addPassenger() {
-    if (_passengerList.length >= 6) return; // Safety check
-
     setState(() {
       // Add a new passenger to the list
       final newPassenger = {
@@ -394,8 +431,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       _genderValues.add('Male');
       _favouritePassengers.add(false);
       _addToPassengerList.add(false); // Default to not saving
+      _customTileExpanded.add(true); // Default to expanded for new passengers
     });
   }
+
+  // This is a duplicate initState method that was added by mistake - removing it
 
   @override
   void dispose() {
@@ -413,6 +453,41 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _gstNumberController.dispose();
     _gstCompanyNameController.dispose();
     super.dispose();
+  }
+
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: EdgeInsets.all(10),
+    );
+    
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Widget _stationTextMarquee(String text,
@@ -715,17 +790,24 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               padding: EdgeInsets.symmetric(horizontal: 12.0),
                               itemBuilder: (context, index) {
                                 final passenger = _savedPassengers[index];
+                                // Check if this passenger is already used in the passenger list
+                                final idNumber = passenger['id_number'] ?? '';
+                                final isUsed = _usedSavedPassengers.containsKey(idNumber) && 
+                                              _usedSavedPassengers[idNumber] == true;
+                                
                                 return GestureDetector(
-                                  onTap: () => _useSavedPassenger(passenger),
+                                  // Only allow tapping if the passenger is not already used
+                                  onTap: isUsed ? null : () => _useSavedPassenger(passenger),
                                   child: Container(
                                     width: 200,
                                     margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
                                     padding: EdgeInsets.all(12.0),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      // Gray out the card if already used
+                                      color: isUsed ? Color(0xFFF3F4F6) : Colors.white,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Color(0xFFE5E7EB)),
-                                      boxShadow: [
+                                      border: Border.all(color: isUsed ? Color(0xFFD1D5DB) : Color(0xFFE5E7EB)),
+                                      boxShadow: isUsed ? [] : [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.05),
                                           blurRadius: 4,
@@ -771,15 +853,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: Color(0xFFF3E8FF),
+                                            color: isUsed ? Color(0xFFE5E7EB) : Color(0xFFF3E8FF),
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Text(
-                                            'Tap to use',
+                                            isUsed ? 'Already used' : 'Tap to use',
                                             style: TextStyle(
                                               fontFamily: 'ProductSans',
+                                              color: isUsed ? Color(0xFF6B7280) : Color(0xFF7C3AED),
                                               fontSize: 10,
-                                              color: Color(0xFF7C3AED),
                                             ),
                                           ),
                                         ),
@@ -827,38 +909,41 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             borderRadius: BorderRadius.circular(16)),
                         backgroundColor: Colors.white,
                         collapsedBackgroundColor: Colors.white,
-                        title: Text(
-                          'Passenger ${index + 1}',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7C3AED),
-                            fontSize: 16,
-                          ),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Passenger ${index + 1}',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7C3AED),
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
-                        trailing: index > 0
-                            ? IconButton(
-                                icon: Icon(Icons.remove_circle,
-                                    color: Colors.red),
-                                onPressed: () {
-                                  setState(() {
-                                    _passengerList.removeAt(index);
-                                    _nameControllers.removeAt(index);
-                                    _ageControllers.removeAt(index);
-                                    _idNumberControllers.removeAt(index);
-                                    _idTypeValues.removeAt(index);
-                                    _genderValues.removeAt(index);
-                                    if (_favouritePassengers.length > index) {
-                                      _favouritePassengers.removeAt(index);
-                                    }
-                                    // Always remove from _addToPassengerList to keep arrays in sync
-                                    if (index < _addToPassengerList.length) {
-                                      _addToPassengerList.removeAt(index);
-                                    }
-                                  });
-                                },
-                              )
-                            : null,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Remove button - call the _removePassenger method
+                            IconButton(
+                              icon: Icon(Icons.remove_circle, color: Colors.red),
+                              onPressed: () => _removePassenger(index),
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints(),
+                              splashRadius: 20,
+                              tooltip: 'Remove passenger',
+                            ),
+                            Icon(_customTileExpanded[index] ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
+                                 color: Color(0xFF7C3AED)),
+                          ],
+                        ),
+                        onExpansionChanged: (expanded) {
+                          setState(() {
+                            _customTileExpanded[index] = expanded;
+                          });
+                        },
                         children: [
                           TextFormField(
                             controller: _nameControllers[index],
@@ -1034,9 +1119,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   ? '12-digit Aadhar number' 
                                   : _idTypeValues[index] == 'PAN' 
                                       ? '10-character PAN number' 
-                                      : 'Enter ID number',
+                                      : _idTypeValues[index] == 'Driving License'
+                                          ? '13-16 character Driving License'
+                                          : 'Enter ID number',
                               // Show error message if validation fails
                               errorText: _validateIdNumber(_idNumberControllers[index].text, _idTypeValues[index]),
+                              // Use darker error style
+                              errorStyle: TextStyle(
+                                color: Colors.red[900],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                fontFamily: 'ProductSans',
+                              ),
                             ),
                             // Auto-capitalize for PAN card
                             textCapitalization: _idTypeValues[index] == 'PAN' 
