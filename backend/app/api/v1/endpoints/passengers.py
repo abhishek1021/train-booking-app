@@ -7,28 +7,10 @@ import json
 from boto3.dynamodb.conditions import Key
 from pydantic import BaseModel
 
+# Import schemas from app.schemas.passenger
+from app.schemas.passenger import PassengerBase, PassengerCreate, Passenger
+
 router = APIRouter()
-
-# Pydantic models
-class PassengerBase(BaseModel):
-    name: str
-    age: int
-    gender: str
-    id_type: str
-    id_number: str
-    is_senior: bool = False
-
-class PassengerCreate(PassengerBase):
-    pass
-
-class Passenger(PassengerBase):
-    id: str
-    user_id: str
-    created_at: str
-    updated_at: str
-
-    class Config:
-        from_attributes = True
 
 # Table name for passengers
 import boto3
