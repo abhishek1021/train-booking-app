@@ -67,15 +67,12 @@ async def create_passenger(
         )
 
 @router.get("/passengers/", response_model=List[Passenger])
-async def get_passengers(
-    current_user: dict = Depends(get_current_user),
-    table=Depends(get_passengers_table)
-):
-    """Get all favorite passengers for the current user"""
+async def get_passengers(user_id: str):
+    """Get all favorite passengers for the specified user_id"""
     try:
-        response = table.query(
+        response = passengers_table.query(
             IndexName='user_id-index',  # Make sure to create this GSI in DynamoDB
-            KeyConditionExpression=Key('user_id').eq(current_user['id'])
+            KeyConditionExpression=Key('user_id').eq(user_id)
         )
         return response.get('Items', [])
     except Exception as e:
@@ -87,20 +84,19 @@ async def get_passengers(
 @router.delete("/passengers/{passenger_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_passenger(
     passenger_id: str,
-    current_user: dict = Depends(get_current_user),
-    table=Depends(get_passengers_table)
+    user_id: str
 ):
     """Delete a favorite passenger"""
     try:
         # First verify the passenger belongs to the user
-        response = table.get_item(Key={'id': passenger_id})
+        response = passengers_table.get_item(Key={'id': passenger_id})
         if 'Item' not in response:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Passenger not found")
         
-        if response['Item']['user_id'] != current_user['id']:
+        if response['Item']['user_id'] != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this passenger")
         
-        table.delete_item(Key={'id': passenger_id})
+        passengers_table.delete_item(Key={'id': passenger_id})
         return None
     except HTTPException:
         raise
