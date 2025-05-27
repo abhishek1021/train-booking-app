@@ -76,45 +76,59 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _genderValues = [];
     _favouritePassengers = [];
     _addToPassengerList = []; // Initialize _addToPassengerList as an empty list
+    _savedPassengers = []; // Initialize saved passengers list
+    _isLoadingSavedPassengers = true; // Set loading state to true
 
     // Initialize with the number of passengers from the widget
     for (int i = 0; i < widget.passengers; i++) {
       _addPassenger();
     }
 
+    // Initialize SharedPreferences first, then passenger service
     _initSharedPreferences();
-    _initPassengerService();
   }
 
   // Initialize SharedPreferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
+    // Load user profile data for email and phone
+    _loadUserProfileData();
+    // Initialize passenger service after SharedPreferences is initialized
+    await _initPassengerService();
+    // Then load saved passengers
+    _loadSavedPassengers();
+  }
+  
+  // Load user profile data to pre-populate email and phone fields
+  void _loadUserProfileData() {
+    try {
+      final userProfileJson = _prefs.getString('user_profile');
+      if (userProfileJson != null && userProfileJson.isNotEmpty) {
+        final userProfile = jsonDecode(userProfileJson);
+        // Pre-populate email and phone if available
+        if (userProfile.containsKey('email') && userProfile['email'] != null) {
+          _emailController.text = userProfile['email'];
+        }
+        if (userProfile.containsKey('phone') && userProfile['phone'] != null) {
+          _phoneController.text = userProfile['phone'];
+        }
+      }
+    } catch (e) {
+      print('Error loading user profile data: $e');
+    }
   }
 
   // Initialize passenger service
   Future<void> _initPassengerService() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      // Check if user object is present in prefs (logged in)
-      final userJson = prefs.getString('user');
-      if (userJson != null && userJson.isNotEmpty) {
+    if (_prefs != null) {
+      _passengerService = PassengerService(_prefs);
+      if (mounted) {
         setState(() {
-          _passengerService = PassengerService(prefs);
           _isLoadingSavedPassengers = true;
         });
-        await _loadSavedPassengers();
-      } else {
-        setState(() {
-          _savedPassengers = [];
-          _isLoadingSavedPassengers = false;
-        });
       }
-    } catch (e) {
-      print('Error initializing passenger service: $e');
-      setState(() {
-        _savedPassengers = [];
-        _isLoadingSavedPassengers = false;
-      });
+    } else {
+      print('Error: SharedPreferences not initialized');
     }
   }
 
@@ -122,8 +136,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   Future<void> _loadSavedPassengers() async {
     if (_passengerService == null) return;
 
+    // Set loading state
+    setState(() {
+      _isLoadingSavedPassengers = true;
+    });
+
     try {
       final passengers = await _passengerService!.getFavoritePassengers();
+      print('Loaded ${passengers.length} saved passengers');
 
       if (mounted) {
         setState(() {
@@ -134,12 +154,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     } catch (e) {
       print('Error loading saved passengers: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load saved passengers'),
-            backgroundColor: Colors.red,
-          ),
-        );
         setState(() {
           _isLoadingSavedPassengers = false;
         });
@@ -524,6 +538,152 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ),
                 ),
               ),
+              
+              // Saved Passengers Horizontal Scroll
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Saved Passengers',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
+                          if (!_isLoadingSavedPassengers)
+                            IconButton(
+                              icon: Icon(Icons.refresh, color: Color(0xFF7C3AED)),
+                              onPressed: _loadSavedPassengers,
+                              tooltip: 'Refresh saved passengers',
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints(),
+                              splashRadius: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                    _isLoadingSavedPassengers
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+                          ),
+                        )
+                      : _savedPassengers.isEmpty
+                        ? Container(
+                            margin: EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'No favourite passenger stored',
+                                style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontSize: 14,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            height: 130,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _savedPassengers.length,
+                              padding: EdgeInsets.symmetric(horizontal: 12.0),
+                              itemBuilder: (context, index) {
+                                final passenger = _savedPassengers[index];
+                                return GestureDetector(
+                                  onTap: () => _useSavedPassenger(passenger),
+                                  child: Container(
+                                    width: 200,
+                                    margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                                    padding: EdgeInsets.all(12.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Color(0xFFE5E7EB)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          passenger['name'] ?? '',
+                                          style: TextStyle(
+                                            fontFamily: 'ProductSans',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF111827),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
+                                          style: TextStyle(
+                                            fontFamily: 'ProductSans',
+                                            fontSize: 12,
+                                            color: Color(0xFF6B7280),
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
+                                          style: TextStyle(
+                                            fontFamily: 'ProductSans',
+                                            fontSize: 12,
+                                            color: Color(0xFF6B7280),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Spacer(),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF3E8FF),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            'Tap to use',
+                                            style: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontSize: 10,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+              
               // Passenger Details Accordion Section
               ListView.builder(
                 shrinkWrap: true,
@@ -823,273 +983,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   );
                 },
               ),
-              SizedBox(height: 16),
-
-              // Saved Passengers Section
-              // --- SAVED PASSENGERS SECTION ---
-              if (_isLoadingSavedPassengers)
-                Container(
-                  margin: EdgeInsets.only(bottom: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
-                      ),
-                    ),
-                  ),
-                )
-              else if (_savedPassengers.isEmpty)
-                Container(
-                  margin: EdgeInsets.only(bottom: 18),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 18.0),
-                    child: Center(
-                      child: Text(
-                        'No favourite passenger stored',
-                        style: TextStyle(
-                          fontFamily: 'ProductSans',
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  margin: EdgeInsets.only(bottom: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(18),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Saved Passengers',
-                              style: TextStyle(
-                                fontFamily: 'ProductSans',
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7C3AED),
-                                fontSize: 16,
-                              ),
-                            ),
-                            if (!_isLoadingSavedPassengers)
-                              IconButton(
-                                icon: Icon(Icons.refresh,
-                                    color: Color(0xFF7C3AED)),
-                                onPressed: _loadSavedPassengers,
-                                tooltip: 'Refresh saved passengers',
-                              ),
-                          ],
-                        ),
-                      ),
-                      _isLoadingSavedPassengers
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFF7C3AED)),
-                                ),
-                              ),
-                            )
-                          : _savedPassengers.isEmpty
-                              ? Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(
-                                    child: Text(
-                                      'No saved passengers found',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  height: 150,
-                                  padding:
-                                      EdgeInsets.only(bottom: 16, left: 16),
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: _savedPassengers.length,
-                                    itemBuilder: (context, index) {
-                                      final passenger = _savedPassengers[index];
-                                      return Container(
-                                        width: 220,
-                                        margin: EdgeInsets.only(right: 12),
-                                        decoration: BoxDecoration(
-                                          color: Color(0xFFF3E8FF),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: Color(0xFF7C3AED),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.all(14),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.person,
-                                                        color:
-                                                            Color(0xFF7C3AED),
-                                                        size: 18,
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: Text(
-                                                          passenger['name'] ??
-                                                              '',
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                'ProductSans',
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontSize: 15,
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 8),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.info_outline,
-                                                        color: Colors.grey[600],
-                                                        size: 16,
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Text(
-                                                        '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              'ProductSans',
-                                                          fontSize: 14,
-                                                          color:
-                                                              Colors.grey[800],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 8),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.badge_outlined,
-                                                        color: Colors.grey[600],
-                                                        size: 16,
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: Text(
-                                                          '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                'ProductSans',
-                                                            fontSize: 14,
-                                                            color: Colors
-                                                                .grey[800],
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 12),
-                                                  Expanded(
-                                                    child: Align(
-                                                      alignment: Alignment
-                                                          .bottomCenter,
-                                                      child: ElevatedButton(
-                                                        onPressed: () =>
-                                                            _useSavedPassenger(
-                                                                passenger),
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              Color(0xFF7C3AED),
-                                                          padding: EdgeInsets
-                                                              .symmetric(
-                                                                  horizontal:
-                                                                      12),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          'Use This Passenger',
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                'ProductSans',
-                                                            fontSize: 13,
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                    ],
-                  ),
-                ),
-
               SizedBox(height: 24),
               // Add Passenger Button
               Container(

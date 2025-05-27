@@ -9,22 +9,33 @@ class PassengerService {
 
   PassengerService(this._prefs);
 
-  // Get auth token from shared preferences
-  String? get _authToken => _prefs.getString('auth_token');
+  // Get user ID from shared preferences
+  String? get _userId {
+    final userProfileJson = _prefs.getString('user_profile');
+    if (userProfileJson != null && userProfileJson.isNotEmpty) {
+      try {
+        final userProfile = jsonDecode(userProfileJson);
+        return userProfile['UserID'];
+      } catch (e) {
+        print('Error parsing user profile: $e');
+      }
+    }
+    return null;
+  }
 
   // Get all favorite passengers for the current user
   Future<List<dynamic>> getFavoritePassengers() async {
     try {
-      // Return empty list if no auth token
-      if (_authToken == null || _authToken!.isEmpty) {
-        print('No auth token found');
+      // Return empty list if no user ID
+      final userId = _userId;
+      if (userId == null || userId.isEmpty) {
+        print('No user ID found');
         return [];
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/passengers/'),
+        Uri.parse('$_baseUrl/passengers?user_id=$userId'),
         headers: {
-          'Authorization': 'Bearer $_authToken',
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 15));
@@ -61,10 +72,17 @@ class PassengerService {
   // Add a new favorite passenger
   Future<Map<String, dynamic>> addFavoritePassenger(Map<String, dynamic> passenger) async {
     try {
+      // Make sure passenger has user_id
+      if (!passenger.containsKey('user_id')) {
+        final userId = _userId;
+        if (userId != null && userId.isNotEmpty) {
+          passenger['user_id'] = userId;
+        }
+      }
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/passengers/'),
         headers: {
-          'Authorization': 'Bearer $_authToken',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(passenger),
@@ -86,7 +104,7 @@ class PassengerService {
       final response = await http.delete(
         Uri.parse('$_baseUrl/passengers/$passengerId'),
         headers: {
-          'Authorization': 'Bearer $_authToken',
+          'Content-Type': 'application/json',
         },
       );
 
@@ -107,8 +125,9 @@ class PassengerService {
     required String idNumber,
     bool isSenior = false,
   }) async {
-    if (_authToken == null) {
-      throw Exception('User not authenticated');
+    final userId = _userId;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('User ID not found');
     }
 
     final passenger = {
@@ -118,6 +137,7 @@ class PassengerService {
       'id_type': idType,
       'id_number': idNumber,
       'is_senior': isSenior,
+      'user_id': userId,
     };
 
     return await addFavoritePassenger(passenger);
@@ -125,8 +145,9 @@ class PassengerService {
 
   // Save multiple passengers in one go
   Future<List<Map<String, dynamic>>> saveMultiplePassengers(List<Map<String, dynamic>> passengers) async {
-    if (_authToken == null) {
-      throw Exception('User not authenticated');
+    final userId = _userId;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('User ID not found');
     }
     
     List<Map<String, dynamic>> results = [];
