@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/passenger_service.dart';
 import 'review_summary_screen.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../api_constants.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -37,6 +39,7 @@ class PassengerDetailsScreen extends StatefulWidget {
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
+  late SharedPreferences _prefs; // Add SharedPreferences instance
   late List<Map<String, dynamic>> _passengerList;
   late List<TextEditingController> _nameControllers;
   late List<TextEditingController> _ageControllers;
@@ -44,6 +47,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   late List<String> _idTypeValues;
   late List<String> _genderValues;
   late List<bool> _favouritePassengers;
+  late List<bool> _addToPassengerList; // Track which passengers to save
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _gstNumberController = TextEditingController();
@@ -71,14 +75,20 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _idTypeValues = [];
     _genderValues = [];
     _favouritePassengers = [];
+    _addToPassengerList = []; // Initialize _addToPassengerList as an empty list
 
     // Initialize with the number of passengers from the widget
     for (int i = 0; i < widget.passengers; i++) {
       _addPassenger();
     }
 
-    // Initialize passenger service and load saved passengers
+    _initSharedPreferences();
     _initPassengerService();
+  }
+
+  // Initialize SharedPreferences
+  Future<void> _initSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
   }
 
   // Initialize passenger service
@@ -162,6 +172,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       _idTypeValues.add(idType);
       _genderValues.add(gender);
       _favouritePassengers.add(false);
+      _addToPassengerList.add(false); // Default to not saving
 
       _passengerList.add({
         'name': name,
@@ -242,13 +253,23 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (_passengerList.length >= 6) return; // Safety check
 
     setState(() {
-      _passengerList.add({});
+      // Add a new passenger to the list
+      final newPassenger = {
+        'name': '',
+        'age': '',
+        'gender': 'Male',
+        'id_type': 'Aadhar',
+        'id_number': '',
+        'is_senior': false,
+      };
+      _passengerList.add(newPassenger);
       _nameControllers.add(TextEditingController());
       _ageControllers.add(TextEditingController());
       _idNumberControllers.add(TextEditingController());
       _idTypeValues.add('Aadhar');
       _genderValues.add('Male');
       _favouritePassengers.add(false);
+      _addToPassengerList.add(false); // Default to not saving
     });
   }
 
@@ -560,6 +581,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     if (_favouritePassengers.length > index) {
                                       _favouritePassengers.removeAt(index);
                                     }
+                                    // Always remove from _addToPassengerList to keep arrays in sync
+                                    if (index < _addToPassengerList.length) {
+                                      _addToPassengerList.removeAt(index);
+                                    }
                                   });
                                 },
                               )
@@ -771,17 +796,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           Row(
                             children: [
                               Checkbox(
-                                value: (_favouritePassengers.length > index
-                                    ? _favouritePassengers[index]
+                                value: (_addToPassengerList.length > index
+                                    ? _addToPassengerList[index]
                                     : false),
                                 onChanged: (v) {
                                   setState(() {
                                     while (
-                                        _favouritePassengers.length <= index) {
-                                      _favouritePassengers.add(false);
+                                        _addToPassengerList.length <= index) {
+                                      _addToPassengerList.add(false);
                                     }
-                                    if (index < _favouritePassengers.length) {
-                                      _favouritePassengers[index] = v ?? false;
+                                    if (index < _addToPassengerList.length) {
+                                      _addToPassengerList[index] = v ?? false;
                                     }
                                   });
                                 },
@@ -1648,16 +1673,44 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         'seat': '-', // Placeholder
                       };
                       passengers.add(passengerMap);
-                      if (_favouritePassengers.length > i && _favouritePassengers[i]) {
-                        passengersToSave.add(passengerMap);
+                      // Check if this passenger should be saved to the list
+                      if (_addToPassengerList[i]) {
+                        // Get UserID from the stored user_profile in SharedPreferences
+                        String userId = '';
+                        final userProfileJson = _prefs.getString('user_profile');
+                        if (userProfileJson != null && userProfileJson.isNotEmpty) {
+                          try {
+                            final userProfile = jsonDecode(userProfileJson);
+                            userId = userProfile['UserID'] ?? '';
+                          } catch (e) {
+                            print('Error parsing user profile: $e');
+                          }
+                        }
+                        if (userId.isNotEmpty) {
+                          final passengerToSave = {
+                            ...passengerMap,
+                            'user_id': userId,
+                          };
+                          passengersToSave.add(passengerToSave);
+                        }
                       }
                     }
 
-                    if (passengersToSave.isNotEmpty && _passengerService != null) {
+                    if (passengersToSave.isNotEmpty) {
                       try {
-                        // Ensure network call for each passenger
-                        await _passengerService!.saveMultiplePassengers(passengersToSave);
-                        // Optionally reload saved passengers after save
+                        // Use the correct backend endpoint path
+                        final baseUrl = ApiConstants.baseUrl;
+                        for (var passenger in passengersToSave) {
+                          final response = await http.post(
+                            Uri.parse('$baseUrl/api/v1/passengers'),
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: jsonEncode(passenger),
+                          );
+                          print('Passenger save response: ${response.statusCode} - ${response.body}');
+                        }
+                        // Reload saved passengers after save
                         await _loadSavedPassengers();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

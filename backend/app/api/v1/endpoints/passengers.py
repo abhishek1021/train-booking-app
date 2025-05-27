@@ -36,7 +36,7 @@ PASSENGERS_TABLE = 'passengers'
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "ap-south-1"))
 passengers_table = dynamodb.Table(PASSENGERS_TABLE)
 
-@router.post("/passengers/", response_model=Passenger, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Passenger, status_code=status.HTTP_201_CREATED)
 async def create_passenger(
     passenger: PassengerCreate
 ):
@@ -66,7 +66,7 @@ async def create_passenger(
             detail=f"Error creating passenger: {str(e)}"
         )
 
-@router.get("/passengers/", response_model=List[Passenger])
+@router.get("/", response_model=List[Passenger])
 async def get_passengers(user_id: str):
     """Get all favorite passengers for the specified user_id"""
     try:
@@ -81,7 +81,7 @@ async def get_passengers(user_id: str):
             detail=f"Error fetching passengers: {str(e)}"
         )
 
-@router.delete("/passengers/{passenger_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{passenger_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_passenger(
     passenger_id: str,
     user_id: str
