@@ -28,6 +28,12 @@ dependencies:
   barcode_widget: ^2.0.4
   google_sign_in: ^6.1.5
   # Add other dependencies as needed
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
 flutter:
   uses-material-design: true
   assets:

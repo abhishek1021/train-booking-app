@@ -86,6 +86,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _customTileExpanded = []; // Initialize expansion state list
     _savedPassengers = []; // Initialize saved passengers list
     _isLoadingSavedPassengers = true; // Set loading state to true
+    
+    // Pre-initialize passenger list based on passenger count from home screen
+    // Only create multiple accordions if more than 1 passenger is needed
+    if (widget.passengers > 1) {
+      for (int i = 0; i < widget.passengers; i++) {
+        _addPassengerWithoutNotification();
+      }
+    }
 
     // Initialize SharedPreferences first, then passenger service
     _initSharedPreferences();
@@ -400,8 +408,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (phone.isEmpty) {
       return 'Please enter your mobile number';
     }
-    if (phone.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      return 'Please enter a valid 10-digit mobile number';
+    // Support format like +919326808458
+    // Allow + at the beginning, followed by country code and number
+    // Total length should be between 12-15 digits including the + sign
+    if (!RegExp(r'^\+?[0-9]{10,14}$').hasMatch(phone)) {
+      return 'Please enter a valid mobile number with country code (e.g., +919326808458)';
     }
 
     // Validate terms and conditions
@@ -412,26 +423,40 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     return null;
   }
 
+  // Add a passenger without showing notification (used for initialization)
+  void _addPassengerWithoutNotification() {
+    // Add a new passenger to the list
+    final newPassenger = {
+      'name': '',
+      'age': '',
+      'gender': 'Male',
+      'id_type': 'Aadhar',
+      'id_number': '',
+      'is_senior': false,
+      'is_new': true, // Mark as newly added (not from saved list)
+    };
+    _passengerList.add(newPassenger);
+    _nameControllers.add(TextEditingController());
+    _ageControllers.add(TextEditingController());
+    _idNumberControllers.add(TextEditingController());
+    _idTypeValues.add('Aadhar');
+    _genderValues.add('Male');
+    _favouritePassengers.add(false);
+    _addToPassengerList.add(true); // Set to true for newly added passengers
+    _customTileExpanded.add(true); // Default to expanded for new passengers
+  }
+
   void _addPassenger() {
     setState(() {
-      // Add a new passenger to the list
-      final newPassenger = {
-        'name': '',
-        'age': '',
-        'gender': 'Male',
-        'id_type': 'Aadhar',
-        'id_number': '',
-        'is_senior': false,
-      };
-      _passengerList.add(newPassenger);
-      _nameControllers.add(TextEditingController());
-      _ageControllers.add(TextEditingController());
-      _idNumberControllers.add(TextEditingController());
-      _idTypeValues.add('Aadhar');
-      _genderValues.add('Male');
-      _favouritePassengers.add(false);
-      _addToPassengerList.add(false); // Default to not saving
-      _customTileExpanded.add(true); // Default to expanded for new passengers
+      // Add a new passenger using the helper method
+      _addPassengerWithoutNotification();
+      
+      // Show confirmation message
+      _showCustomSnackBar(
+        message: 'New passenger added',
+        icon: Icons.person_add,
+        backgroundColor: Color(0xFF7C3AED),
+      );
     });
   }
 
@@ -473,6 +498,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                 fontFamily: 'ProductSans',
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
+                color: Colors.white,
               ),
             ),
           ),
@@ -1544,7 +1570,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                             'No, thanks',
                                             style: TextStyle(
                                               color: !_optForInsurance
-                                                  ? Color(0xFF7C3AED)
+                                                  ? Colors.white
                                                   : Colors.grey[700],
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w600,
@@ -1767,30 +1793,28 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                     elevation: MaterialStateProperty.all(0),
                     backgroundColor: MaterialStateProperty.resolveWith<Color>(
                         (Set<MaterialState> states) {
+                      if (states.contains(MaterialState.disabled)) {
+                        return Color(0xFFE0E0E0); // Light gray when disabled
+                      }
                       return Colors.transparent;
                     }),
                     overlayColor: MaterialStateProperty.all(
                         Color(0xFF9F7AEA).withOpacity(0.08)),
+                    foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                      if (states.contains(MaterialState.disabled)) {
+                        return Color(0xFF9E9E9E); // Gray text when disabled
+                      }
+                      return Colors.white;
+                    }),
                   ),
-                   onPressed: () async {
+                   onPressed: _passengerList.isEmpty ? null : () async {
                     final error = _validateAllFields();
                     if (error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(error,
-                              style: TextStyle(
-                                color: Color(0xFFD32F2F), // Material red
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'ProductSans',
-                              )),
-                          backgroundColor:
-                              Color(0xFFF3E8FF), // Light purple/white
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
+                      _showCustomSnackBar(
+                        message: error,
+                        icon: Icons.error_outline,
+                        backgroundColor: Colors.red,
                       );
                       return;
                     }
@@ -1837,6 +1861,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       try {
                         // Use the correct backend endpoint path
                         final baseUrl = ApiConstants.baseUrl;
+                        int savedCount = 0;
+                        
+                        // Show loading indicator
+                        _showCustomSnackBar(
+                          message: 'Saving passengers to your list...',
+                          icon: Icons.save,
+                          backgroundColor: Color(0xFF7C3AED),
+                        );
+                        
                         for (var passenger in passengersToSave) {
                           final response = await http.post(
                             Uri.parse('$baseUrl/api/v1/passengers'),
@@ -1846,24 +1879,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             body: jsonEncode(passenger),
                           );
                           print('Passenger save response: ${response.statusCode} - ${response.body}');
+                          if (response.statusCode >= 200 && response.statusCode < 300) {
+                            savedCount++;
+                          }
                         }
+                        
                         // Reload saved passengers after save
                         await _loadSavedPassengers();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Selected passengers saved to your list!',
-                                style: TextStyle(
-                                  color: Color(0xFF388E3C),
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'ProductSans',
-                                )),
-                            backgroundColor: Color(0xFFE8F5E9),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
+                        
+                        // Show success message with custom snackbar
+                        _showCustomSnackBar(
+                          message: 'Saved $savedCount ${savedCount == 1 ? 'passenger' : 'passengers'} to your list!',
+                          icon: Icons.check_circle,
+                          backgroundColor: Colors.green,
                         );
                       } catch (e) {
                         print('Error saving passengers: $e');
@@ -1922,9 +1950,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                      ),
+                      gradient: _passengerList.isEmpty
+                          ? null // No gradient when disabled
+                          : LinearGradient(
+                              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                            ),
+                      color: _passengerList.isEmpty ? Color(0xFFE0E0E0) : null, // Light gray background when disabled
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
@@ -1934,7 +1965,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.white,
+                        color: _passengerList.isEmpty ? Color(0xFF9E9E9E) : Colors.white, // Gray text when disabled
                       ),
                     ),
                   ),
