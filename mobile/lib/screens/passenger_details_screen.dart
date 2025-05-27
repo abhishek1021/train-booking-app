@@ -6,6 +6,7 @@ import 'review_summary_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../api_constants.dart';
+import 'package:country_picker/country_picker.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -59,6 +60,20 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   bool _showGstDetails = false;
   bool _showTravelInsurance = false;
   bool _optForInsurance = false;
+  
+  // Default country for phone number
+  Country _selectedCountry = Country(
+    phoneCode: '91',
+    countryCode: 'IN',
+    e164Sc: 0,
+    geographic: true,
+    level: 1,
+    name: 'India',
+    example: '9123456789',
+    displayName: 'India',
+    displayNameNoCountryCode: 'India',
+    e164Key: '',
+  );
 
   // Passenger service and related state
   PassengerService? _passengerService;
@@ -132,27 +147,60 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           print('Pre-populated email: ${userProfile['Email']}');
         }
         
-        // Check for phone in different possible fields
+        // Check for phone in different possible fields and strip any country code
+        String? phoneNumber;
+        
         if (userProfile.containsKey('phone') && userProfile['phone'] != null) {
-          setState(() {
-            _phoneController.text = userProfile['phone'];
-          });
-          print('Pre-populated phone: ${userProfile['phone']}');
+          phoneNumber = userProfile['phone'];
+          print('Found phone: $phoneNumber');
         } else if (userProfile.containsKey('Phone') && userProfile['Phone'] != null) {
-          setState(() {
-            _phoneController.text = userProfile['Phone'];
-          });
-          print('Pre-populated phone: ${userProfile['Phone']}');
+          phoneNumber = userProfile['Phone'];
+          print('Found phone: $phoneNumber');
         } else if (userProfile.containsKey('mobile') && userProfile['mobile'] != null) {
-          setState(() {
-            _phoneController.text = userProfile['mobile'];
-          });
-          print('Pre-populated phone: ${userProfile['mobile']}');
+          phoneNumber = userProfile['mobile'];
+          print('Found phone: $phoneNumber');
         } else if (userProfile.containsKey('Mobile') && userProfile['Mobile'] != null) {
+          phoneNumber = userProfile['Mobile'];
+          print('Found phone: $phoneNumber');
+        }
+        
+        // Process phone number if found
+        if (phoneNumber != null && phoneNumber.isNotEmpty) {
+          // Strip any country code (extract last 10 digits if phone has country code)
+          if (phoneNumber.startsWith('+')) {
+            // If format is like +919876543210, extract the last 10 digits
+            if (phoneNumber.length > 10) {
+              phoneNumber = phoneNumber.substring(phoneNumber.length - 10);
+            } else {
+              // Just remove the + if it's shorter
+              phoneNumber = phoneNumber.substring(1);
+            }
+          } else if (phoneNumber.length > 10) {
+            // If it doesn't start with + but is longer than 10 digits (e.g., 919876543210)
+            phoneNumber = phoneNumber.substring(phoneNumber.length - 10);
+          }
+          
+          // Set the phone controller text
           setState(() {
-            _phoneController.text = userProfile['Mobile'];
+            _phoneController.text = phoneNumber!;
           });
-          print('Pre-populated phone: ${userProfile['Mobile']}');
+          print('Pre-populated phone (without country code): $phoneNumber');
+          
+          // Also try to determine country code from the original number
+          if (userProfile.containsKey('country_code') && userProfile['country_code'] != null) {
+            // If country code is stored separately
+            try {
+              final countryCode = userProfile['country_code'].toString();
+              // Set the country code directly
+              setState(() {
+                // We can't easily get a Country object by phone code, so we'll just keep the default
+                // But we could update this in the future if needed
+              });
+              print('Found country code in profile: $countryCode');
+            } catch (e) {
+              print('Error setting country code: $e');
+            }
+          }
         }
       }
     } catch (e) {
@@ -408,10 +456,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (phone.isEmpty) {
       return 'Please enter your mobile number';
     }
+    
+    // Phone number should be exactly 10 digits without country code
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+      return 'Please enter a valid 10-digit mobile number';
+    }
+    
+    // Get the full phone number with country code for passing to the next screen
+    final fullPhoneNumber = '+${_selectedCountry.phoneCode}$phone';
     // Support format like +919326808458
     // Allow + at the beginning, followed by country code and number
     // Total length should be between 12-15 digits including the + sign
-    if (!RegExp(r'^\+?[0-9]{10,14}$').hasMatch(phone)) {
+    if (!RegExp(r'^\+?[0-9]{10,14}$').hasMatch(fullPhoneNumber)) {
       return 'Please enter a valid mobile number with country code (e.g., +919326808458)';
     }
 
@@ -1397,6 +1453,91 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               borderSide: BorderSide.none),
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 16),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 4.0, right: 8.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                showCountryPicker(
+                                  context: context,
+                                  showPhoneCode: true,
+                                  countryListTheme: CountryListThemeData(
+                                    flagSize: 24,
+                                    backgroundColor: Colors.white,
+                                    textStyle: const TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                    ),
+                                    bottomSheetHeight: 500,
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(18)),
+                                    inputDecoration: InputDecoration(
+                                      hintText: 'Search country',
+                                      hintStyle: const TextStyle(
+                                          fontFamily: 'ProductSans'),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                            color: Color(0xFF7C3AED),
+                                            width: 1),
+                                      ),
+                                    ),
+                                  ),
+                                  onSelect: (Country country) {
+                                    setState(() {
+                                      _selectedCountry = country;
+                                    });
+                                  },
+                                );
+                              },
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: 80,
+                                  maxWidth: 120,
+                                  minHeight: 0,
+                                  maxHeight: 52,
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: const Color(0xFF7C3AED),
+                                        width: 1),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10.0, vertical: 6.0),
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical: 2.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '+${_selectedCountry.phoneCode}',
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 16,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Container(
+                                        height: 18,
+                                        width: 1.2,
+                                        color: Color(0xFF7C3AED),
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 6),
+                                      ),
+                                      const Icon(Icons.arrow_drop_down,
+                                          color: Colors.black54, size: 20),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          hintText: _selectedCountry.example,
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -1920,6 +2061,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         : '';
                     final contactEmail = _emailController.text.trim();
                     final contactPhone = _phoneController.text.trim();
+                    // Always add country code to phone number when passing to next screen
+                    final fullPhoneNumber = '+${_selectedCountry.phoneCode}$contactPhone';
                     // Update the train data to include seat count
                     final updatedTrain = Map<String, dynamic>.from(widget.train);
                     // Ensure seat_count is included in the train data
@@ -1948,7 +2091,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           price: widget.price,
                           passengers: passengers,
                           email: contactEmail,
-                          phone: contactPhone,
+                          phone: fullPhoneNumber,
                           coins: 25, // Placeholder
                           tax: 2.0, // Placeholder
                         ),

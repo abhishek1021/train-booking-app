@@ -3,7 +3,7 @@ import 'package:marquee/marquee.dart';
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
 
-class ReviewSummaryScreen extends StatelessWidget {
+class ReviewSummaryScreen extends StatefulWidget {
   final Map<String, dynamic> train;
   final String originName;
   final String destinationName;
@@ -14,6 +14,53 @@ class ReviewSummaryScreen extends StatelessWidget {
   final int price;
   final List<Map<String, dynamic>> passengers;
 
+  final String email;
+  final String phone;
+  final int coins;
+  final double tax;
+
+  const ReviewSummaryScreen({
+    Key? key,
+    required this.train,
+    required this.originName,
+    required this.destinationName,
+    required this.depTime,
+    required this.arrTime,
+    required this.date,
+    required this.selectedClass,
+    required this.price,
+    required this.passengers,
+    required this.email,
+    required this.phone,
+    this.coins = 0,
+    this.tax = 2.0,
+  }) : super(key: key);
+
+  @override
+  State<ReviewSummaryScreen> createState() => _ReviewSummaryScreenState();
+}
+
+class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
+  // List to store passengers that can be modified
+  late List<Map<String, dynamic>> _passengers;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Create a copy of the passengers list that we can modify
+    _passengers = List<Map<String, dynamic>>.from(widget.passengers);
+  }
+  
+  // Remove passenger at the specified index
+  void _removePassenger(int index) {
+    // Only allow removal if there's more than one passenger
+    if (_passengers.length > 1) {
+      setState(() {
+        _passengers.removeAt(index);
+      });
+    }
+  }
+  
   String _calculateDuration(String dep, String arr) {
     // Dummy implementation, you can replace with actual duration logic
     return '4h';
@@ -22,20 +69,20 @@ class ReviewSummaryScreen extends StatelessWidget {
   // Helper method to get seat count safely
   int _getSeatCount() {
     // Try to get seat count from train data first
-    if (train.containsKey('seat_count')) {
+    if (widget.train.containsKey('seat_count')) {
       // Handle both int and String types for seat_count
-      if (train['seat_count'] is int) {
-        return train['seat_count'];
-      } else if (train['seat_count'] is String) {
-        return int.tryParse(train['seat_count']) ?? 0;
+      if (widget.train['seat_count'] is int) {
+        return widget.train['seat_count'];
+      } else if (widget.train['seat_count'] is String) {
+        return int.tryParse(widget.train['seat_count']) ?? 0;
       }
     }
     
     // Check seat availability for the selected class if available
-    if (train.containsKey('seat_availability') && 
-        train['seat_availability'] is Map && 
-        train['seat_availability'].containsKey(selectedClass)) {
-      final seatAvailability = train['seat_availability'][selectedClass];
+    if (widget.train.containsKey('seat_availability') && 
+        widget.train['seat_availability'] is Map && 
+        widget.train['seat_availability'].containsKey(widget.selectedClass)) {
+      final seatAvailability = widget.train['seat_availability'][widget.selectedClass];
       if (seatAvailability is int) {
         return seatAvailability;
       } else if (seatAvailability is String) {
@@ -44,7 +91,7 @@ class ReviewSummaryScreen extends StatelessWidget {
     }
     
     // Last fallback based on price
-    return price > 3000 ? 77 : 120; // If price is high, seats are likely filling up fast
+    return widget.price > 3000 ? 77 : 120; // If price is high, seats are likely filling up fast
   }
   
   // Station text marquee widget for scrolling text
@@ -91,31 +138,10 @@ class ReviewSummaryScreen extends StatelessWidget {
       );
     }
   }
-  final String email;
-  final String phone;
-  final int coins;
-  final double tax;
-
-  const ReviewSummaryScreen({
-    Key? key,
-    required this.train,
-    required this.originName,
-    required this.destinationName,
-    required this.depTime,
-    required this.arrTime,
-    required this.date,
-    required this.selectedClass,
-    required this.price,
-    required this.passengers,
-    required this.email,
-    required this.phone,
-    this.coins = 0,
-    this.tax = 2.0,
-  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final totalPrice = price + tax;
+    final totalPrice = widget.price + widget.tax;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -171,7 +197,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  train['train_name'] ?? '',
+                                  widget.train['train_name'] ?? '',
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.bold,
@@ -181,7 +207,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  train['train_number'] != null ? 'Train No: ${train['train_number']}' : '',
+                                  widget.train['train_number'] != null ? 'Train No: ${widget.train['train_number']}' : '',
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
@@ -192,7 +218,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 SizedBox(height: 2),
                                 // Use only marquee without 'From' text to avoid overflow
                                 _stationTextMarquee(
-                                  '$originName → $destinationName',
+                                  '${widget.originName} → ${widget.destinationName}',
                                   width: 150, // Reduced width to fit in the card
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -200,7 +226,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  'Class: $selectedClass',
+                                  'Class: ${widget.selectedClass}',
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
@@ -244,7 +270,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                originName,
+                                widget.originName,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontSize: 14,
@@ -254,7 +280,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                depTime,
+                                widget.depTime,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
@@ -263,7 +289,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                date,
+                                widget.date,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontSize: 12,
@@ -277,7 +303,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                destinationName,
+                                widget.destinationName,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontSize: 14,
@@ -287,7 +313,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                arrTime,
+                                widget.arrTime,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
@@ -296,7 +322,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                date,
+                                widget.date,
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontSize: 12,
@@ -331,9 +357,9 @@ class ReviewSummaryScreen extends StatelessWidget {
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
                       SizedBox(height: 18),
-                      _infoRow('Email', email),
+                      _infoRow('Email', widget.email),
                       SizedBox(height: 10),
-                      _infoRow('Phone Number', phone),
+                      _infoRow('Phone Number', widget.phone),
                     ],
                   ),
                 ),
@@ -364,11 +390,13 @@ class ReviewSummaryScreen extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 16),
-                      ...passengers.asMap().entries.map((entry) {
+                      ..._passengers.asMap().entries.map((entry) {
                         final idx = entry.key;
                         final p = entry.value;
                         // Check if passenger is a senior based on age
                         final isSenior = (p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60;
+                        // Determine if remove button should be enabled (only if more than 1 passenger)
+                        final canRemove = _passengers.length > 1;
                         
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16.0),
@@ -403,20 +431,38 @@ class ReviewSummaryScreen extends StatelessWidget {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.person, color: Color(0xFF7C3AED), size: 18),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Passenger ${idx + 1}${isSenior ? ' - Senior' : ''}',
-                                              style: TextStyle(
-                                                fontFamily: 'ProductSans',
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 15,
-                                                color: Colors.black87,
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                p['fullName'] ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                  color: Colors.black87,
+                                                ),
                                               ),
+                                            ],
+                                          ),
+                                        ),
+                                        // Remove passenger button
+                                        GestureDetector(
+                                          onTap: canRemove ? () => _removePassenger(idx) : null,
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: canRemove ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
                                             ),
-                                          ],
+                                            child: Icon(
+                                              Icons.close,
+                                              color: canRemove ? Colors.red : Colors.grey,
+                                              size: 16,
+                                            ),
+                                          ),
                                         ),
                                         // Seat indicator (placeholder)
                                         Container(
@@ -616,23 +662,23 @@ class ReviewSummaryScreen extends StatelessWidget {
                                   builder: (context) => SelectPaymentMethodScreen(
                                     walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
                                     bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
-                                    trainName: train['train_name'] ?? '',
-                                    trainClass: selectedClass,
-                                    departureStation: originName,
-                                    arrivalStation: destinationName,
-                                    departureTime: depTime,
-                                    arrivalTime: arrTime,
-                                    departureDate: date,
-                                    arrivalDate: date,
-                                    duration: _calculateDuration(depTime, arrTime),
-                                    price: price.toDouble(),
-                                    tax: tax,
-                                    totalPrice: price.toDouble() + tax,
+                                    trainName: widget.train['train_name'] ?? '',
+                                    trainClass: widget.selectedClass,
+                                    departureStation: widget.originName,
+                                    arrivalStation: widget.destinationName,
+                                    departureTime: widget.depTime,
+                                    arrivalTime: widget.arrTime,
+                                    departureDate: widget.date,
+                                    arrivalDate: widget.date,
+                                    duration: _calculateDuration(widget.depTime, widget.arrTime),
+                                    price: widget.price.toDouble(),
+                                    tax: widget.tax,
+                                    totalPrice: widget.price.toDouble() + widget.tax,
                                     status: 'Paid',
                                     transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                     merchantId: 'MERCHANT123',
                                     paymentMethod: 'Wallet',
-                                    passengers: passengers.map((p) => Passenger(
+                                    passengers: widget.passengers.map((p) => Passenger(
                                       fullName: p['name'] ?? '',
                                       idType: p['id_type'] ?? '',
                                       idNumber: p['id_number'] ?? '',
@@ -706,23 +752,23 @@ class ReviewSummaryScreen extends StatelessWidget {
                                     builder: (context) => SelectPaymentMethodScreen(
                                       walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
                                       bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
-                                      trainName: train['train_name'] ?? '',
-                                      trainClass: selectedClass,
-                                      departureStation: originName,
-                                      arrivalStation: destinationName,
-                                      departureTime: depTime,
-                                      arrivalTime: arrTime,
-                                      departureDate: date,
-                                      arrivalDate: date,
-                                      duration: _calculateDuration(depTime, arrTime),
-                                      price: price.toDouble(),
-                                      tax: tax,
-                                      totalPrice: price.toDouble() + tax,
+                                      trainName: widget.train['train_name'] ?? '',
+                                      trainClass: widget.selectedClass,
+                                      departureStation: widget.originName,
+                                      arrivalStation: widget.destinationName,
+                                      departureTime: widget.depTime,
+                                      arrivalTime: widget.arrTime,
+                                      departureDate: widget.date,
+                                      arrivalDate: widget.date,
+                                      duration: _calculateDuration(widget.depTime, widget.arrTime),
+                                      price: widget.price.toDouble(),
+                                      tax: widget.tax,
+                                      totalPrice: widget.price.toDouble() + widget.tax,
                                       status: 'Paid',
                                       transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                       merchantId: 'MERCHANT123',
                                       paymentMethod: 'Wallet',
-                                      passengers: passengers.map((p) => Passenger(
+                                      passengers: widget.passengers.map((p) => Passenger(
                                         fullName: p['fullName'],
                                         idType: p['idType'],
                                         idNumber: p['idNumber'],
@@ -833,10 +879,10 @@ class ReviewSummaryScreen extends StatelessWidget {
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
                       SizedBox(height: 18),
-                      _priceRow('Price (Adult x ${passengers.length})', price),
-                      _priceRow('Tax', tax),
+                      _priceRow('Price (Adult x ${_passengers.length})', widget.price),
+                      _priceRow('Tax', widget.tax),
                       Divider(),
-                      _priceRow('Total Price', price + tax, bold: true),
+                      _priceRow('Total Price', widget.price + widget.tax, bold: true),
                     ],
                   ),
                 ),
@@ -853,23 +899,23 @@ class ReviewSummaryScreen extends StatelessWidget {
                         builder: (context) => SelectPaymentMethodScreen(
                           walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
                           bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
-                          trainName: train['train_name'] ?? '',
-                          trainClass: selectedClass,
-                          departureStation: originName,
-                          arrivalStation: destinationName,
-                          departureTime: depTime,
-                          arrivalTime: arrTime,
-                          departureDate: date,
-                          arrivalDate: date,
-                          duration: _calculateDuration(depTime, arrTime),
-                          price: price.toDouble(),
-                          tax: tax,
-                          totalPrice: price.toDouble() + tax,
+                          trainName: widget.train['train_name'] ?? '',
+                          trainClass: widget.selectedClass,
+                          departureStation: widget.originName,
+                          arrivalStation: widget.destinationName,
+                          departureTime: widget.depTime,
+                          arrivalTime: widget.arrTime,
+                          departureDate: widget.date,
+                          arrivalDate: widget.date,
+                          duration: _calculateDuration(widget.depTime, widget.arrTime),
+                          price: widget.price.toDouble(),
+                          tax: widget.tax,
+                          totalPrice: widget.price.toDouble() + widget.tax,
                           status: 'Paid',
                           transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                           merchantId: 'MERCHANT123',
                           paymentMethod: 'Wallet',
-                          passengers: passengers.map((p) => Passenger(
+                          passengers: _passengers.map((p) => Passenger(
                             fullName: p['fullName'] ?? '',
                             idType: p['idType'] ?? '',
                             idNumber: p['idNumber'] ?? '',
@@ -933,7 +979,7 @@ class ReviewSummaryScreen extends StatelessWidget {
 
   Widget _priceRow(String label, num value, {bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -943,11 +989,17 @@ class ReviewSummaryScreen extends StatelessWidget {
               fontFamily: 'ProductSans',
               fontSize: 15,
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              color: Colors.black87,
+              color: bold ? Color(0xFF7C3AED) : Colors.black87,
             ),
           ),
           Text(
             '₹${value.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF7C3AED),
+            ),
           ),
         ],
       ),
