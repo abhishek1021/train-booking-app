@@ -215,24 +215,30 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     color: Colors.black54,
                                   ),
                                 ),
+                              
                                 SizedBox(height: 2),
-                                // Use only marquee without 'From' text to avoid overflow
-                                _stationTextMarquee(
-                                  '${widget.originName} → ${widget.destinationName}',
-                                  width: 150, // Reduced width to fit in the card
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF7C3AED),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Class: ${widget.selectedClass}',
-                                  style: TextStyle(
-                                    fontFamily: 'ProductSans',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Class: ${widget.selectedClass}',
+                                      style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '• Seats: ${_getSeatCount()}',
+                                      style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -447,23 +453,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                             ],
                                           ),
                                         ),
-                                        // Remove passenger button
-                                        GestureDetector(
-                                          onTap: canRemove ? () => _removePassenger(idx) : null,
-                                          child: Container(
-                                            width: 24,
-                                            height: 24,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: canRemove ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                                            ),
-                                            child: Icon(
-                                              Icons.close,
-                                              color: canRemove ? Colors.red : Colors.grey,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ),
+
                                         // Seat indicator (placeholder)
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -887,11 +877,20 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
+                  style: ButtonStyle(
+                    shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    )),
+                    padding: MaterialStateProperty.all(EdgeInsets.zero),
+                    elevation: MaterialStateProperty.all(0),
+                    backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                    overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -926,31 +925,23 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                       ),
                     );
                   },
-                  style: ButtonStyle(
-                    shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
-                    backgroundColor: MaterialStateProperty.all(Colors.transparent),
-                    elevation: MaterialStateProperty.all(0),
-                    overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
-                  ),
                   child: Container(
-                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text('Confirm Booking',
-                        style: TextStyle(
-                          fontFamily: 'ProductSans',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.white,
-                        )),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Confirm Booking',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
