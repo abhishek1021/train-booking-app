@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:marquee/marquee.dart';
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
 
@@ -16,6 +17,79 @@ class ReviewSummaryScreen extends StatelessWidget {
   String _calculateDuration(String dep, String arr) {
     // Dummy implementation, you can replace with actual duration logic
     return '4h';
+  }
+  
+  // Helper method to get seat count safely
+  int _getSeatCount() {
+    // Try to get seat count from train data first
+    if (train.containsKey('seat_count')) {
+      // Handle both int and String types for seat_count
+      if (train['seat_count'] is int) {
+        return train['seat_count'];
+      } else if (train['seat_count'] is String) {
+        return int.tryParse(train['seat_count']) ?? 0;
+      }
+    }
+    
+    // Check seat availability for the selected class if available
+    if (train.containsKey('seat_availability') && 
+        train['seat_availability'] is Map && 
+        train['seat_availability'].containsKey(selectedClass)) {
+      final seatAvailability = train['seat_availability'][selectedClass];
+      if (seatAvailability is int) {
+        return seatAvailability;
+      } else if (seatAvailability is String) {
+        return int.tryParse(seatAvailability) ?? 0;
+      }
+    }
+    
+    // Last fallback based on price
+    return price > 3000 ? 77 : 120; // If price is high, seats are likely filling up fast
+  }
+  
+  // Station text marquee widget for scrolling text
+  Widget _stationTextMarquee(String text,
+      {TextAlign align = TextAlign.left,
+      Color color = Colors.black,
+      double fontSize = 13,
+      double width = 90,
+      FontWeight fontWeight = FontWeight.w600}) {
+    if (text.length > 14) {
+      return SizedBox(
+        width: width,
+        height: 20,
+        child: Marquee(
+          text: text,
+          style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontWeight: fontWeight,
+              fontSize: fontSize,
+              color: color),
+          scrollAxis: Axis.horizontal,
+          blankSpace: 30.0,
+          velocity: 25.0,
+          pauseAfterRound: Duration(milliseconds: 800),
+          startAfter: Duration(milliseconds: 800),
+          fadingEdgeStartFraction: 0.1,
+          fadingEdgeEndFraction: 0.1,
+          showFadingOnlyWhenScrolling: false,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          textDirection: TextDirection.ltr,
+        ),
+      );
+    } else {
+      return Text(
+        text,
+        style: TextStyle(
+            fontFamily: 'ProductSans',
+            fontWeight: fontWeight,
+            fontSize: fontSize,
+            color: color),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: align,
+      );
+    }
   }
   final String email;
   final String phone;
@@ -116,14 +190,13 @@ class ReviewSummaryScreen extends StatelessWidget {
                                   ),
                                 ),
                                 SizedBox(height: 2),
-                                Text(
-                                  'From $originName → $destinationName',
-                                  style: TextStyle(
-                                    fontFamily: 'ProductSans',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                  ),
+                                // Use only marquee without 'From' text to avoid overflow
+                                _stationTextMarquee(
+                                  '$originName → $destinationName',
+                                  width: 150, // Reduced width to fit in the card
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF7C3AED),
                                 ),
                                 SizedBox(height: 2),
                                 Text(
@@ -138,29 +211,28 @@ class ReviewSummaryScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Available',
-                                style: TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                  fontSize: 13,
-                                ),
+                          // Availability indicator based on seat count
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _getSeatCount() < 100 
+                                  ? Color(0xFFFEE2E2) // Light red background for 'Filling up fast'
+                                  : Color(0xFFE8F5E9), // Light green background for 'Available'
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _getSeatCount() < 100
+                                  ? 'Filling up fast'
+                                  : 'Available',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.bold,
+                                color: _getSeatCount() < 100
+                                    ? Colors.red
+                                    : Colors.green,
+                                fontSize: 13,
                               ),
-                              SizedBox(height: 2),
-                              Text(
-                                '₹${price.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF7C3AED),
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
@@ -266,7 +338,7 @@ class ReviewSummaryScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Passenger(s) Card
+              // Passenger Details Card
               Card(
                 color: Colors.white,
                 margin: EdgeInsets.only(bottom: 22),
@@ -279,42 +351,232 @@ class ReviewSummaryScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Passenger(s)',
-                          style: TextStyle(
-                              fontFamily: 'ProductSans',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Color(0xFF7C3AED))),
-                      SizedBox(height: 12),
-                      ...List.generate(passengers.length, (idx) {
-                        final p = passengers[idx];
+                      Row(
+                        children: [
+                          Icon(Icons.people, color: Color(0xFF7C3AED)),
+                          SizedBox(width: 10),
+                          Text('Passenger(s)',
+                              style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.black87)),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      ...passengers.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final p = entry.value;
+                        // Check if passenger is a senior based on age
+                        final isSenior = (p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60;
+                        
                         return Container(
-                          margin: EdgeInsets.only(bottom: 14),
-                          padding: EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16.0),
                           decoration: BoxDecoration(
-                            color: Color(0xFFF7F7FA),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text('Passenger ${idx + 1}',
-                                      style: TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                          color: Colors.black87)),
-                                ],
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
                               ),
-                              SizedBox(height: 6),
-                              Text('Name: ${p['name'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
-                              Text('Gender: ${p['gender'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
-                              Text('Age: ${p['age'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
-                              Text('ID Type: ${p['idType'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
-                              Text('ID Number: ${p['idNumber'] ?? ''}', style: TextStyle(fontFamily: 'ProductSans', fontSize: 14, color: Colors.black87)),
                             ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    color: Color(0xFF7C3AED),
+                                    width: 4,
+                                  ),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.person, color: Color(0xFF7C3AED), size: 18),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Passenger ${idx + 1}${isSenior ? ' - Senior' : ''}',
+                                              style: TextStyle(
+                                                fontFamily: 'ProductSans',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Seat indicator (placeholder)
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF3E8FF),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            p['seat'] ?? 'B2-34',
+                                            style: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Name',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2),
+                                              Text(
+                                                p['name'] ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Gender',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2),
+                                              Text(
+                                                p['gender'] ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Age',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2),
+                                              Text(
+                                                p['age']?.toString() ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'ID Type',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2),
+                                              Text(
+                                                p['id_type'] ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'ID Number',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontSize: 12,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                              SizedBox(height: 2),
+                                              Text(
+                                                p['id_number'] ?? '',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       }),
@@ -371,10 +633,10 @@ class ReviewSummaryScreen extends StatelessWidget {
                                     merchantId: 'MERCHANT123',
                                     paymentMethod: 'Wallet',
                                     passengers: passengers.map((p) => Passenger(
-                                      fullName: p['fullName'],
-                                      idType: p['idType'],
-                                      idNumber: p['idNumber'],
-                                      passengerType: p['passengerType'],
+                                      fullName: p['name'] ?? '',
+                                      idType: p['id_type'] ?? '',
+                                      idNumber: p['id_number'] ?? '',
+                                      passengerType: (p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60 ? 'Senior' : 'Adult',
                                       seat: p['seat'] ?? 'B2-34',
                                     )).toList(),
                                   ),

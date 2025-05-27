@@ -1920,11 +1920,18 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         : '';
                     final contactEmail = _emailController.text.trim();
                     final contactPhone = _phoneController.text.trim();
+                    // Update the train data to include seat count
+                    final updatedTrain = Map<String, dynamic>.from(widget.train);
+                    // Ensure seat_count is included in the train data
+                    if (!updatedTrain.containsKey('seat_count')) {
+                      updatedTrain['seat_count'] = widget.seatCount;
+                    }
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ReviewSummaryScreen(
-                          train: widget.train,
+                          train: updatedTrain, // Pass the updated train data with seat count
                           originName: widget.originName,
                           destinationName: widget.destinationName,
                           depTime: (widget.train['schedule'] != null &&
