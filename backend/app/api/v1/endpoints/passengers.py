@@ -5,8 +5,6 @@ import boto3
 import os
 import json
 from boto3.dynamodb.conditions import Key
-from ..dependencies import get_current_user
-from ..dynamodb_user import get_dynamodb_table
 from pydantic import BaseModel
 
 router = APIRouter()
