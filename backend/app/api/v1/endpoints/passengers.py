@@ -33,24 +33,22 @@ class Passenger(PassengerBase):
         from_attributes = True
 
 # Table name for passengers
-PASSENGERS_TABLE = os.getenv('PASSENGERS_TABLE', 'Passengers')
-
-def get_passengers_table():
-    return get_dynamodb_table(PASSENGERS_TABLE)
+import boto3
+PASSENGERS_TABLE = 'passengers'
+dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+passengers_table = dynamodb.Table(PASSENGERS_TABLE)
 
 @router.post("/passengers/", response_model=Passenger, status_code=status.HTTP_201_CREATED)
 async def create_passenger(
-    passenger: PassengerCreate,
-    current_user: dict = Depends(get_current_user),
-    table=Depends(get_passengers_table)
+    passenger: PassengerCreate
 ):
-    """Create a new favorite passenger for the current user"""
+    """Create a new favorite passenger for the provided user_id (from frontend)"""
     passenger_id = f"pax_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     now = datetime.utcnow().isoformat()
     
     passenger_item = {
         'id': passenger_id,
-        'user_id': current_user['id'],
+        'user_id': passenger.user_id,
         'name': passenger.name,
         'age': passenger.age,
         'gender': passenger.gender,
@@ -62,7 +60,7 @@ async def create_passenger(
     }
     
     try:
-        table.put_item(Item=passenger_item)
+        passengers_table.put_item(Item=passenger_item)
         return passenger_item
     except Exception as e:
         raise HTTPException(
