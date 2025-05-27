@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'dart:math' show max;
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
 
@@ -43,12 +44,13 @@ class ReviewSummaryScreen extends StatefulWidget {
 class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   // List to store passengers that can be modified
   late List<Map<String, dynamic>> _passengers;
-  
+  bool _useCoins = false;
+  final int _coinValue = 100; // Default coin value
+
   @override
   void initState() {
     super.initState();
-    // Create a copy of the passengers list that we can modify
-    _passengers = List<Map<String, dynamic>>.from(widget.passengers);
+    _passengers = List.from(widget.passengers);
   }
   
   // Remove passenger at the specified index
@@ -139,9 +141,26 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
     }
   }
 
+  // Calculate total price with coin discount if applicable
+  double _calculateTotalPrice() {
+    double basePrice = widget.price.toDouble();
+    double totalPrice = basePrice + widget.tax;
+    
+    // Apply coin discount if toggle is on
+    if (_useCoins) {
+      // Calculate how many coins to use (up to the user's available coins)
+      int coinsToUse = widget.coins;
+      // Convert coins to discount amount (1 coin = 1 rupee)
+      double coinDiscount = coinsToUse.toDouble();
+      // Apply discount (ensure total doesn't go below 0)
+      totalPrice = max(0, totalPrice - coinDiscount);
+    }
+    
+    return totalPrice;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalPrice = widget.price + widget.tax;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -217,28 +236,24 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                 ),
                               
                                 SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Class: ${widget.selectedClass}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 16,
-                                        color: Color(0xFF7C3AED),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '• Seats: ${_getSeatCount()}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 16,
-                                        color: Color(0xFF7C3AED),
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  'Class: ${widget.selectedClass}',
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Seats: ${_getSeatCount()}',
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                    color: Color(0xFF7C3AED),
+                                  ),
                                 ),
                               ],
                             ),
@@ -453,7 +468,25 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                             ],
                                           ),
                                         ),
-
+                                        
+                                        // Remove passenger button
+                                        GestureDetector(
+                                          onTap: canRemove ? () => _removePassenger(idx) : null,
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: canRemove ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                                            ),
+                                            child: Icon(
+                                              Icons.remove,
+                                              color: canRemove ? Colors.red : Colors.grey,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        
                                         // Seat indicator (placeholder)
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -663,7 +696,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     duration: _calculateDuration(widget.depTime, widget.arrTime),
                                     price: widget.price.toDouble(),
                                     tax: widget.tax,
-                                    totalPrice: widget.price.toDouble() + widget.tax,
+                                    totalPrice: _calculateTotalPrice(),
                                     status: 'Paid',
                                     transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                     merchantId: 'MERCHANT123',
@@ -753,7 +786,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       duration: _calculateDuration(widget.depTime, widget.arrTime),
                                       price: widget.price.toDouble(),
                                       tax: widget.tax,
-                                      totalPrice: widget.price.toDouble() + widget.tax,
+                                      totalPrice: _calculateTotalPrice(),
                                       status: 'Paid',
                                       transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                       merchantId: 'MERCHANT123',
@@ -811,7 +844,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'You have 25 coins',
+                              'You have ${widget.coins} coins',
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
@@ -820,19 +853,14 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                               ),
                             ),
                           ),
-                          StatefulBuilder(
-                            builder: (context, setState) {
-                              bool useCoins = false;
-                              return Switch(
-                                value: useCoins,
-                                onChanged: (v) {
-                                  setState(() {
-                                    useCoins = v;
-                                  });
-                                },
-                                activeColor: Color(0xFF7C3AED),
-                              );
+                          Switch(
+                            value: _useCoins,
+                            onChanged: (v) {
+                              setState(() {
+                                _useCoins = v;
+                              });
                             },
+                            activeColor: Color(0xFF7C3AED),
                           ),
                         ],
                       ),
@@ -871,8 +899,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                       SizedBox(height: 18),
                       _priceRow('Price (Adult x ${_passengers.length})', widget.price),
                       _priceRow('Tax', widget.tax),
+                      _useCoins ? _priceRow('Coin Discount', -widget.coins, color: Colors.green) : SizedBox(),
                       Divider(),
-                      _priceRow('Total Price', widget.price + widget.tax, bold: true),
+                      _priceRow('Total Price', _calculateTotalPrice(), bold: true),
                     ],
                   ),
                 ),
@@ -909,7 +938,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           duration: _calculateDuration(widget.depTime, widget.arrTime),
                           price: widget.price.toDouble(),
                           tax: widget.tax,
-                          totalPrice: widget.price.toDouble() + widget.tax,
+                          totalPrice: _calculateTotalPrice(),
                           status: 'Paid',
                           transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                           merchantId: 'MERCHANT123',
@@ -968,9 +997,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   TextStyle _headerStyle() => TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, color: Color(0xFF7C3AED), fontSize: 13);
   TextStyle _cellStyle() => TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
 
-  Widget _priceRow(String label, num value, {bool bold = false}) {
+  Widget _priceRow(String label, dynamic value, {bool bold = false, Color? color}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -978,18 +1007,17 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
             label,
             style: TextStyle(
               fontFamily: 'ProductSans',
-              fontSize: 15,
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              color: bold ? Color(0xFF7C3AED) : Colors.black87,
+              fontSize: 14,
+              color: Colors.black87,
             ),
           ),
           Text(
-            '₹${value.toStringAsFixed(2)}',
+            '₹ ${value.toStringAsFixed(2)}',
             style: TextStyle(
               fontFamily: 'ProductSans',
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF7C3AED),
+              fontWeight: bold ? FontWeight.bold : FontWeight.w500,
+              fontSize: bold ? 16 : 14,
+              color: color ?? (bold ? Color(0xFF7C3AED) : Colors.black87),
             ),
           ),
         ],
