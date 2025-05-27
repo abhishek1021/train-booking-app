@@ -209,25 +209,67 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final gender = passenger['gender'] ?? 'Male';
     final idType = passenger['id_type'] ?? 'Aadhar';
     final idNumber = passenger['id_number'] ?? '';
-
+    
+    // Find the next available passenger index
+    int targetIndex = 0;
+    
+    // If there are existing passengers, place the new one at the next position
+    if (_passengerList.isNotEmpty) {
+      // If we're replacing an existing passenger, use its index
+      // Otherwise add to the end
+      targetIndex = _passengerList.length;
+    }
+    
     setState(() {
-      _nameControllers.add(TextEditingController(text: name));
-      _ageControllers.add(TextEditingController(text: age));
-      _idNumberControllers.add(TextEditingController(text: idNumber));
-      _idTypeValues.add(idType);
-      _genderValues.add(gender);
-      _favouritePassengers.add(false);
-      _addToPassengerList.add(false); // Default to not saving
-
-      _passengerList.add({
-        'name': name,
-        'age': age,
-        'gender': gender,
-        'id_type': idType,
-        'id_number': idNumber,
-        'is_senior': (int.tryParse(age) ?? 0) >= 60,
-      });
+      // If we're adding to the end
+      if (targetIndex >= _passengerList.length) {
+        _nameControllers.add(TextEditingController(text: name));
+        _ageControllers.add(TextEditingController(text: age));
+        _idNumberControllers.add(TextEditingController(text: idNumber));
+        _idTypeValues.add(idType);
+        _genderValues.add(gender);
+        _favouritePassengers.add(true); // Mark as a favorite since it came from saved list
+        _addToPassengerList.add(false); // Disable checkbox since it's already saved
+        
+        _passengerList.add({
+          'name': name,
+          'age': age,
+          'gender': gender,
+          'id_type': idType,
+          'id_number': idNumber,
+          'is_senior': (int.tryParse(age) ?? 0) >= 60,
+          'from_saved_list': true, // Mark that this passenger came from saved list
+        });
+      } else {
+        // If we're replacing an existing passenger
+        _nameControllers[targetIndex].text = name;
+        _ageControllers[targetIndex].text = age;
+        _idNumberControllers[targetIndex].text = idNumber;
+        _idTypeValues[targetIndex] = idType;
+        _genderValues[targetIndex] = gender;
+        _favouritePassengers[targetIndex] = true; // Mark as a favorite
+        _addToPassengerList[targetIndex] = false; // Disable checkbox
+        
+        _passengerList[targetIndex] = {
+          'name': name,
+          'age': age,
+          'gender': gender,
+          'id_type': idType,
+          'id_number': idNumber,
+          'is_senior': (int.tryParse(age) ?? 0) >= 60,
+          'from_saved_list': true, // Mark that this passenger came from saved list
+        };
+      }
     });
+    
+    // Show a confirmation message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Passenger details applied to Passenger ${targetIndex + 1}'),
+        backgroundColor: Color(0xFF7C3AED),
+        duration: Duration(seconds: 2),
+      ),
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -235,6 +277,37 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         backgroundColor: Color(0xFF7C3AED),
       ),
     );
+  }
+
+  /// Validates ID number based on the ID type
+  String? _validateIdNumber(String idNumber, String idType) {
+    if (idNumber.isEmpty) {
+      return null; // Empty validation will be handled separately
+    }
+    
+    if (idType == 'Aadhar') {
+      // Aadhar should be 12 digits
+      if (idNumber.length != 12) {
+        return 'Aadhar must be 12 digits';
+      }
+      
+      // Check if Aadhar contains only numbers
+      if (!RegExp(r'^[0-9]{12}$').hasMatch(idNumber)) {
+        return 'Aadhar must contain only digits';
+      }
+    } else if (idType == 'PAN') {
+      // PAN should be 10 characters
+      if (idNumber.length != 10) {
+        return 'PAN must be 10 characters';
+      }
+      
+      // PAN format: AAAAA1234A (5 letters, 4 numbers, 1 letter)
+      if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(idNumber.toUpperCase())) {
+        return 'Invalid PAN format';
+      }
+    }
+    
+    return null;
   }
 
   /// Validates all passenger and contact fields.
@@ -265,6 +338,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       }
       if (idType == null || idType.isEmpty) {
         return 'Please select ID type for passenger ${i + 1}';
+      }
+      
+      // Validate ID number format based on ID type
+      String? idError = _validateIdNumber(idNum, idType);
+      if (idError != null) {
+        return 'Passenger ${i + 1}: $idError';
       }
     }
 
@@ -950,7 +1029,29 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   borderSide: BorderSide.none),
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
+                              // Show hint text based on selected ID type
+                              hintText: _idTypeValues[index] == 'Aadhar' 
+                                  ? '12-digit Aadhar number' 
+                                  : _idTypeValues[index] == 'PAN' 
+                                      ? '10-character PAN number' 
+                                      : 'Enter ID number',
+                              // Show error message if validation fails
+                              errorText: _validateIdNumber(_idNumberControllers[index].text, _idTypeValues[index]),
                             ),
+                            // Auto-capitalize for PAN card
+                            textCapitalization: _idTypeValues[index] == 'PAN' 
+                                ? TextCapitalization.characters 
+                                : TextCapitalization.none,
+                            // Set keyboard type based on ID type
+                            keyboardType: _idTypeValues[index] == 'Aadhar' 
+                                ? TextInputType.number 
+                                : TextInputType.text,
+                            // Update validation on text change
+                            onChanged: (value) {
+                              setState(() {
+                                // This will trigger a rebuild to show validation errors
+                              });
+                            },
                           ),
                           SizedBox(height: 10),
                           Row(
@@ -990,22 +1091,40 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 value: (_addToPassengerList.length > index
                                     ? _addToPassengerList[index]
                                     : false),
-                                onChanged: (v) {
-                                  setState(() {
-                                    while (
-                                        _addToPassengerList.length <= index) {
-                                      _addToPassengerList.add(false);
-                                    }
-                                    if (index < _addToPassengerList.length) {
-                                      _addToPassengerList[index] = v ?? false;
-                                    }
-                                  });
-                                },
+                                // Disable checkbox if passenger is from saved list
+                                onChanged: _passengerList.length > index && 
+                                          _passengerList[index].containsKey('from_saved_list') && 
+                                          _passengerList[index]['from_saved_list'] == true
+                                    ? null // Null makes the checkbox disabled
+                                    : (v) {
+                                        setState(() {
+                                          while (
+                                              _addToPassengerList.length <= index) {
+                                            _addToPassengerList.add(false);
+                                          }
+                                          if (index < _addToPassengerList.length) {
+                                            _addToPassengerList[index] = v ?? false;
+                                          }
+                                        });
+                                      },
+                                activeColor: Color(0xFF7C3AED),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
-                              Text('Add to Passenger List - For Tatkal Mode',
-                                  style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      color: Color(0xFF222222))),
+                              Text(
+                                'Add to Passenger List - For Tatkal Mode',
+                                style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  // Gray out text if checkbox is disabled
+                                  color: _passengerList.length > index && 
+                                        _passengerList[index].containsKey('from_saved_list') && 
+                                        _passengerList[index]['from_saved_list'] == true
+                                      ? Colors.grey[400]
+                                      : Color(0xFF222222),
+                                  fontSize: 14,
+                                ),
+                              ),
                             ],
                           ),
                         ],
