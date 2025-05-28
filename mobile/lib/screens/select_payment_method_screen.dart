@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'transaction_details_screen.dart';
+import '../services/booking_service.dart';
+import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class SelectPaymentMethodScreen extends StatefulWidget {
   final double walletBalance;
@@ -50,6 +54,33 @@ class SelectPaymentMethodScreen extends StatefulWidget {
 
 class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
   int _selectedIndex = 0; // Only wallet for now
+  bool _isProcessing = false;
+  final BookingService _bookingService = BookingService();
+  String _userId = ''; // Will be loaded from SharedPreferences
+  late SharedPreferences _prefs;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  // Load user data from SharedPreferences
+  Future<void> _loadUserData() async {
+    _prefs = await SharedPreferences.getInstance();
+    final userProfileJson = _prefs.getString('user_profile');
+    
+    if (userProfileJson != null && userProfileJson.isNotEmpty) {
+      try {
+        final userProfile = jsonDecode(userProfileJson);
+        setState(() {
+          _userId = userProfile['UserID'] ?? '';
+        });
+      } catch (e) {
+        print('Error parsing user profile: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,45 +181,114 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => TicketSuccessDialog(
-                      onViewTransaction: () {
-                        Navigator.of(context).pop();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TransactionDetailsScreen(
-                              bookingId: widget.bookingId,
-                              barcodeData: '', // Not used, QR is generated from all fields
-                              trainName: widget.trainName,
-                              trainClass: widget.trainClass,
-                              departureStation: widget.departureStation,
-                              arrivalStation: widget.arrivalStation,
-                              departureTime: widget.departureTime,
-                              arrivalTime: widget.arrivalTime,
-                              departureDate: widget.departureDate,
-                              arrivalDate: widget.arrivalDate,
-                              duration: widget.duration,
-                              price: widget.price,
-                              tax: widget.tax,
-                              totalPrice: widget.totalPrice,
-                              status: widget.status,
-                              transactionId: widget.transactionId,
-                              merchantId: widget.merchantId,
-                              paymentMethod: widget.paymentMethod,
-                              passengers: widget.passengers,
+                onPressed: _isProcessing ? null : () async {
+                  setState(() {
+                    _isProcessing = true;
+                  });
+                  
+                  try {
+                    // Check if user ID is available
+                    if (_userId.isEmpty) {
+                      // Try to load user ID again
+                      final userProfileJson = _prefs.getString('user_profile');
+                      if (userProfileJson != null && userProfileJson.isNotEmpty) {
+                        try {
+                          final userProfile = jsonDecode(userProfileJson);
+                          _userId = userProfile['UserID'] ?? '';
+                        } catch (e) {
+                          print('Error parsing user profile: $e');
+                        }
+                      }
+                      
+                      // If still empty, show error
+                      if (_userId.isEmpty) {
+                        throw Exception('User ID not found. Please log in again.');
+                      }
+                    }
+                    
+                    // Process the booking with payment
+                    final result = await _bookingService.processBookingWithPayment(
+                      userId: _userId,
+                      trainId: 'train_${widget.trainName.replaceAll(" ", "_").toLowerCase()}', // Generate train ID from name
+                      trainName: widget.trainName,
+                      journeyDate: widget.departureDate,
+                      originStationCode: widget.departureStation,
+                      destinationStationCode: widget.arrivalStation,
+                      travelClass: widget.trainClass,
+                      fare: widget.price,
+                      tax: widget.tax,
+                      totalAmount: widget.totalPrice,
+                      passengers: widget.passengers,
+                      paymentMethod: 'wallet',
+                    );
+                    
+                    // Get the booking and payment details
+                    final bookingDetails = result['booking'];
+                    final paymentDetails = result['payment'];
+                    final transactionDetails = result['transaction'];
+                    
+                    // Update state and show success dialog
+                    setState(() {
+                      _isProcessing = false;
+                    });
+                    
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => TicketSuccessDialog(
+                        onViewTransaction: () {
+                          Navigator.of(context).pop();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TransactionDetailsScreen(
+                                bookingId: bookingDetails['booking_id'],
+                                barcodeData: '', // Not used, QR is generated from all fields
+                                trainName: widget.trainName,
+                                trainClass: widget.trainClass,
+                                departureStation: widget.departureStation,
+                                arrivalStation: widget.arrivalStation,
+                                departureTime: widget.departureTime,
+                                arrivalTime: widget.arrivalTime,
+                                departureDate: widget.departureDate,
+                                arrivalDate: widget.arrivalDate,
+                                duration: widget.duration,
+                                price: widget.price,
+                                tax: widget.tax,
+                                totalPrice: widget.totalPrice,
+                                status: 'confirmed',
+                                transactionId: paymentDetails['payment_id'],
+                                merchantId: transactionDetails['txn_id'],
+                                paymentMethod: 'wallet',
+                                passengers: widget.passengers,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onBackToHome: () {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                      },
-                    ),
-                  );
+                          );
+                        },
+                        onBackToHome: () {
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        },
+                      ),
+                    );
+                  } catch (e) {
+                    // Show error dialog on failure
+                    setState(() {
+                      _isProcessing = false;
+                    });
+                    
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => TicketFailureDialog(
+                        onRetry: () {
+                          Navigator.of(context).pop();
+                        },
+                        onBackToHome: () {
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        },
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
@@ -212,15 +312,24 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                   ),
                   child: Container(
                     alignment: Alignment.center,
-                    child: const Text(
-                      'Continue',
-                      style: TextStyle(
-                        fontFamily: 'ProductSans',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: _isProcessing
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : const Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
                   ),
                 ),
               ),
