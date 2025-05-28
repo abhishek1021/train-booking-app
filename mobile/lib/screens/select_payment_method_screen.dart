@@ -74,7 +74,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
         title: const Text(
           'Select Payment Method',
           style: TextStyle(
-            fontFamily: 'Lato',
+            fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontSize: 20,
@@ -115,7 +115,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                 title: Text(
                   'My Wallet',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Color(0xFF7C3AED),
@@ -128,7 +128,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                     Text(
                       '\u20B9${widget.walletBalance.toStringAsFixed(2)}',
                       style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF2563EB),
                         fontSize: 16,
@@ -215,7 +215,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                     child: const Text(
                       'Continue',
                       style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: Colors.white,
@@ -246,7 +246,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                 style: TextStyle(
                   color: Color(0xFFB91C1C),
                   decoration: TextDecoration.underline,
-                  fontFamily: 'Lato',
+                  fontFamily: 'ProductSans',
                   fontSize: 14,
                 ),
               ),
@@ -298,7 +298,7 @@ class TicketFailureDialog extends StatelessWidget {
               'Payment Failed',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
                 color: Color(0xFFB91C1C),
@@ -309,7 +309,7 @@ class TicketFailureDialog extends StatelessWidget {
               'Your payment could not be processed. Please check your details or try again.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.normal,
                 fontSize: 15,
                 color: Colors.black54,
@@ -340,7 +340,7 @@ class TicketFailureDialog extends StatelessWidget {
                   child: const Text(
                     'Retry',
                     style: TextStyle(
-                      fontFamily: 'Lato',
+                      fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.white,
@@ -364,7 +364,7 @@ class TicketFailureDialog extends StatelessWidget {
                 child: const Text(
                   'Back to Home',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Color(0xFFB91C1C),
@@ -419,7 +419,7 @@ class TicketSuccessDialog extends StatelessWidget {
               'Ticket Booking\nSuccessful!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
                 color: Color(0xFF2563EB),
@@ -430,7 +430,7 @@ class TicketSuccessDialog extends StatelessWidget {
               'You have successfully made a\npayment transaction and booked a ticket. You can access tickets through the My Ticket menu.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Lato',
+                fontFamily: 'ProductSans',
                 fontWeight: FontWeight.normal,
                 fontSize: 15,
                 color: Colors.black54,
@@ -468,7 +468,7 @@ class TicketSuccessDialog extends StatelessWidget {
                     child: const Text(
                       'View Transaction',
                       style: TextStyle(
-                        fontFamily: 'Lato',
+                        fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: Colors.white,
@@ -493,7 +493,7 @@ class TicketSuccessDialog extends StatelessWidget {
                 child: const Text(
                   'Back to Home',
                   style: TextStyle(
-                    fontFamily: 'Lato',
+                    fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Color(0xFF7C3AED),

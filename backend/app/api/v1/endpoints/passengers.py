@@ -20,11 +20,37 @@ passengers_table = dynamodb.Table(PASSENGERS_TABLE)
 
 @router.post("/", response_model=Passenger, status_code=status.HTTP_201_CREATED)
 async def create_passenger(
-    passenger: PassengerCreate
+    passenger: PassengerCreate,
+    passenger_id: Optional[str] = None
 ):
-    """Create a new favorite passenger for the provided user_id (from frontend)"""
-    passenger_id = f"pax_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    """Create a new passenger or update an existing one if passenger_id is provided"""
     now = datetime.utcnow().isoformat()
+    
+    # Check if this is an update or a new creation
+    is_update = passenger_id is not None and passenger_id.startswith("pax_")
+    
+    if not is_update:
+        # Generate a new ID for new passengers
+        passenger_id = f"pax_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        created_at = now
+    else:
+        # For updates, fetch the existing record to preserve created_at
+        try:
+            existing = passengers_table.get_item(Key={'id': passenger_id})
+            if 'Item' not in existing:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Passenger with ID {passenger_id} not found"
+                )
+            created_at = existing['Item'].get('created_at', now)
+        except Exception as e:
+            if 'not found' not in str(e):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error fetching passenger: {str(e)}"
+                )
+            # If we get here with an error that's not 'not found', create a new record
+            created_at = now
     
     passenger_item = {
         'id': passenger_id,
@@ -35,7 +61,7 @@ async def create_passenger(
         'id_type': passenger.id_type,
         'id_number': passenger.id_number,
         'is_senior': passenger.is_senior,
-        'created_at': now,
+        'created_at': created_at,
         'updated_at': now,
     }
     
@@ -43,9 +69,10 @@ async def create_passenger(
         passengers_table.put_item(Item=passenger_item)
         return passenger_item
     except Exception as e:
+        operation = "updating" if is_update else "creating"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating passenger: {str(e)}"
+            detail=f"Error {operation} passenger: {str(e)}"
         )
 
 @router.get("/", response_model=List[Passenger])
