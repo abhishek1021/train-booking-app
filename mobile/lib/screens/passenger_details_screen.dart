@@ -327,6 +327,73 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     return -1;
   }
   
+  // Find a saved passenger by ID
+  Map<String, dynamic>? _findSavedPassengerById(String passengerId) {
+    for (final passenger in _savedPassengers) {
+      if (passenger['id'] == passengerId) {
+        return passenger;
+      }
+    }
+    return null;
+  }
+  
+  // Update a saved passenger when details are edited
+  Future<void> _updateSavedPassenger(int passengerIndex) async {
+    if (_passengerService == null) return;
+    
+    // Check if this passenger is from the saved list
+    if (passengerIndex < 0 || passengerIndex >= _passengerList.length) return;
+    
+    final passenger = _passengerList[passengerIndex];
+    final fromSavedList = passenger.containsKey('from_saved_list') && passenger['from_saved_list'] == true;
+    
+    if (!fromSavedList) return; // Only update passengers from saved list
+    
+    // Find the saved passenger index
+    final savedPassengerIndex = passenger['saved_passenger_index'];
+    if (savedPassengerIndex < 0 || savedPassengerIndex >= _savedPassengers.length) return;
+    
+    // Get the saved passenger ID
+    final savedPassenger = _savedPassengers[savedPassengerIndex];
+    final passengerId = savedPassenger['id'];
+    if (passengerId == null) return;
+    
+    // Create updated passenger data
+    final updatedPassenger = {
+      'user_id': savedPassenger['user_id'],
+      'name': _nameControllers[passengerIndex].text,
+      'age': int.tryParse(_ageControllers[passengerIndex].text) ?? 0,
+      'gender': _genderValues[passengerIndex],
+      'id_type': _idTypeValues[passengerIndex],
+      'id_number': _idNumberControllers[passengerIndex].text,
+      'is_senior': (int.tryParse(_ageControllers[passengerIndex].text) ?? 0) >= 60,
+    };
+    
+    try {
+      // Call the API to update the passenger
+      final result = await _passengerService!.updateFavoritePassenger(passengerId, updatedPassenger);
+      
+      // Update the local saved passengers list
+      setState(() {
+        _savedPassengers[savedPassengerIndex] = result;
+      });
+      
+      // Show success message
+      _showCustomSnackBar(
+        message: 'Passenger details updated successfully',
+        icon: Icons.check_circle,
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      print('Error updating passenger: $e');
+      _showCustomSnackBar(
+        message: 'Failed to update passenger details',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+  
   // Remove a passenger from the list
   void _removePassenger(int index) {
     if (index < 0 || index >= _passengerList.length) return;
@@ -1052,6 +1119,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
                             ),
+                            onChanged: (value) {
+                              // Check if this is a saved passenger and update if needed
+                              if (_passengerList[index].containsKey('from_saved_list') && 
+                                  _passengerList[index]['from_saved_list'] == true) {
+                                // Debounce the update to avoid too many API calls
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  _updateSavedPassenger(index);
+                                });
+                              }
+                            },
                           ),
                           SizedBox(height: 10),
                           Row(
@@ -1083,6 +1160,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                         horizontal: 16, vertical: 16),
                                   ),
                                   keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    // Check if this is a saved passenger and update if needed
+                                    if (_passengerList[index].containsKey('from_saved_list') && 
+                                        _passengerList[index]['from_saved_list'] == true) {
+                                      // Debounce the update to avoid too many API calls
+                                      Future.delayed(Duration(milliseconds: 500), () {
+                                        _updateSavedPassenger(index);
+                                      });
+                                    }
+                                  },
                                 ),
                               ),
                               SizedBox(width: 10),
@@ -1096,6 +1183,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     setState(() {
                                       _idTypeValues[index] = v ?? 'Aadhar';
                                     });
+                                    
+                                    // Check if this is a saved passenger and update if needed
+                                    if (_passengerList[index].containsKey('from_saved_list') && 
+                                        _passengerList[index]['from_saved_list'] == true) {
+                                      _updateSavedPassenger(index);
+                                    }
                                   },
                                   dropdownColor: Colors.white,
                                   iconEnabledColor: Color(0xFF7C3AED),
@@ -1140,6 +1233,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     setState(() {
                                       _genderValues[index] = v ?? 'Male';
                                     });
+                                    
+                                    // Check if this is a saved passenger and update if needed
+                                    if (_passengerList[index].containsKey('from_saved_list') && 
+                                        _passengerList[index]['from_saved_list'] == true) {
+                                      _updateSavedPassenger(index);
+                                    }
                                   },
                                   dropdownColor: Colors.white,
                                   iconEnabledColor: Color(0xFF7C3AED),
@@ -1196,7 +1295,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   borderSide: BorderSide.none),
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
-                              // Show hint text based on selected ID type
                               hintText: _idTypeValues[index] == 'Aadhar' 
                                   ? '12-digit Aadhar number' 
                                   : _idTypeValues[index] == 'PAN' 
@@ -1204,9 +1302,6 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                       : _idTypeValues[index] == 'Driving License'
                                           ? '13-16 character Driving License'
                                           : 'Enter ID number',
-                              // Show error message if validation fails
-                              errorText: _validateIdNumber(_idNumberControllers[index].text, _idTypeValues[index]),
-                              // Use darker error style
                               errorStyle: TextStyle(
                                 color: Colors.red[900],
                                 fontWeight: FontWeight.bold,
@@ -1227,6 +1322,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               setState(() {
                                 // This will trigger a rebuild to show validation errors
                               });
+                              
+                              // Check if this is a saved passenger and update if needed
+                              if (_passengerList[index].containsKey('from_saved_list') && 
+                                  _passengerList[index]['from_saved_list'] == true) {
+                                // Debounce the update to avoid too many API calls
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  _updateSavedPassenger(index);
+                                });
+                              }
                             },
                           ),
                           SizedBox(height: 10),

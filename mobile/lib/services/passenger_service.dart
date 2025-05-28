@@ -163,4 +163,33 @@ class PassengerService {
     
     return results;
   }
+  
+  // Update an existing favorite passenger
+  Future<Map<String, dynamic>> updateFavoritePassenger(String passengerId, Map<String, dynamic> passenger) async {
+    try {
+      // Make sure passenger has user_id
+      if (!passenger.containsKey('user_id')) {
+        final userId = _userId;
+        if (userId != null && userId.isNotEmpty) {
+          passenger['user_id'] = userId;
+        }
+      }
+      
+      final response = await http.post(
+        Uri.parse('$_baseUrl/passengers/?passenger_id=$passengerId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(passenger),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('Failed to update favorite passenger: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating passenger: $e');
+    }
+  }
 }
