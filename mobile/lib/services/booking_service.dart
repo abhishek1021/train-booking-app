@@ -158,6 +158,22 @@ class BookingService {
       throw Exception('Failed to get wallet: $e');
     }
   }
+  
+  // Get wallet balance
+  Future<double> getWalletBalance(String userId) async {
+    try {
+      final walletData = await getWalletByUserId(userId);
+      // Parse the balance as a double
+      final balance = double.tryParse(walletData['balance'].toString()) ?? 0.0;
+      return balance;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting wallet balance: $e');
+      }
+      // Return a default balance of 0 in case of error
+      return 0.0;
+    }
+  }
 
   // Process a complete booking with payment
   Future<Map<String, dynamic>> processBookingWithPayment({

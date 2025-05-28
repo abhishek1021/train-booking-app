@@ -57,11 +57,13 @@ class SelectPaymentMethodScreen extends StatefulWidget {
 }
 
 class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
-  int _selectedIndex = 0; // Only wallet for now
+  int _selectedIndex = 0; // Only wallet is selectable
   bool _isProcessing = false;
   final BookingService _bookingService = BookingService();
   String _userId = ''; // Will be loaded from SharedPreferences
   late SharedPreferences _prefs;
+  double _actualWalletBalance = 0.0; // Actual wallet balance from API
+  bool _isLoadingWallet = true; // Flag to track wallet balance loading state
   
   @override
   void initState() {
@@ -71,18 +73,52 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
   
   // Load user data from SharedPreferences
   Future<void> _loadUserData() async {
+    setState(() {
+      _isLoadingWallet = true;
+    });
+    
     _prefs = await SharedPreferences.getInstance();
     final userProfileJson = _prefs.getString('user_profile');
     
     if (userProfileJson != null && userProfileJson.isNotEmpty) {
       try {
         final userProfile = jsonDecode(userProfileJson);
+        final userId = userProfile['UserID'] ?? '';
         setState(() {
-          _userId = userProfile['UserID'] ?? '';
+          _userId = userId;
         });
+        
+        if (userId.isNotEmpty) {
+          // Fetch wallet balance
+          await _fetchWalletBalance(userId);
+        }
       } catch (e) {
         print('Error parsing user profile: $e');
+        setState(() {
+          _isLoadingWallet = false;
+        });
       }
+    } else {
+      setState(() {
+        _isLoadingWallet = false;
+      });
+    }
+  }
+  
+  // Fetch wallet balance from API
+  Future<void> _fetchWalletBalance(String userId) async {
+    try {
+      final balance = await _bookingService.getWalletBalance(userId);
+      setState(() {
+        _actualWalletBalance = balance;
+        _isLoadingWallet = false;
+      });
+    } catch (e) {
+      print('Error fetching wallet balance: $e');
+      setState(() {
+        _actualWalletBalance = 0.0;
+        _isLoadingWallet = false;
+      });
     }
   }
 
@@ -160,15 +196,24 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      '\u20B9${widget.walletBalance.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontFamily: 'ProductSans',
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                        fontSize: 16,
-                      ),
-                    ),
+                    _isLoadingWallet
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                          ),
+                        )
+                      : Text(
+                          '\u20B9${_actualWalletBalance.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2563EB),
+                            fontSize: 16,
+                          ),
+                        ),
                     const SizedBox(width: 12),
                     Radio<int>(
                       value: 0,
