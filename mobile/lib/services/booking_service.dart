@@ -17,6 +17,8 @@ class BookingService {
     required String travelClass,
     required double fare,
     required List<Passenger> passengers,
+    required String email,
+    required String phone,
   }) async {
     try {
       final response = await http.post(
@@ -32,6 +34,8 @@ class BookingService {
           'destination_station_code': destinationStationCode,
           'travel_class': travelClass,
           'fare': fare.toString(), // Convert to string to avoid float type errors
+          'booking_email': email,
+          'booking_phone': phone,
           'passengers': passengers.map((passenger) => {
             'name': passenger.fullName.isNotEmpty ? passenger.fullName : 'Passenger',
             'age': passenger.age,
@@ -169,6 +173,8 @@ class BookingService {
     required double totalAmount,
     required List<Passenger> passengers,
     required String paymentMethod,
+    required String email,
+    required String phone,
   }) async {
     try {
       // Step 1: Create the booking
@@ -181,6 +187,8 @@ class BookingService {
         travelClass: travelClass,
         fare: fare,
         passengers: passengers,
+        email: email,
+        phone: phone,
       );
 
       final String bookingId = bookingResponse['booking_id'];

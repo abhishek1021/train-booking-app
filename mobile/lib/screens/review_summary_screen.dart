@@ -701,6 +701,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                     merchantId: 'MERCHANT123',
                                     paymentMethod: 'Wallet',
+                                    email: widget.email,
+                                    phone: widget.phone,
                                     passengers: widget.passengers.map((p) => Passenger(
                                       fullName: p['name'] ?? '',
                                       idType: p['id_type'] ?? '',
@@ -791,6 +793,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
                                       merchantId: 'MERCHANT123',
                                       paymentMethod: 'Wallet',
+                                      email: widget.email,
+                                      phone: widget.phone,
                                       passengers: widget.passengers.map((p) => Passenger(
                                         fullName: p['fullName'],
                                         idType: p['idType'],
@@ -953,6 +957,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                             gender: p['gender'] ?? 'male',
                             isSenior: p['isSenior'] ?? false,
                           )).toList(),
+                          email: widget.email,
+                          phone: widget.phone,
                         ),
                       ),
                     );

@@ -25,6 +25,8 @@ class SelectPaymentMethodScreen extends StatefulWidget {
   final String merchantId;
   final String paymentMethod;
   final List<Passenger> passengers;
+  final String email;
+  final String phone;
   const SelectPaymentMethodScreen({
     Key? key,
     required this.walletBalance,
@@ -46,6 +48,8 @@ class SelectPaymentMethodScreen extends StatefulWidget {
     required this.merchantId,
     required this.paymentMethod,
     required this.passengers,
+    required this.email,
+    required this.phone,
   }) : super(key: key);
 
   @override
@@ -220,6 +224,8 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                       totalAmount: widget.totalPrice,
                       passengers: widget.passengers,
                       paymentMethod: 'wallet',
+                      email: widget.email,
+                      phone: widget.phone,
                     );
                     
                     // Get the booking and payment details
