@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../screens/transaction_details_screen.dart';
-import '../api_constants.dart';
+import '../config/api_config.dart';
 
 class BookingService {
-  final String baseUrl = ApiConstants.baseUrl;
+  final String baseUrl = ApiConfig.baseUrl;
 
   // Create a new booking
   Future<Map<String, dynamic>> createBooking({
@@ -20,7 +20,7 @@ class BookingService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/bookings/'),
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -31,13 +31,16 @@ class BookingService {
           'origin_station_code': originStationCode,
           'destination_station_code': destinationStationCode,
           'travel_class': travelClass,
-          'fare': fare,
+          'fare': fare.toString(), // Convert to string to avoid float type errors
           'passengers': passengers.map((passenger) => {
-            'name': passenger.fullName,
-            'id_type': passenger.idType,
-            'id_number': passenger.idNumber,
-            'passenger_type': passenger.passengerType,
-            'seat': passenger.seat,
+            'name': passenger.fullName.isNotEmpty ? passenger.fullName : 'Passenger',
+            'age': passenger.age,
+            'gender': passenger.gender,
+            'id_type': passenger.idType.isNotEmpty ? passenger.idType : 'aadhar',
+            'id_number': passenger.idNumber.isNotEmpty ? passenger.idNumber : 'XXXX-XXXX-XXXX',
+            'seat': passenger.seat.isNotEmpty ? passenger.seat : 'B2-34',
+            'status': 'confirmed',
+            'is_senior': passenger.isSenior
           }).toList(),
         }),
       );
@@ -64,7 +67,7 @@ class BookingService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/payments/'),
+        Uri.parse('$baseUrl${ApiConfig.paymentEndpoint}/'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -101,7 +104,7 @@ class BookingService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/wallet-transactions/'),
+        Uri.parse('$baseUrl${ApiConfig.walletTransactionEndpoint}/'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -133,7 +136,7 @@ class BookingService {
   Future<Map<String, dynamic>> getWalletByUserId(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/wallet/user/$userId'),
+        Uri.parse('$baseUrl${ApiConfig.walletEndpoint}/user/$userId'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -210,7 +213,7 @@ class BookingService {
 
       // Step 5: Update booking with payment ID
       await http.patch(
-        Uri.parse('$baseUrl/bookings/$bookingId'),
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/$bookingId'),
         headers: {
           'Content-Type': 'application/json',
         },

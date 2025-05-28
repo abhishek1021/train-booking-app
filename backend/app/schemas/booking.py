@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
 
 class BookingStatus(str, Enum):
@@ -19,6 +20,7 @@ class PassengerInfo(BaseModel):
     status: str = "confirmed"
     id_type: Optional[str] = None
     id_number: Optional[str] = None
+    is_senior: Optional[bool] = False
 
 
 class BookingBase(BaseModel):
@@ -28,7 +30,7 @@ class BookingBase(BaseModel):
     origin_station_code: str
     destination_station_code: str
     travel_class: str
-    fare: float
+    fare: Decimal
     passengers: List[PassengerInfo]
 
 

@@ -685,14 +685,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 Container(
                                   height: 1,
                                   width: double.infinity,
-                                  margin: EdgeInsets.only(top: 7, bottom: 14),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(1),
-                                    gradient: LinearGradient(colors: [
-                                      Color(0xFF7C3AED),
-                                      Color(0xFF9F7AEA)
-                                    ]),
-                                  ),
+                                  margin: EdgeInsets.only(top: 14, bottom: 14),
                                 ),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,

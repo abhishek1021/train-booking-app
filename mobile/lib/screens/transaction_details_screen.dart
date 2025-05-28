@@ -529,6 +529,9 @@ class Passenger {
   final String idNumber;
   final String passengerType;
   final String seat;
+  final int age;
+  final String gender;
+  final bool isSenior;
 
   Passenger({
     required this.fullName,
@@ -536,6 +539,9 @@ class Passenger {
     required this.idNumber,
     required this.passengerType,
     required this.seat,
+    this.age = 30, // Default age
+    this.gender = 'male', // Default gender
+    this.isSenior = false, // Default senior status
   });
 
   Map<String, dynamic> toJson() => {
@@ -544,6 +550,9 @@ class Passenger {
     'idNumber': idNumber,
     'passengerType': passengerType,
     'seat': seat,
+    'age': age,
+    'gender': gender,
+    'isSenior': isSenior,
   };
 }
 

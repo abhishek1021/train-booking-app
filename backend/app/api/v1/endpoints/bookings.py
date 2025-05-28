@@ -7,6 +7,7 @@ import json
 import uuid
 from boto3.dynamodb.conditions import Key
 from pydantic import BaseModel
+from decimal import Decimal
 
 # Import schemas
 from app.schemas.booking import BookingBase, BookingCreate, BookingUpdate, Booking, BookingStatus
@@ -43,7 +44,7 @@ async def create_booking(booking: BookingCreate):
         'origin_station_code': booking.origin_station_code,
         'destination_station_code': booking.destination_station_code,
         'class': booking.travel_class,
-        'fare': booking.fare,
+        'fare': Decimal(str(booking.fare)),  # Convert to Decimal for DynamoDB
         'passengers': [passenger.dict() for passenger in booking.passengers],
         'created_at': now,
         'updated_at': now
