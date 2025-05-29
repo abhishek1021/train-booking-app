@@ -114,17 +114,22 @@ class TransactionDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  bookingId,
-                  style: const TextStyle(
-                    fontFamily: 'ProductSans',
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7C3AED),
-                    fontSize: 16,
+                Expanded(
+                  child: Text(
+                    bookingId,
+                    style: const TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7C3AED),
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy, size: 18, color: Color(0xFF7C3AED)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   onPressed: () {
                     // Copy to clipboard logic
                   },
@@ -451,14 +456,17 @@ class TransactionDetailsScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label + ':',
-            style: const TextStyle(
-              fontFamily: 'ProductSans',
-              color: Colors.black54,
-              fontSize: 14,
+          SizedBox(
+            width: 90, // Fixed width for labels to align them
+            child: Text(
+              label + ':',
+              style: const TextStyle(
+                fontFamily: 'ProductSans',
+                color: Colors.black54,
+                fontSize: 14,
+              ),
             ),
           ),
           const SizedBox(width: 6),
@@ -471,11 +479,14 @@ class TransactionDetailsScreen extends StatelessWidget {
                 fontSize: 14,
               ),
               overflow: TextOverflow.ellipsis,
+              maxLines: 2, // Allow up to 2 lines for longer values
             ),
           ),
           if (copyable)
             IconButton(
               icon: const Icon(Icons.copy, size: 16, color: Color(0xFF7C3AED)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
               onPressed: () {
                 // Copy logic
               },

@@ -174,6 +174,98 @@ class BookingService {
       return 0.0;
     }
   }
+  
+  // Get wallet transactions
+  Future<List<dynamic>> getWalletTransactions(String walletId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl${ApiConfig.walletTransactionEndpoint}/wallet/$walletId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> transactions = jsonDecode(response.body);
+        return transactions;
+      } else {
+        throw Exception('Failed to get wallet transactions: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting wallet transactions: $e');
+      }
+      // Return an empty list in case of error
+      return [];
+    }
+  }
+  
+  // Get bookings by user ID
+  Future<List<dynamic>> getBookingsByUserId(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/user/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> bookings = jsonDecode(response.body);
+        return bookings;
+      } else {
+        throw Exception('Failed to get bookings: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting bookings: $e');
+      }
+      // Return an empty list in case of error
+      return [];
+    }
+  }
+  
+  // Get booking by ID
+  Future<Map<String, dynamic>> getBookingById(String bookingId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/$bookingId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (kDebugMode) {
+        print('Booking API Response Status: ${response.statusCode}');
+        print('Booking API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> booking = jsonDecode(response.body);
+        
+        // Ensure booking_email and booking_phone are included
+        if (booking['booking_email'] == null) {
+          if (kDebugMode) {
+            print('Warning: booking_email is null in the API response');
+          }
+        }
+        if (booking['booking_phone'] == null) {
+          if (kDebugMode) {
+            print('Warning: booking_phone is null in the API response');
+          }
+        }
+        
+        return booking;
+      } else {
+        throw Exception('Failed to get booking: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting booking: $e');
+      }
+      throw Exception('Failed to get booking: $e');
+    }
+  }
 
   // Process a complete booking with payment
   Future<Map<String, dynamic>> processBookingWithPayment({

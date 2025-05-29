@@ -11,6 +11,7 @@ import 'package:train_booking_app/screens/auth/signup_step1_email_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step3_sendotp_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.dart';
 import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
+import 'package:train_booking_app/screens/wallet_screen.dart';
 
 void main() {
   runApp(
@@ -84,6 +85,7 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
         '/signup_step3_password': (context) => const SignupStep3PasswordScreen(),
         '/signup_step3_mobile_otp': (context) => SignupStep3SendOtpScreen(),
         '/signup_step3_sendotp': (context) => SignupStep3SendOtpScreen(),
+        '/wallet': (context) => const WalletScreen(),
       },
     );
   }
