@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
 
 class WalletStatus(str, Enum):
@@ -11,7 +12,7 @@ class WalletStatus(str, Enum):
 
 class WalletBase(BaseModel):
     user_id: str
-    balance: float = 0.0
+    balance: Decimal = Decimal('0.0')
     status: WalletStatus = WalletStatus.ACTIVE
 
 
@@ -20,7 +21,7 @@ class WalletCreate(WalletBase):
 
 
 class WalletUpdate(BaseModel):
-    balance: Optional[float] = None
+    balance: Optional[Decimal] = None
     status: Optional[WalletStatus] = None
 
 

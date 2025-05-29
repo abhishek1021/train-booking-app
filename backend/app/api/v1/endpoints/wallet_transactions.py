@@ -59,11 +59,13 @@ async def create_transaction(transaction: WalletTransactionCreate):
         wallet_transactions_table.put_item(Item=transaction_item)
         
         # Update wallet balance
-        new_balance = wallet['balance']
+        # Convert string balance to Decimal for calculation
+        current_balance = Decimal(wallet['balance']) if isinstance(wallet['balance'], str) else wallet['balance']
+        
         if transaction.type == TransactionType.CREDIT:
-            new_balance += transaction.amount
+            new_balance = current_balance + transaction.amount
         elif transaction.type == TransactionType.DEBIT:
-            new_balance -= transaction.amount
+            new_balance = current_balance - transaction.amount
         
         wallet_update = WalletUpdate(balance=new_balance)
         await update_wallet(transaction.wallet_id, wallet_update)

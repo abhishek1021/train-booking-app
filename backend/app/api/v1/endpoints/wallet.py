@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
 # Import schemas
 from app.schemas.wallet import WalletBase, WalletCreate, WalletUpdate, Wallet, WalletStatus
@@ -29,7 +30,7 @@ async def create_wallet(wallet: WalletCreate):
         'SK': "METADATA",
         'wallet_id': wallet_id,
         'user_id': wallet.user_id,
-        'balance': wallet.balance,
+        'balance': str(wallet.balance),  # Convert Decimal to string for DynamoDB
         'status': wallet.status.value,
         'created_at': now,
         'updated_at': now
@@ -111,7 +112,10 @@ async def get_wallet_by_user_id(user_id: str):
         
         items = response.get('Items', [])
         if not items:
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Wallet for user {user_id} not found"
+            )
             
         item = items[0]
         
@@ -162,7 +166,7 @@ async def update_wallet(wallet_id: str, wallet_update: WalletUpdate):
         # Add fields to update
         if wallet_update.balance is not None:
             update_expression += ", balance = :balance"
-            expression_attribute_values[':balance'] = wallet_update.balance
+            expression_attribute_values[':balance'] = str(wallet_update.balance)  # Convert Decimal to string for DynamoDB
         
         if wallet_update.status is not None:
             update_expression += ", #status = :status"
