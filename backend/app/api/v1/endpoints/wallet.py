@@ -162,6 +162,7 @@ async def update_wallet(wallet_id: str, wallet_update: WalletUpdate):
         expression_attribute_values = {
             ':updated_at': now
         }
+        expression_attribute_names = {}
         
         # Add fields to update
         if wallet_update.balance is not None:
@@ -171,21 +172,24 @@ async def update_wallet(wallet_id: str, wallet_update: WalletUpdate):
         if wallet_update.status is not None:
             update_expression += ", #status = :status"
             expression_attribute_values[':status'] = wallet_update.status.value
-            expression_attribute_names = {"#status": "status"}
-        else:
-            expression_attribute_names = {}
+            expression_attribute_names["#status"] = "status"
         
         # Update the item
-        response = wallet_table.update_item(
-            Key={
+        update_params = {
+            'Key': {
                 'PK': f"WALLET#{wallet_id}",
                 'SK': "METADATA"
             },
-            UpdateExpression=update_expression,
-            ExpressionAttributeValues=expression_attribute_values,
-            ExpressionAttributeNames=expression_attribute_names if expression_attribute_names else None,
-            ReturnValues="ALL_NEW"
-        )
+            'UpdateExpression': update_expression,
+            'ExpressionAttributeValues': expression_attribute_values,
+            'ReturnValues': "ALL_NEW"
+        }
+        
+        # Only add ExpressionAttributeNames if it's not empty
+        if expression_attribute_names:
+            update_params['ExpressionAttributeNames'] = expression_attribute_names
+            
+        response = wallet_table.update_item(**update_params)
         
         updated_item = response['Attributes']
         
