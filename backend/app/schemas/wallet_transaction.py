@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
 
 class TransactionType(str, Enum):
@@ -27,7 +28,7 @@ class WalletTransactionBase(BaseModel):
     wallet_id: str
     user_id: str
     type: TransactionType
-    amount: float
+    amount: Decimal
     source: TransactionSource
     reference_id: Optional[str] = None
     notes: Optional[str] = None

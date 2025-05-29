@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
 # Import schemas
 from app.schemas.wallet_transaction import (
@@ -36,7 +37,7 @@ async def create_transaction(transaction: WalletTransactionCreate):
         'wallet_id': transaction.wallet_id,
         'user_id': transaction.user_id,
         'type': transaction.type.value,
-        'amount': transaction.amount,
+        'amount': str(transaction.amount),  # Convert Decimal to string for DynamoDB
         'source': transaction.source.value,
         'status': TransactionStatus.PENDING.value,
         'reference_id': transaction.reference_id,
