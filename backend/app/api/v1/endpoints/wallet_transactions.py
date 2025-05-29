@@ -15,6 +15,58 @@ from app.schemas.wallet_transaction import (
 )
 from app.api.v1.endpoints.wallet import get_wallet, update_wallet
 from app.schemas.wallet import WalletUpdate
+from app.api.v1.endpoints.payments import payments_table
+from app.schemas.payment import PaymentUpdate, PaymentStatus
+
+# Helper function to update payment status after wallet transaction
+async def update_payment_after_transaction(reference_id, txn_id, status=PaymentStatus.SUCCESS):
+    """Update payment status, transaction reference, and gateway response after wallet transaction"""
+    try:
+        # Find the payment by reference_id (booking_id)
+        response = payments_table.query(
+            IndexName='booking_id-index',
+            KeyConditionExpression=Key('booking_id').eq(reference_id),
+            Limit=1
+        )
+        
+        items = response.get('Items', [])
+        if not items:
+            return None
+            
+        payment_item = items[0]
+        payment_id = payment_item['payment_id']
+        
+        # Create payment update
+        now = datetime.utcnow().isoformat()
+        
+        # Prepare update expression
+        update_expression = "SET payment_status = :payment_status, transaction_reference = :txn_id, completed_at = :completed_at, gateway_response = :gateway_response"
+        expression_attribute_values = {
+            ':payment_status': status.value,
+            ':txn_id': txn_id,
+            ':completed_at': now,
+            ':gateway_response': {
+                'transaction_id': txn_id,
+                'status': status.value,
+                'timestamp': now,
+                'method': 'wallet'
+            }
+        }
+        
+        # Update the payment
+        payments_table.update_item(
+            Key={
+                'PK': f"PAYMENT#{payment_id}",
+                'SK': "METADATA"
+            },
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values
+        )
+        
+        return payment_id
+    except Exception as e:
+        print(f"Error updating payment after transaction: {str(e)}")
+        return None
 
 router = APIRouter()
 
@@ -113,6 +165,19 @@ async def create_transaction(transaction: WalletTransactionCreate):
                 ':status': TransactionStatus.SUCCESS.value
             }
         )
+        
+        # If this transaction is for a booking payment, update the payment status
+        if transaction.source == TransactionSource.BOOKING and transaction.reference_id:
+            try:
+                # Update payment status, transaction reference, and gateway response
+                await update_payment_after_transaction(
+                    reference_id=transaction.reference_id,
+                    txn_id=txn_id,
+                    status=PaymentStatus.SUCCESS
+                )
+            except Exception as e:
+                # Log the error but don't fail the transaction
+                print(f"Error updating payment after wallet transaction: {str(e)}")
         
         # Convert to response model
         response = {**transaction.dict(), 

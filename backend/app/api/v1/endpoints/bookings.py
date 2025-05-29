@@ -274,6 +274,8 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
             'travel_class': updated_item['class'],
             'fare': updated_item['fare'],
             'passengers': updated_item['passengers'],
+            'booking_email': updated_item.get('booking_email'),  # Include booking_email
+            'booking_phone': updated_item.get('booking_phone'),  # Include booking_phone
             'payment_id': updated_item.get('payment_id'),
             'created_at': datetime.fromisoformat(updated_item['created_at']),
             'updated_at': datetime.fromisoformat(updated_item['updated_at']),
