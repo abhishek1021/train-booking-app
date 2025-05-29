@@ -2,15 +2,28 @@ from fastapi import APIRouter, HTTPException, status, Query, Depends
 from typing import List, Optional, Dict, Any
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
+import boto3
+import os
 import uuid
 import random
 import string
 
-from ....db.dynamodb import bookings_table
-from ....schemas.booking import Booking, BookingCreate, BookingUpdate, BookingStatus
-from ....utils.pnr_generator import generate_pnr
+# Import schemas
+from app.schemas.booking import Booking, BookingCreate, BookingUpdate, BookingStatus
 
 router = APIRouter()
+
+# Table names
+BOOKINGS_TABLE = 'bookings'
+dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+bookings_table = dynamodb.Table(BOOKINGS_TABLE)
+
+# Generate PNR function
+def generate_pnr():
+    """Generate a unique PNR number"""
+    prefix = "PNR"
+    date_part = datetime.now().strftime("%y%m%d%H%M%S")
+    return f"{prefix}{date_part}"
 
 @router.post("/", response_model=Dict[str, Any])
 async def create_booking(booking: BookingCreate):
