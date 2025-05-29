@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:train_booking_app/api_constants.dart';
 import 'package:train_booking_app/screens/city_search_screen.dart';
 import 'package:train_booking_app/screens/train_search_results_screen.dart';
+import 'package:train_booking_app/screens/tatkal_mode_screen.dart';
+import 'package:train_booking_app/screens/tatkal_jobs_screen.dart';
 import 'search_tab/search_header.dart';
 import 'search_tab/search_card.dart';
 import 'search_tab/quick_actions.dart';
@@ -505,10 +507,154 @@ class _SearchTabState extends State<SearchTab> {
                       ),
                     ),
                   ),
+                  
+                  // Tatkal Mode Banner
+                  const SizedBox(height: 24),
+                  _buildTatkalModeBanner(context),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+  
+  // Tatkal Mode Banner
+  Widget _buildTatkalModeBanner(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const TatkalJobsScreen()),
+          );
+        },
+        child: Container(
+          width: double.infinity,
+          height: 140,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Background design elements
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -30,
+                bottom: -30,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    // Left side with icon and text
+                    Expanded(
+                      flex: 7,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.flash_on,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Tatkal Mode',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'ProductSans',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Automate your Tatkal booking process for faster ticket booking',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'ProductSans',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Right side with button
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Try Now',
+                            style: TextStyle(
+                              color: Color(0xFF7C3AED),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              fontFamily: 'ProductSans',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

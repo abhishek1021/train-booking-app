@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation - TatkalPro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f7f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .email-header {
+            background: linear-gradient(135deg, #7C3AED, #9F7AEA);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        
+        .email-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .email-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .email-body {
+            padding: 32px 24px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 24px;
+            color: #333;
+        }
+        
+        .booking-info {
+            background-color: #f7f7fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .booking-info h2 {
+            font-size: 18px;
+            color: #7C3AED;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .booking-details {
+            margin-bottom: 24px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 12px;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+            text-align: right;
+        }
+        
+        .journey-details {
+            background-color: #f0eafb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .journey-details h2 {
+            font-size: 18px;
+            color: #7C3AED;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .journey-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .station {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .station-code {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .station-name {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .journey-arrow {
+            flex: 0.5;
+            text-align: center;
+            color: #7C3AED;
+            font-size: 24px;
+        }
+        
+        .journey-time {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #7C3AED;
+        }
+        
+        .passenger-details {
+            margin-bottom: 24px;
+        }
+        
+        .passenger-details h2 {
+            font-size: 18px;
+            color: #7C3AED;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .passenger {
+            background-color: #f7f7fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .passenger:last-child {
+            margin-bottom: 0;
+        }
+        
+        .passenger-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .passenger-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .qr-section p {
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .qr-placeholder {
+            width: 150px;
+            height: 150px;
+            background-color: #f0eafb;
+            margin: 0 auto;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7C3AED;
+            font-weight: 600;
+        }
+        
+        .cta-button {
+            display: block;
+            text-align: center;
+            background: linear-gradient(135deg, #7C3AED, #9F7AEA);
+            color: white;
+            text-decoration: none;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 32px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background: linear-gradient(135deg, #6B2AE2, #8E69D9);
+        }
+        
+        .important-info {
+            background-color: #fff8e6;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .important-info h3 {
+            color: #d97706;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .important-info p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .email-footer {
+            background-color: #f7f7fa;
+            padding: 24px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .social-links {
+            margin: 16px 0;
+        }
+        
+        .social-icon {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background-color: #7C3AED;
+            border-radius: 50%;
+            margin: 0 8px;
+            color: white;
+            line-height: 32px;
+            text-align: center;
+            text-decoration: none;
+        }
+        
+        .footer-links {
+            margin-top: 16px;
+        }
+        
+        .footer-links a {
+            color: #7C3AED;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100%;
+                border-radius: 0;
+            }
+            
+            .email-header, .email-body, .email-footer {
+                padding: 24px 16px;
+            }
+            
+            .journey-row {
+                flex-direction: column;
+            }
+            
+            .station {
+                margin-bottom: 16px;
+            }
+            
+            .journey-arrow {
+                transform: rotate(90deg);
+                margin: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Booking Confirmed!</h1>
+            <p>Your train journey is all set</p>
+        </div>
+        
+        <div class="email-body">
+            <p class="greeting">Hello {{passenger_name}},</p>
+            
+            <p>Great news! Your train booking has been confirmed. Below are the details of your journey:</p>
+            
+            <div class="booking-info">
+                <h2>Booking Information</h2>
+                <div class="booking-details">
+                    <div class="detail-row">
+                        <span class="detail-label">PNR Number</span>
+                        <span class="detail-value">{{pnr}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Booking ID</span>
+                        <span class="detail-value">{{booking_id}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Booking Date</span>
+                        <span class="detail-value">{{booking_date}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Payment Status</span>
+                        <span class="detail-value" style="color: #059669;">{{payment_status}}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="journey-details">
+                <h2>Journey Details</h2>
+                <div class="journey-row">
+                    <div class="station">
+                        <div class="station-code">{{origin_code}}</div>
+                        <div class="station-name">{{origin_station}}</div>
+                    </div>
+                    <div class="journey-arrow">→</div>
+                    <div class="station">
+                        <div class="station-code">{{destination_code}}</div>
+                        <div class="station-name">{{destination_station}}</div>
+                    </div>
+                </div>
+                <div class="journey-time">
+                    {{journey_date}} • {{departure_time}}
+                </div>
+                <div class="detail-row" style="margin-top: 16px;">
+                    <span class="detail-label">Train Number</span>
+                    <span class="detail-value">{{train_number}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Train Name</span>
+                    <span class="detail-value">{{train_name}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Class</span>
+                    <span class="detail-value">{{train_class}}</span>
+                </div>
+            </div>
+            
+            <div class="passenger-details">
+                <h2>Passenger Details</h2>
+                {{#each passengers}}
+                <div class="passenger">
+                    <div class="passenger-name">{{name}}</div>
+                    <div class="passenger-info">
+                        <span>Age: {{age}} | Gender: {{gender}}</span>
+                        <span>Seat: {{seat}}</span>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div class="qr-section">
+                <p>Scan this QR code at the station for quick access to your ticket</p>
+                <div class="qr-placeholder">
+                    QR Code for PNR: {{pnr}}
+                </div>
+            </div>
+            
+            <div class="important-info">
+                <h3>Important Information</h3>
+                <p>Please arrive at the station at least 30 minutes before departure. Carry a valid ID proof that matches the details provided during booking.</p>
+            </div>
+            
+            <a href="https://tatkalpro.in/my-bookings" class="cta-button">View Booking Details</a>
+            
+            <p>Thank you for choosing TatkalPro for your journey. We wish you a pleasant trip!</p>
+            
+            <p>Best regards,<br>Team TatkalPro</p>
+        </div>
+        
+        <div class="email-footer">
+            <p>© 2025 TatkalPro. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-icon">f</a>
+                <a href="#" class="social-icon">t</a>
+                <a href="#" class="social-icon">in</a>
+            </div>
+            <p>Have questions? Contact our support team at <a href="mailto:support@tatkalpro.in">support@tatkalpro.in</a></p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Unsubscribe</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

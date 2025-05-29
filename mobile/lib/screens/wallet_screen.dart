@@ -4,6 +4,7 @@ import '../services/booking_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../widgets/success_animation_dialog.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({Key? key}) : super(key: key);
@@ -161,10 +162,20 @@ class _WalletScreenState extends State<WalletScreen> {
 
       // Clear the amount field
       _amountController.clear();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wallet topped up successfully')),
-      );
+      
+      // Show success animation dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => SuccessAnimationDialog(
+            message: 'Wallet topped up successfully\n₹${amount.toStringAsFixed(2)} added to your wallet',
+            onAnimationComplete: () {
+              // Dialog will auto-dismiss after animation
+            },
+          ),
+        );
+      }
     } catch (e) {
       print('Error topping up wallet: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -441,12 +452,24 @@ class _WalletScreenState extends State<WalletScreen> {
           TextField(
             controller: _amountController,
             keyboardType: TextInputType.number,
+            style: const TextStyle(
+              fontFamily: 'ProductSans',
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+              fontSize: 16,
+            ),
             decoration: InputDecoration(
               hintText: 'Enter amount',
+              hintStyle: const TextStyle(
+                fontFamily: 'ProductSans',
+                color: Colors.black45,
+                fontSize: 16,
+              ),
               prefixText: '₹ ',
               prefixStyle: const TextStyle(
                 fontFamily: 'ProductSans',
-                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
                 fontSize: 16,
               ),
               filled: true,
@@ -489,6 +512,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   fontFamily: 'ProductSans',
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  color: Color.fromARGB(255, 255, 255, 255)
                 ),
               ),
             ),

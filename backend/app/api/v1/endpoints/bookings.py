@@ -7,6 +7,10 @@ import os
 import uuid
 import random
 import string
+import sendgrid
+from sendgrid.helpers.mail import Mail
+import jinja2
+import pathlib
 
 # Import schemas
 from app.schemas.booking import Booking, BookingCreate, BookingUpdate, BookingStatus
@@ -24,6 +28,88 @@ def generate_pnr():
     prefix = "PNR"
     date_part = datetime.now().strftime("%y%m%d%H%M%S")
     return f"{prefix}{date_part}"
+
+# Function to send booking confirmation email
+def send_booking_confirmation_email(booking_data):
+    """Send booking confirmation email to the user"""
+    try:
+        # Get SendGrid API key
+        SENDGRID_API_KEY = os.environ.get("SENDGRIDAPIKEY")
+        if not SENDGRID_API_KEY:
+            print("[TatkalPro][Email] SendGrid API key not found")
+            return
+            
+        SENDER_EMAIL = "bookings@tatkalpro.in"
+        to_email = booking_data.get("booking_email")
+        
+        if not to_email:
+            print("[TatkalPro][Email] No recipient email provided")
+            return
+            
+        # Get passenger name (first passenger in the list)
+        passengers = booking_data.get("passengers", [])
+        passenger_name = "Traveler"
+        if passengers and len(passengers) > 0:
+            passenger_name = passengers[0].get("name", "Traveler")
+        
+        # Format booking date
+        booking_date = datetime.fromisoformat(booking_data.get("created_at")).strftime("%B %d, %Y")
+        
+        # Load the email template
+        template_dir = pathlib.Path(__file__).parent.parent.parent.parent / "templates"
+        template_path = template_dir / "booking_confirmation_email.html"
+        
+        with open(template_path, "r") as file:
+            template_content = file.read()
+        
+        # Create Jinja2 environment
+        env = jinja2.Environment()
+        template = env.from_string(template_content)
+        
+        # Prepare template variables
+        template_vars = {
+            "passenger_name": passenger_name,
+            "pnr": booking_data.get("pnr"),
+            "booking_id": booking_data.get("booking_id"),
+            "booking_date": booking_date,
+            "payment_status": "Successful",
+            "origin_code": booking_data.get("origin_station_code"),
+            "origin_station": booking_data.get("origin_station_code"),  # Would be better with full station name
+            "destination_code": booking_data.get("destination_station_code"),
+            "destination_station": booking_data.get("destination_station_code"),  # Would be better with full station name
+            "journey_date": booking_data.get("journey_date"),
+            "departure_time": "As per schedule",  # Would be better with actual departure time
+            "train_number": booking_data.get("train_id"),  # Would be better with actual train number
+            "train_name": "Express",  # Would be better with actual train name
+            "train_class": booking_data.get("class"),
+            "passengers": [{
+                "name": p.get("name"),
+                "age": p.get("age"),
+                "gender": p.get("gender"),
+                "seat": p.get("seat", "To be allocated")
+            } for p in booking_data.get("passengers", [])]
+        }
+        
+        # Render the template
+        html_content = template.render(**template_vars)
+        
+        # Create the email message
+        message = Mail(
+            from_email=SENDER_EMAIL,
+            to_emails=to_email,
+            subject=f"Booking Confirmed - PNR: {booking_data.get('pnr')}",
+            html_content=html_content
+        )
+        
+        # Send the email
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+        response = sg.send(message)
+        
+        print(f"[TatkalPro][Email] Email sent with status code: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"[TatkalPro][Email] Error in send_booking_confirmation_email: {e}")
+        raise e
 
 @router.post("/", response_model=Dict[str, Any])
 async def create_booking(booking: BookingCreate):
@@ -55,6 +141,16 @@ async def create_booking(booking: BookingCreate):
         }
         
         bookings_table.put_item(Item=booking_item)
+        
+        # Send booking confirmation email if email is provided
+        if booking.booking_email:
+            try:
+                print(f"[TatkalPro][Email] Sending booking confirmation email to {booking.booking_email}")
+                send_booking_confirmation_email(booking_item)
+                print(f"[TatkalPro][Email] Booking confirmation email sent successfully")
+            except Exception as email_error:
+                print(f"[TatkalPro][Email] Error sending booking confirmation email: {email_error}")
+                # Don't fail the booking if email fails
         
         return {
             'booking_id': booking_id,
