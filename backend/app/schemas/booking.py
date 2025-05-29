@@ -45,6 +45,8 @@ class BookingUpdate(BaseModel):
     payment_id: Optional[str] = None
     cancellation_details: Optional[Dict[str, Any]] = None
     refund_status: Optional[str] = None
+    booking_email: Optional[str] = None
+    booking_phone: Optional[str] = None
 
 
 class Booking(BookingBase):

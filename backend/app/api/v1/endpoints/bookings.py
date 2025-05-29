@@ -46,6 +46,8 @@ async def create_booking(booking: BookingCreate):
         'class': booking.travel_class,
         'fare': Decimal(str(booking.fare)),  # Convert to Decimal for DynamoDB
         'passengers': [passenger.dict() for passenger in booking.passengers],
+        'booking_email': booking.booking_email,  # Add booking_email to DynamoDB record
+        'booking_phone': booking.booking_phone,  # Add booking_phone to DynamoDB record
         'created_at': now,
         'updated_at': now
     }
@@ -247,6 +249,15 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
         if booking_update.refund_status is not None:
             update_expression += ", refund_status = :refund_status"
             expression_attribute_values[':refund_status'] = booking_update.refund_status
+            
+        # Add booking_email and booking_phone fields if provided
+        if booking_update.booking_email is not None:
+            update_expression += ", booking_email = :booking_email"
+            expression_attribute_values[':booking_email'] = booking_update.booking_email
+            
+        if booking_update.booking_phone is not None:
+            update_expression += ", booking_phone = :booking_phone"
+            expression_attribute_values[':booking_phone'] = booking_update.booking_phone
         
         # Update the item
         response = bookings_table.update_item(
