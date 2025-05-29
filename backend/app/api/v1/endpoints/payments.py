@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
 # Import schemas
 from app.schemas.payment import PaymentBase, PaymentCreate, PaymentUpdate, Payment, PaymentStatus, PaymentMethod
@@ -30,7 +31,7 @@ async def create_payment(payment: PaymentCreate):
         'payment_id': payment_id,
         'user_id': payment.user_id,
         'booking_id': payment.booking_id,
-        'amount': payment.amount,
+        'amount': str(payment.amount),  # Convert Decimal to string for DynamoDB
         'payment_method': payment.payment_method.value,
         'payment_status': PaymentStatus.PENDING.value,
         'initiated_at': now,

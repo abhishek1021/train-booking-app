@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
 
 class PaymentStatus(str, Enum):
@@ -22,7 +23,7 @@ class PaymentMethod(str, Enum):
 class PaymentBase(BaseModel):
     user_id: str
     booking_id: str
-    amount: float
+    amount: Decimal
     payment_method: PaymentMethod
 
 
