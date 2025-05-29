@@ -47,28 +47,57 @@ async def create_transaction(transaction: WalletTransactionCreate):
     
     try:
         # First get the wallet to check if it exists and has sufficient balance for debits
-        wallet = await get_wallet(transaction.wallet_id)
-        
-        if transaction.type == TransactionType.DEBIT and wallet['balance'] < transaction.amount:
+        try:
+            wallet = await get_wallet(transaction.wallet_id)
+            # Convert string balance to Decimal for comparison
+            wallet_balance = Decimal(wallet['balance']) if isinstance(wallet['balance'], str) else wallet['balance']
+            
+            if transaction.type == TransactionType.DEBIT and wallet_balance < transaction.amount:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Insufficient balance in wallet: {wallet_balance} < {transaction.amount}"
+                )
+        except HTTPException as e:
+            # Re-raise the HTTP exception
+            raise e
+        except Exception as e:
+            # Handle other exceptions when getting the wallet
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Insufficient balance in wallet: {wallet['balance']} < {transaction.amount}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error retrieving wallet: {str(e)}"
             )
         
         # Save transaction to DynamoDB
         wallet_transactions_table.put_item(Item=transaction_item)
         
         # Update wallet balance
-        # Convert string balance to Decimal for calculation
-        current_balance = Decimal(wallet['balance']) if isinstance(wallet['balance'], str) else wallet['balance']
-        
-        if transaction.type == TransactionType.CREDIT:
-            new_balance = current_balance + transaction.amount
-        elif transaction.type == TransactionType.DEBIT:
-            new_balance = current_balance - transaction.amount
-        
-        wallet_update = WalletUpdate(balance=new_balance)
-        await update_wallet(transaction.wallet_id, wallet_update)
+        try:
+            # Convert string balance to Decimal for calculation
+            current_balance = Decimal(wallet['balance']) if isinstance(wallet['balance'], str) else wallet['balance']
+            
+            if transaction.type == TransactionType.CREDIT:
+                new_balance = current_balance + transaction.amount
+            elif transaction.type == TransactionType.DEBIT:
+                new_balance = current_balance - transaction.amount
+            
+            # Create a wallet update object
+            wallet_update = WalletUpdate(balance=new_balance)
+            
+            # Update the wallet balance
+            try:
+                await update_wallet(transaction.wallet_id, wallet_update)
+            except Exception as e:
+                # If wallet update fails, raise an exception
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error updating wallet balance: {str(e)}"
+                )
+        except Exception as e:
+            # Handle any other exceptions during balance calculation
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error calculating new wallet balance: {str(e)}"
+            )
         
         # Update transaction status to SUCCESS
         wallet_transactions_table.update_item(
