@@ -13,4 +13,6 @@ class ApiConfig {
   static const String walletTransactionEndpoint = '/wallet-transactions';
   static const String passengerEndpoint = '/passengers';
   static const String cityEndpoint = '/cities';
+  static const String stationEndpoint = '/stations';
+  static const String jobsEndpoint = '/jobs';
 }

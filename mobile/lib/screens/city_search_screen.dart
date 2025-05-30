@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:train_booking_app/api_constants.dart';
+import '../config/api_config.dart';
 import 'package:dio/dio.dart';
-import 'package:marquee/marquee.dart';
 
 class CitySearchScreen extends StatefulWidget {
+  final String searchType; // 'city' or 'station'
   final bool isOrigin;
-  final Function(Map<String, dynamic>) onCitySelected;
-  const CitySearchScreen(
-      {Key? key, required this.isOrigin, required this.onCitySelected})
-      : super(key: key);
+  final Function(Map<String, dynamic>)? onCitySelected;
+  final String sourceScreen; // To identify which screen called this
+  
+  const CitySearchScreen({
+    Key? key, 
+    this.searchType = 'city',
+    this.isOrigin = true, 
+    this.onCitySelected,
+    this.sourceScreen = 'default',
+  }) : super(key: key);
 
   @override
-  _CitySearchScreenState createState() => _CitySearchScreenState();
+  State<CitySearchScreen> createState() => _CitySearchScreenState();
 }
 
 class _CitySearchScreenState extends State<CitySearchScreen> {
@@ -42,20 +48,21 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   Future<void> _fetchCities() async {
     try {
       final dio = Dio();
-      final response = await dio.get("${ApiConstants.baseUrl}/api/v1/cities");
+      final String endpoint = widget.searchType == 'station' 
+          ? "${ApiConfig.baseUrl}${ApiConfig.stationEndpoint}"
+          : "${ApiConfig.baseUrl}${ApiConfig.cityEndpoint}";
+      
+      final response = await dio.get(endpoint);
       setState(() {
         _cities = (response.data as List)
             .map((item) => {
-                  'city_id': item['city_id'] ?? item['id'],
-                  'station_code':
-                      item['keyword'] ?? item['station_code'] ?? item['code'],
-                  'station_name':
-                      item['name'] ?? item['station_name'] ?? item['city'],
+                  'id': item['id'] ?? item['city_id'] ?? item['station_id'],
+                  'code': item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'name': item['name'] ?? item['station_name'] ?? item['city'],
                   'state': item['state'] ?? '',
-                  'id': item['id'] ?? item['city_id'],
                 })
             .toList();
-        _cities.sort((a, b) => (a['station_name'] ?? '').toString().toLowerCase().compareTo((b['station_name'] ?? '').toString().toLowerCase()));
+        _cities.sort((a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo((b['name'] ?? '').toString().toLowerCase()));
         _filteredCities = _cities;
         _loading = false;
       });
@@ -72,187 +79,190 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     setState(() {
       _search = query;
       _filteredCities = _cities.where((city) {
-        final code = city['station_code']?.toString()?.toLowerCase() ?? '';
-        final name = city['station_name']?.toString()?.toLowerCase() ?? '';
-        final cityName = city['city']?.toString()?.toLowerCase() ?? '';
+        final code = city['code']?.toString().toLowerCase() ?? '';
+        final name = city['name']?.toString().toLowerCase() ?? '';
+        final state = city['state']?.toString().toLowerCase() ?? '';
         return code.contains(query.toLowerCase()) ||
             name.contains(query.toLowerCase()) ||
-            cityName.contains(query.toLowerCase());
+            state.contains(query.toLowerCase());
       }).toList();
     });
   }
 
-  Widget _stationTextMarquee(String text, {TextAlign align = TextAlign.left}) {
-    if (text.length > 20) {
-      return SizedBox(
-        width: 120,
-        height: 22,
-        child: Marquee(
-          text: text,
-          style: const TextStyle(
-            fontFamily: 'ProductSans',
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Colors.black,
-          ),
-          scrollAxis: Axis.horizontal,
-          blankSpace: 30.0,
-          velocity: 25.0,
-          pauseAfterRound: const Duration(milliseconds: 800),
-          startAfter: const Duration(milliseconds: 800),
-          fadingEdgeStartFraction: 0.1,
-          fadingEdgeEndFraction: 0.1,
-          showFadingOnlyWhenScrolling: false,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          textDirection: TextDirection.ltr,
-        ),
-      );
-    } else {
-      return Text(
-        text,
-        style: const TextStyle(
-          fontFamily: 'ProductSans',
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-          color: Colors.black,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: align,
-      );
+  void _onCityTap(Map<String, dynamic> city) {
+    // Return a standardized format for both city and station
+    final result = {
+      'id': city['id'],
+      'code': city['code'],
+      'name': city['name'],
+      'state': city['state'],
+      'sourceScreen': widget.sourceScreen, // Add source screen to identify where to return
+    };
+    
+    if (widget.onCitySelected != null) {
+      widget.onCitySelected!(result);
     }
-  }
-
-  Widget _buildCityTile(Map city) {
-    final Map<String, dynamic> cityMap = Map<String, dynamic>.from(city);
-    final cityName =
-        cityMap['station_name'] ?? cityMap['name'] ?? cityMap['city'] ?? '';
-    final code =
-        cityMap['station_code'] ?? cityMap['keyword'] ?? cityMap['code'] ?? '';
-    final state = cityMap['state'] ?? '';
-    return InkWell(
-      onTap: () => widget.onCitySelected(cityMap),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _stationTextMarquee(cityName),
-                if (code.isNotEmpty) ...[
-                  SizedBox(width: 10),
-                  Text(
-                    '($code)',
-                    style: const TextStyle(
-                      fontFamily: 'ProductSans',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Color(0xFF7C3AED),
-                    ),
-                  ),
-                ]
-              ],
-            ),
-            if (state.isNotEmpty) ...[
-              SizedBox(height: 6),
-              Text(
-                state,
-                style: const TextStyle(
-                  fontFamily: 'ProductSans',
-                  fontSize: 15,
-                  color: Colors.black87,
-                ),
-              ),
-            ]
-          ],
-        ),
-      ),
-    );
+    Navigator.pop(context, result);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Purple gradient header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 48, bottom: 24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.isOrigin ? 'Select Origin' : 'Select Destination',
-                      style: TextStyle(
-                        fontFamily: 'ProductSans',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF7C3AED),
+        elevation: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 30.0), // Add 30px top margin to header
+          child: Text(
+            widget.searchType == 'station'
+                ? (widget.isOrigin ? 'Select Origin Station' : 'Select Destination Station')
+                : (widget.isOrigin ? 'Select Origin City' : 'Select Destination City'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 24, // Increased font size
+              fontFamily: 'ProductSans',
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        ),
+        toolbarHeight: 100, // Increased height to accommodate the top padding
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF7C3AED),
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
               onChanged: _filterCities,
-              decoration: InputDecoration(
-                hintText: 'Search by city, code or name',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-              ),
               style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'ProductSans',
+                fontSize: 16, // Increased font size
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search by name or code',
+                hintStyle: const TextStyle(
+                  color: Colors.white70,
                   fontFamily: 'ProductSans',
-                  fontSize: 16,
-                  color: Color.fromARGB(255, 0, 0, 0)),
+                  fontSize: 16, // Increased font size
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: Colors.white70,
+                  size: 24, // Increased icon size
+                ),
+                filled: true,
+                fillColor: Colors.white24,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
             ),
           ),
-          if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator())),
-          if (!_loading && _filteredCities.isEmpty)
-            const Expanded(
-                child: Center(
-                    child: Text('No cities found',
-                        style: TextStyle(
-                            fontFamily: 'ProductSans', fontWeight: FontWeight.w600)))),
-          if (!_loading && _filteredCities.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filteredCities.length,
-                padding: const EdgeInsets.only(top: 8),
-                itemBuilder: (context, index) {
-                  final city = _filteredCities[index];
-                  return _buildCityTile(city);
-                },
-              ),
-            ),
+          
+          // Results list
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED)))
+                : _filteredCities.isEmpty
+                    ? Center(
+                        child: Text(
+                          _search.isEmpty
+                              ? 'No cities found'
+                              : 'No results for "$_search"',
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 18, // Increased font size
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black, // Changed to black
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _filteredCities.length,
+                        padding: const EdgeInsets.only(top: 8),
+                        itemBuilder: (context, index) {
+                          return _buildCityItem(_filteredCities[index]);
+                        },
+                      ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCityItem(Map<String, dynamic> city) {
+    final name = city['name'] ?? '';
+    final code = city['code'] ?? '';
+    final state = city['state'] ?? '';
+    
+    return InkWell(
+      onTap: () => _onCityTap(city),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // City name with larger font and black color
+                Expanded(
+                  child: Text(
+                    name,
+                    style: const TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18, // Increased font size
+                      color: Colors.black, // Explicitly set to black
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Code aligned to the right with fixed width
+                Container(
+                  width: 70, // Fixed width to align all codes
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  alignment: Alignment.center, // Center the text
+                  child: Text(
+                    code,
+                    style: const TextStyle(
+                      fontFamily: 'ProductSans',
+                      color: Color(0xFF7C3AED),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16, // Increased font size
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (state.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  state,
+                  style: TextStyle(
+                    fontFamily: 'ProductSans',
+                    color: Colors.grey[600],
+                    fontSize: 16, // Increased font size
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12), // Increased spacing
+            Divider(color: Colors.grey[300], thickness: 1.0), // Thicker divider
+          ],
+        ),
       ),
     );
   }
