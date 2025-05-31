@@ -21,29 +21,40 @@ class JobService {
     bool autoBookAlternateDate = false,
     String paymentMethod = "wallet",
     String? notes,
+    bool optForInsurance = false,
+    Map<String, dynamic>? gstDetails,
   }) async {
     try {
+      // Create the request body
+      Map<String, dynamic> requestBody = {
+        'user_id': userId,
+        'origin_station_code': originStationCode,
+        'destination_station_code': destinationStationCode,
+        'journey_date': journeyDate,
+        'booking_time': bookingTime,
+        'travel_class': travelClass,
+        'passengers': passengers,
+        'job_type': jobType,
+        'booking_email': bookingEmail,
+        'booking_phone': bookingPhone,
+        'auto_upgrade': autoUpgrade,
+        'auto_book_alternate_date': autoBookAlternateDate,
+        'payment_method': paymentMethod,
+        'notes': notes,
+        'opt_for_insurance': optForInsurance,
+      };
+      
+      // Add GST details if provided
+      if (gstDetails != null) {
+        requestBody['gst_details'] = gstDetails;
+      }
+      
       final response = await http.post(
         Uri.parse('$baseUrl/jobs/'),
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'user_id': userId,
-          'origin_station_code': originStationCode,
-          'destination_station_code': destinationStationCode,
-          'journey_date': journeyDate,
-          'booking_time': bookingTime,
-          'travel_class': travelClass,
-          'passengers': passengers,
-          'job_type': jobType,
-          'booking_email': bookingEmail,
-          'booking_phone': bookingPhone,
-          'auto_upgrade': autoUpgrade,
-          'auto_book_alternate_date': autoBookAlternateDate,
-          'payment_method': paymentMethod,
-          'notes': notes,
-        }),
+        body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

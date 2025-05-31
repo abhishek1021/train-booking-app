@@ -533,28 +533,15 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
   // Create a new Tatkal job
   Future<void> _createTatkalJob() async {
-    // Ensure form keys are properly initialized before validation
-    if (_journeyFormKey.currentState == null) {
-      _showCustomSnackBar(
-        message: 'Error: Journey form not initialized properly',
-        icon: Icons.error,
-        backgroundColor: Colors.red,
-      );
-      return;
-    }
-
     // Manually validate each required field in the journey form
-    bool originValid = _originController.text.isNotEmpty && _selectedOriginCode != null;
-    bool destinationValid = _destinationController.text.isNotEmpty && _selectedDestinationCode != null;
+    bool originValid = _originController.text.isNotEmpty;
+    bool destinationValid = _destinationController.text.isNotEmpty;
     bool dateValid = _dateController.text.isNotEmpty;
     bool timeValid = _timeController.text.isNotEmpty;
     bool classValid = _selectedClass.isNotEmpty;
     
-    // Check if origin and destination are different
-    bool differentStations = _selectedOriginCode != _selectedDestinationCode;
-    
     // Validate journey details manually
-    if (!originValid || !destinationValid || !dateValid || !timeValid || !classValid || !differentStations) {
+    if (!originValid || !destinationValid || !dateValid || !timeValid || !classValid) {
       _showCustomSnackBar(
         message: 'Please fill all journey details correctly',
         icon: Icons.error,
@@ -563,25 +550,111 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       return;
     }
     
-    // Now validate other forms
-    bool isPassengersValid =
-        _passengerFormKey.currentState?.validate() ?? false;
-    bool isContactValid = _contactFormKey.currentState?.validate() ?? false;
-
-    // Only continue if journey details are valid
-
-    if (!isPassengersValid) {
+    // Check if origin and destination are the same
+    if (_originController.text == _destinationController.text) {
       _showCustomSnackBar(
-        message: 'Please fill all passenger details correctly',
+        message: 'Origin and destination cannot be the same',
         icon: Icons.error,
         backgroundColor: Colors.red,
       );
       return;
     }
-
-    if (!isContactValid) {
+    
+    // Now validate passengers manually
+    bool isPassengersValid = true;
+    String passengerError = '';
+    
+    // Check if there's at least one passenger
+    if (_passengers.isEmpty) {
       _showCustomSnackBar(
-        message: 'Please fill all contact details correctly',
+        message: 'Please add at least one passenger',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Validate each passenger's required fields
+    for (int i = 0; i < _passengers.length; i++) {
+      final passenger = _passengers[i];
+      
+      // Check name
+      if (passenger['name'].text.isEmpty) {
+        isPassengersValid = false;
+        passengerError = 'Please enter name for Passenger ${i+1}';
+        break;
+      }
+      
+      // Check age
+      if (passenger['age'].text.isEmpty) {
+        isPassengersValid = false;
+        passengerError = 'Please enter age for Passenger ${i+1}';
+        break;
+      }
+      
+      // Validate age is a number
+      final age = int.tryParse(passenger['age'].text);
+      if (age == null || age <= 0 || age > 120) {
+        isPassengersValid = false;
+        passengerError = 'Invalid age for Passenger ${i+1}';
+        break;
+      }
+      
+      // Check ID number if required
+      if (passenger['idNumber'].text.isEmpty) {
+        isPassengersValid = false;
+        passengerError = 'Please enter ID number for Passenger ${i+1}';
+        break;
+      }
+    }
+    
+    if (!isPassengersValid) {
+      _showCustomSnackBar(
+        message: passengerError,
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Manually validate contact details
+    String email = _emailController.text.trim();
+    String phone = _phoneController.text.trim();
+    
+    // Check email
+    if (email.isEmpty) {
+      _showCustomSnackBar(
+        message: 'Please enter your email address',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Simple email validation
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      _showCustomSnackBar(
+        message: 'Please enter a valid email address',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Check phone
+    if (phone.isEmpty) {
+      _showCustomSnackBar(
+        message: 'Please enter your phone number',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Simple phone validation - check if it's 10 digits
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+      _showCustomSnackBar(
+        message: 'Please enter a valid 10-digit phone number',
         icon: Icons.error,
         backgroundColor: Colors.red,
       );
@@ -603,6 +676,23 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     });
 
     try {
+      // Ensure user ID is loaded
+      if (_userId.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        _userId = prefs.getString('user_id') ?? '';
+        if (_userId.isEmpty) {
+          _showCustomSnackBar(
+            message: 'User ID not found. Please log in again.',
+            icon: Icons.error,
+            backgroundColor: Colors.red,
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      
       // Prepare passenger data
       List<Map<String, dynamic>> passengersData = [];
       for (var passenger in _passengers) {
@@ -675,7 +765,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'status': 'pending',
       };
 
-      // Save to SharedPreferences for now (in a real app, this would be sent to a server)
+      // First, save to SharedPreferences as a backup
       final prefs = await SharedPreferences.getInstance();
       List<String> existingJobs = prefs.getStringList('tatkal_jobs') ?? [];
 
@@ -685,6 +775,49 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
       existingJobs.add(jsonEncode(jobData));
       await prefs.setStringList('tatkal_jobs', existingJobs);
+      
+      // Call the JobService API to store the job in DynamoDB
+      try {
+        // Prepare GST details if available
+        Map<String, dynamic>? gstDetails;
+        if (_showGstDetails && _gstNumberController.text.isNotEmpty) {
+          gstDetails = {
+            'gstin': _gstNumberController.text,
+            'company_name': _gstNameController.text,
+            'company_address': _gstAddressController.text,
+          };
+        }
+        
+        // Make the API call with correct job_type capitalization
+        final response = await _jobService.createJob(
+          userId: _userId,
+          originStationCode: journeyData['from_station'],
+          destinationStationCode: journeyData['to_station'],
+          journeyDate: journeyData['journey_date'],
+          bookingTime: journeyData['preferred_time'],
+          travelClass: journeyData['class'],
+          passengers: passengersData,
+          jobType: 'Tatkal', // Capitalized to match backend enum
+          bookingEmail: contactData['email'],
+          bookingPhone: contactData['phone'],
+          autoUpgrade: preferencesData['auto_upgrade'],
+          autoBookAlternateDate: preferencesData['auto_book_alternate_date'],
+          paymentMethod: preferencesData['payment_method'],
+          notes: preferencesData['notes'],
+          optForInsurance: _optForInsurance,
+          gstDetails: gstDetails,
+        );
+        
+        // Update jobId with the one returned from the server if available
+        if (response.containsKey('job_id')) {
+          jobId = response['job_id'];
+        }
+        
+        print('Job created successfully on server with ID: $jobId');
+      } catch (e) {
+        print('Error creating job on server: ${e.toString()}');
+        // Continue with local storage even if server call fails
+      }
 
       if (mounted) {
         setState(() {

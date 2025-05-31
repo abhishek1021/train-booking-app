@@ -65,11 +65,16 @@ async def create_job(job: JobCreate):
             'auto_book_alternate_date': job.auto_book_alternate_date,
             'payment_method': job.payment_method,
             'notes': job.notes,
+            'opt_for_insurance': job.opt_for_insurance,
             'execution_attempts': 0,
             'max_attempts': 3,
             'created_at': now,
             'updated_at': now
         }
+        
+        # Add GST details if provided
+        if job.gst_details:
+            job_item['gst_details'] = job.gst_details.dict()
         
         # Calculate next execution time based on booking_time and journey_date
         try:

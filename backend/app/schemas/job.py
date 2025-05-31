@@ -15,6 +15,11 @@ class JobType(str, Enum):
     PREMIUM_TATKAL = "Premium Tatkal"
     GENERAL = "General"
 
+class GSTDetails(BaseModel):
+    gstin: str
+    company_name: str
+    company_address: Optional[str] = None
+
 class PassengerInfo(BaseModel):
     name: str
     age: int
@@ -39,6 +44,8 @@ class JobCreate(BaseModel):
     auto_book_alternate_date: Optional[bool] = False  # Book for next day if not available
     payment_method: Optional[str] = "wallet"  # wallet, upi, etc.
     notes: Optional[str] = None
+    opt_for_insurance: Optional[bool] = False  # Whether to opt for travel insurance
+    gst_details: Optional[GSTDetails] = None  # GST details for billing
 
     @validator('journey_date')
     def validate_journey_date(cls, v):
