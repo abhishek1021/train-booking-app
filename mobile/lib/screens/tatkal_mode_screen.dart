@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/job_service.dart';
@@ -22,7 +24,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   final JobService _jobService = JobService();
   PassengerService? _passengerService;
   SharedPreferences? _prefs;
-  
+
   // Saved passengers
   List<Map<String, dynamic>> _savedPassengers = [];
   bool _isLoadingSavedPassengers = false;
@@ -66,6 +68,11 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   // Contact Details
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _gstNumberController = TextEditingController();
+  final _gstNameController = TextEditingController();
+  final _gstAddressController = TextEditingController();
+  bool _showGstDetails = false;
+  bool _optForInsurance = false;
 
   // Preferences
   bool _autoUpgrade = false;
@@ -98,14 +105,14 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     _loadUserData();
     _initSharedPreferences();
   }
-  
+
   // Initialize shared preferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
     await _initPassengerService();
     await _loadSavedPassengers();
   }
-  
+
   // Initialize passenger service
   Future<void> _initPassengerService() async {
     if (_prefs != null) {
@@ -120,7 +127,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       print('Error: SharedPreferences not initialized');
     }
   }
-  
+
   // Load saved passengers from database
   Future<void> _loadSavedPassengers() async {
     if (_passengerService == null) return;
@@ -137,8 +144,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       if (mounted) {
         setState(() {
           // Cast the List<dynamic> to List<Map<String, dynamic>> using map function
-          _savedPassengers = passengers.map((passenger) => 
-            Map<String, dynamic>.from(passenger as Map)).toList();
+          _savedPassengers = passengers
+              .map((passenger) => Map<String, dynamic>.from(passenger as Map))
+              .toList();
           _isLoadingSavedPassengers = false;
         });
       }
@@ -151,7 +159,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       }
     }
   }
-  
+
   // Use a saved passenger
   void _useSavedPassenger(Map<String, dynamic> passenger) {
     if (_passengers.length >= 6) {
@@ -168,9 +176,10 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     final gender = passenger['gender'] ?? 'Male';
     final idType = passenger['id_type'] ?? 'Aadhar';
     final idNumber = passenger['id_number'] ?? '';
-    
+
     // Check if this passenger is already in use
-    if (_usedSavedPassengers.containsKey(idNumber) && _usedSavedPassengers[idNumber] == true) {
+    if (_usedSavedPassengers.containsKey(idNumber) &&
+        _usedSavedPassengers[idNumber] == true) {
       _showCustomSnackBar(
         message: 'This passenger is already in your list',
         icon: Icons.warning,
@@ -178,7 +187,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       );
       return;
     }
-    
+
     setState(() {
       // Add the passenger to the list
       _passengers.add({
@@ -192,11 +201,11 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'isExpanded': true, // Expand the new passenger accordion
         'fromSavedList': true, // Mark that this passenger came from saved list
       });
-      
+
       // Mark this passenger as used
       _usedSavedPassengers[idNumber] = true;
     });
-    
+
     // Show a custom confirmation message
     _showCustomSnackBar(
       message: 'Passenger ${name} added as Passenger ${_passengers.length}',
@@ -235,7 +244,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _notesController.dispose();
-    
+
     // GST controllers
     _gstNumberController.dispose();
     _gstNameController.dispose();
@@ -524,11 +533,68 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
   // Create a new Tatkal job
   Future<void> _createTatkalJob() async {
-    // Validate all forms
-    if (!(_journeyFormKey.currentState?.validate() ?? false) ||
-        !(_passengerFormKey.currentState?.validate() ?? false) ||
-        !(_contactFormKey.currentState?.validate() ?? false) ||
-        !(_preferencesFormKey.currentState?.validate() ?? false)) {
+    // Ensure form keys are properly initialized before validation
+    if (_journeyFormKey.currentState == null) {
+      _showCustomSnackBar(
+        message: 'Error: Journey form not initialized properly',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    // Manually validate each required field in the journey form
+    bool originValid = _originController.text.isNotEmpty && _selectedOriginCode != null;
+    bool destinationValid = _destinationController.text.isNotEmpty && _selectedDestinationCode != null;
+    bool dateValid = _dateController.text.isNotEmpty;
+    bool timeValid = _timeController.text.isNotEmpty;
+    bool classValid = _selectedClass.isNotEmpty;
+    
+    // Check if origin and destination are different
+    bool differentStations = _selectedOriginCode != _selectedDestinationCode;
+    
+    // Validate journey details manually
+    if (!originValid || !destinationValid || !dateValid || !timeValid || !classValid || !differentStations) {
+      _showCustomSnackBar(
+        message: 'Please fill all journey details correctly',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+    
+    // Now validate other forms
+    bool isPassengersValid =
+        _passengerFormKey.currentState?.validate() ?? false;
+    bool isContactValid = _contactFormKey.currentState?.validate() ?? false;
+
+    // Only continue if journey details are valid
+
+    if (!isPassengersValid) {
+      _showCustomSnackBar(
+        message: 'Please fill all passenger details correctly',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    if (!isContactValid) {
+      _showCustomSnackBar(
+        message: 'Please fill all contact details correctly',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    // Check if at least one passenger is added
+    if (_passengers.isEmpty) {
+      _showCustomSnackBar(
+        message: 'Please add at least one passenger',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
       return;
     }
 
@@ -538,74 +604,111 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
     try {
       // Prepare passenger data
-      final List<Map<String, dynamic>> passengersData = _passengers
-          .map((passenger) => {
-                'name': passenger['name'].text,
-                'age': int.parse(passenger['age'].text),
-                'gender': passenger['gender'],
-                'berth_preference': passenger['berth'],
-                'is_senior_citizen': passenger['isSenior'],
-                'id_type': passenger['idType'],
-                'id_number': passenger['idNumber'].text,
-              })
-          .toList();
-
-      // Create job
-      final result = await _jobService.createJob(
-        userId: _userId,
-        originStationCode: _selectedOriginCode!,
-        destinationStationCode: _selectedDestinationCode!,
-        journeyDate: _formatDate(_selectedDate!),
-        bookingTime: _formatTime(_selectedTime!),
-        travelClass: _selectedClass,
-        passengers: passengersData,
-        jobType: 'Tatkal',
-        bookingEmail: _emailController.text,
-        bookingPhone: _phoneController.text,
-        autoUpgrade: _autoUpgrade,
-        autoBookAlternateDate: _autoBookAlternateDate,
-        paymentMethod: _paymentMethod,
-        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-      );
-
-      setState(() {
-        _isLoading = false;
-        _isJobCreated = true;
-        _jobId = result['job_id'];
-      });
-
-      // Show success dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => SuccessAnimationDialog(
-            message: 'Tatkal job created successfully!\nJob ID: $_jobId',
-            onAnimationComplete: () {
-              // Dialog will auto-dismiss after animation
-            },
-          ),
-        );
+      List<Map<String, dynamic>> passengersData = [];
+      for (var passenger in _passengers) {
+        passengersData.add({
+          'name': passenger['name'].text,
+          'age': int.parse(passenger['age'].text),
+          'gender': passenger['gender'],
+          'berth_preference': passenger['berth'],
+          'id_type': passenger['idType'],
+          'id_number': passenger['idNumber'].text,
+          'is_senior': passenger['isSenior'],
+        });
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
 
-      // Show error dialog
+      // Prepare contact data
+      Map<String, dynamic> contactData = {
+        'email': _emailController.text,
+        'phone': _phoneController.text,
+        'opt_for_insurance': _optForInsurance,
+      };
+
+      // Add GST details if available
+      if (_showGstDetails) {
+        contactData['gst_details'] = {
+          'gstin': _gstNumberController.text,
+          'company_name': _gstNameController.text,
+          'company_address': _gstAddressController.text,
+        };
+      }
+
+      // Get train details from form
+      String trainNumber = _originController.text.isNotEmpty &&
+              _destinationController.text.isNotEmpty
+          ? 'TRN-${DateTime.now().millisecondsSinceEpoch % 10000}'
+          : '';
+      String trainName = _originController.text.isNotEmpty &&
+              _destinationController.text.isNotEmpty
+          ? '${_originController.text.substring(0, min(3, _originController.text.length))}-${_destinationController.text.substring(0, min(3, _destinationController.text.length))} Express'
+          : '';
+      String selectedQuota = 'Tatkal';
+
+      // Prepare journey data
+      Map<String, dynamic> journeyData = {
+        'from_station': _originController.text,
+        'to_station': _destinationController.text,
+        'journey_date': _dateController.text,
+        'preferred_time': _timeController.text,
+        'train_number': trainNumber,
+        'train_name': trainName,
+        'class': _selectedClass,
+        'quota': selectedQuota,
+      };
+
+      // Prepare preferences data
+      Map<String, dynamic> preferencesData = {
+        'auto_upgrade': _autoUpgrade,
+        'auto_book_alternate_date': _autoBookAlternateDate,
+        'payment_method': _paymentMethod,
+        'notes': _notesController.text,
+      };
+
+      // Combine all data
+      Map<String, dynamic> jobData = {
+        'user_id': _userId,
+        'journey': journeyData,
+        'passengers': passengersData,
+        'contact': contactData,
+        'preferences': preferencesData,
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 'pending',
+      };
+
+      // Save to SharedPreferences for now (in a real app, this would be sent to a server)
+      final prefs = await SharedPreferences.getInstance();
+      List<String> existingJobs = prefs.getStringList('tatkal_jobs') ?? [];
+
+      // Generate a job ID
+      String jobId = 'TJ-${DateTime.now().millisecondsSinceEpoch}';
+      jobData['job_id'] = jobId;
+
+      existingJobs.add(jsonEncode(jobData));
+      await prefs.setStringList('tatkal_jobs', existingJobs);
+
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to create job: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+        setState(() {
+          _isLoading = false;
+          _jobId = jobId;
+          _isJobCreated = true;
+        });
+      }
+
+      _showCustomSnackBar(
+        message: 'Tatkal job created successfully!',
+        icon: Icons.check_circle,
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        _showCustomSnackBar(
+          message: 'Error creating job: ${e.toString()}',
+          icon: Icons.error,
+          backgroundColor: Colors.red,
         );
       }
     }
@@ -1032,7 +1135,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       children: [
         _buildSectionTitle('Passenger Details'),
         const SizedBox(height: 16),
-        
+
         // Saved Passengers Section
         Container(
           margin: EdgeInsets.only(bottom: 16),
@@ -1040,7 +1143,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1057,125 +1161,147 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                 ),
               ),
               _isLoadingSavedPassengers
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
-                    ),
-                  )
-                : _savedPassengers.isEmpty
-                  ? Container(
-                      margin: EdgeInsets.symmetric(horizontal: 16.0),
-                      padding: EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'No favourite passenger stored',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                            fontSize: 14,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            CircularProgressIndicator(color: Color(0xFF7C3AED)),
                       ),
                     )
-                  : Container(
-                      height: 130,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _savedPassengers.length,
-                        padding: EdgeInsets.symmetric(horizontal: 12.0),
-                        itemBuilder: (context, index) {
-                          final passenger = _savedPassengers[index];
-                          // Check if this passenger is already used in the passenger list
-                          final idNumber = passenger['id_number'] ?? '';
-                          final isUsed = _usedSavedPassengers.containsKey(idNumber) && 
-                                        _usedSavedPassengers[idNumber] == true;
-                          
-                          return GestureDetector(
-                            // Only allow tapping if the passenger is not already used
-                            onTap: isUsed ? null : () => _useSavedPassenger(passenger),
-                            child: Container(
-                              width: 200,
-                              margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                              padding: EdgeInsets.all(12.0),
-                              decoration: BoxDecoration(
-                                // Gray out the card if already used
-                                color: isUsed ? Color(0xFFF3F4F6) : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: isUsed ? Color(0xFFD1D5DB) : Color(0xFFE5E7EB)),
-                                boxShadow: isUsed ? [] : [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    passenger['name'] ?? '',
-                                    style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF111827),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
-                                    style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      fontSize: 12,
-                                      color: Color(0xFF6B7280),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
-                                    style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      fontSize: 12,
-                                      color: Color(0xFF6B7280),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Spacer(),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: isUsed ? Color(0xFFE5E7EB) : Color(0xFFF3E8FF),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      isUsed ? 'Already used' : 'Tap to use',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        color: isUsed ? Color(0xFF6B7280) : Color(0xFF7C3AED),
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                  : _savedPassengers.isEmpty
+                      ? Container(
+                          margin: EdgeInsets.symmetric(horizontal: 16.0),
+                          padding: EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'No favourite passenger stored',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
+                        )
+                      : Container(
+                          height: 130,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _savedPassengers.length,
+                            padding: EdgeInsets.symmetric(horizontal: 12.0),
+                            itemBuilder: (context, index) {
+                              final passenger = _savedPassengers[index];
+                              // Check if this passenger is already used in the passenger list
+                              final idNumber = passenger['id_number'] ?? '';
+                              final isUsed =
+                                  _usedSavedPassengers.containsKey(idNumber) &&
+                                      _usedSavedPassengers[idNumber] == true;
+
+                              return GestureDetector(
+                                // Only allow tapping if the passenger is not already used
+                                onTap: isUsed
+                                    ? null
+                                    : () => _useSavedPassenger(passenger),
+                                child: Container(
+                                  width: 200,
+                                  margin: EdgeInsets.symmetric(
+                                      horizontal: 4.0, vertical: 4.0),
+                                  padding: EdgeInsets.all(12.0),
+                                  decoration: BoxDecoration(
+                                    // Gray out the card if already used
+                                    color: isUsed
+                                        ? Color(0xFFF3F4F6)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: isUsed
+                                            ? Color(0xFFD1D5DB)
+                                            : Color(0xFFE5E7EB)),
+                                    boxShadow: isUsed
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: Colors.black
+                                                  .withOpacity(0.05),
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        passenger['name'] ?? '',
+                                        style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF111827),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
+                                        style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 12,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
+                                        style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 12,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Spacer(),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isUsed
+                                              ? Color(0xFFE5E7EB)
+                                              : Color(0xFFF3E8FF),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          isUsed
+                                              ? 'Already used'
+                                              : 'Tap to use',
+                                          style: TextStyle(
+                                            fontFamily: 'ProductSans',
+                                            color: isUsed
+                                                ? Color(0xFF6B7280)
+                                                : Color(0xFF7C3AED),
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
             ],
           ),
         ),
-        
+
         Form(
           key: _passengerFormKey,
           child: Column(
@@ -1646,13 +1772,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     );
   }
 
-  // Variables for travel insurance and GST
-  bool _optForInsurance = false;
+  // Variables for travel insurance
   bool _showTravelInsurance = false;
-  bool _showGstDetails = false;
-  final _gstNumberController = TextEditingController();
-  final _gstNameController = TextEditingController();
-  final _gstAddressController = TextEditingController();
 
   Widget _buildContactDetailsStep() {
     return Column(
@@ -1774,7 +1895,13 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                             horizontal: 16,
                             vertical: 16,
                           ),
-                          prefixIcon: Icon(Icons.phone, color: Color(0xFF7C3AED)),
+                          prefixIcon:
+                              Icon(Icons.phone, color: Color(0xFF7C3AED)),
+                          errorStyle: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
@@ -1807,12 +1934,17 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                   ],
                 ),
                 child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(context)
+                      .copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
-                    tilePadding: EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-                    childrenPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    tilePadding:
+                        EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                    childrenPadding:
+                        EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    collapsedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                     backgroundColor: Colors.white,
                     title: Text(
                       'Additional Preferences',
@@ -1832,10 +1964,13 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Theme(
-                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
-                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            tilePadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             title: Text(
                               'Travel Insurance',
                               style: TextStyle(
@@ -1849,12 +1984,16 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                               _optForInsurance ? 'Selected: Yes' : 'Optional',
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
-                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[600],
+                                color: _optForInsurance
+                                    ? Color(0xFF7C3AED)
+                                    : Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
-                              _showTravelInsurance ? Icons.expand_less : Icons.expand_more,
+                              _showTravelInsurance
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
                               color: Color(0xFF7C3AED),
                             ),
                             onExpansionChanged: (bool expanded) {
@@ -1876,7 +2015,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                   ),
                                   SizedBox(height: 16),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
@@ -1886,20 +2026,28 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                             });
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: _optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            backgroundColor: _optForInsurance
+                                                ? Color(0xFF7C3AED)
+                                                : Color(0xFFF7F7FA),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               side: BorderSide(
-                                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                color: _optForInsurance
+                                                    ? Color(0xFF7C3AED)
+                                                    : Colors.grey[300]!,
                                                 width: 1,
                                               ),
                                             ),
-                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10),
                                           ),
                                           child: Text(
                                             'Yes, I want insurance',
                                             style: TextStyle(
-                                              color: _optForInsurance ? Colors.white : Colors.grey[700],
+                                              color: _optForInsurance
+                                                  ? Colors.white
+                                                  : Colors.grey[700],
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 12,
@@ -1916,20 +2064,28 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                             });
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: !_optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            backgroundColor: !_optForInsurance
+                                                ? Color(0xFF7C3AED)
+                                                : Color(0xFFF7F7FA),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               side: BorderSide(
-                                                color: !_optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                color: !_optForInsurance
+                                                    ? Color(0xFF7C3AED)
+                                                    : Colors.grey[300]!,
                                                 width: 1,
                                               ),
                                             ),
-                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10),
                                           ),
                                           child: Text(
                                             'No, thanks',
                                             style: TextStyle(
-                                              color: !_optForInsurance ? Colors.white : Colors.grey[700],
+                                              color: !_optForInsurance
+                                                  ? Colors.white
+                                                  : Colors.grey[700],
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 12,
@@ -1953,10 +2109,13 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Theme(
-                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
-                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            tilePadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             title: Text(
                               'GST Details (Optional)',
                               style: TextStyle(
@@ -1972,12 +2131,16 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                   : 'Add GST details for business travel',
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
-                                color: _gstNumberController.text.isNotEmpty ? Color(0xFF7C3AED) : Colors.grey[600],
+                                color: _gstNumberController.text.isNotEmpty
+                                    ? Color(0xFF7C3AED)
+                                    : Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
-                              _showGstDetails ? Icons.expand_less : Icons.expand_more,
+                              _showGstDetails
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
                               color: Color(0xFF7C3AED),
                             ),
                             onExpansionChanged: (bool expanded) {
@@ -1994,6 +2157,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       color: Color(0xFF222222),
                                       fontFamily: 'ProductSans',
                                     ),
+                                    // GST fields are optional even when expanded
+                                    validator: (value) => null,
                                     decoration: InputDecoration(
                                       labelText: 'GSTIN',
                                       hintText: '22AAAAA0000A1Z5',
@@ -2007,17 +2172,22 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       fillColor: Colors.white,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                        borderSide: BorderSide(
+                                            color: Color(0xFF7C3AED),
+                                            width: 1.5),
                                       ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
                                     ),
                                   ),
                                   SizedBox(height: 12),
@@ -2027,6 +2197,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       color: Color(0xFF222222),
                                       fontFamily: 'ProductSans',
                                     ),
+                                    // Company name is optional
+                                    validator: (value) => null,
                                     decoration: InputDecoration(
                                       labelText: 'Company Name',
                                       labelStyle: TextStyle(
@@ -2039,17 +2211,22 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       fillColor: Colors.white,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                        borderSide: BorderSide(
+                                            color: Color(0xFF7C3AED),
+                                            width: 1.5),
                                       ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
                                     ),
                                   ),
                                   SizedBox(height: 12),
@@ -2060,6 +2237,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       fontFamily: 'ProductSans',
                                     ),
                                     maxLines: 2,
+                                    // Company address is optional
+                                    validator: (value) => null,
                                     decoration: InputDecoration(
                                       labelText: 'Company Address',
                                       labelStyle: TextStyle(
@@ -2072,17 +2251,22 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                                       fillColor: Colors.white,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!, width: 1),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                        borderSide: BorderSide(
+                                            color: Color(0xFF7C3AED),
+                                            width: 1.5),
                                       ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
                                     ),
                                   ),
                                 ],
@@ -2103,146 +2287,246 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   }
 
   Widget _buildPreferencesStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Booking Preferences'),
-        const SizedBox(height: 16),
-        Form(
-          key: _preferencesFormKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _buildSectionTitle('Booking Preferences (Optional)'),
+      const SizedBox(height: 16),
+      // No Form validation needed for preferences as they're optional
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: EdgeInsets.only(bottom: 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Booking Options',
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Booking Options',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7C3AED),
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Auto Upgrade
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF7F7FA),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: EdgeInsets.only(bottom: 12),
+                    child: SwitchListTile(
+                      title: const Text(
+                        'Auto Upgrade Class',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7C3AED),
+                          fontFamily: 'ProductSans',
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF222222),
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Automatically upgrade to higher class if tickets are not available',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
                           fontFamily: 'ProductSans',
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Auto Upgrade
-                      SwitchListTile(
-                        title: const Text(
-                          'Auto Upgrade Class',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                          ),
-                        ),
-                        subtitle: const Text(
-                          'Automatically upgrade to higher class if tickets are not available',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                            fontFamily: 'ProductSans',
-                          ),
-                        ),
-                        value: _autoUpgrade,
-                        activeColor: const Color(0xFF7C3AED),
-                        onChanged: (bool value) {
-                          setState(() {
-                            _autoUpgrade = value;
-                          });
-                        },
+                      value: _autoUpgrade,
+                      activeColor: const Color(0xFF7C3AED),
+                      onChanged: (bool value) {
+                        setState(() {
+                          _autoUpgrade = value;
+                        });
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    ),
+                  ),
 
-                      // Auto Book Alternate Date
-                      SwitchListTile(
-                        title: const Text(
-                          'Auto Book Alternate Date',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                          ),
+                  // Auto Book Alternate Date
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF7F7FA),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: EdgeInsets.only(bottom: 16),
+                    child: SwitchListTile(
+                      title: const Text(
+                        'Auto Book Alternate Date',
+                        style: TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF222222),
+                          fontSize: 14,
                         ),
-                        subtitle: const Text(
-                          'Try booking for next day if tickets are not available',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                            fontFamily: 'ProductSans',
-                          ),
-                        ),
-                        value: _autoBookAlternateDate,
-                        activeColor: const Color(0xFF7C3AED),
-                        onChanged: (bool value) {
-                          setState(() {
-                            _autoBookAlternateDate = value;
-                          });
-                        },
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Payment Method
-                      DropdownButtonFormField<String>(
-                        value: _paymentMethod,
-                        decoration: const InputDecoration(
-                          labelText: 'Payment Method',
-                          prefixIcon: Icon(Icons.payment),
-                          border: OutlineInputBorder(),
-                          floatingLabelStyle: TextStyle(
-                            color: Color(0xFF7C3AED),
-                            fontFamily: 'ProductSans',
-                          ),
+                      subtitle: const Text(
+                        'Try booking for next day if tickets are not available',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontFamily: 'ProductSans',
                         ),
-                        items: _paymentMethods.map((String method) {
-                          return DropdownMenuItem<String>(
-                            value: method,
-                            child: Text(
-                              method.toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'ProductSans',
-                              ),
+                      ),
+                      value: _autoBookAlternateDate,
+                      activeColor: const Color(0xFF7C3AED),
+                      onChanged: (bool value) {
+                        setState(() {
+                          _autoBookAlternateDate = value;
+                        });
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    ),
+                  ),
+
+                  // Payment Method
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Payment Method',
+                        style: TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7C3AED),
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF7F7FA),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _paymentMethod,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _paymentMethod = newValue;
-                            });
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Notes
-                      TextFormField(
-                        controller: _notesController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Additional Notes (Optional)',
-                          prefixIcon: Icon(Icons.note),
-                          border: OutlineInputBorder(),
-                          floatingLabelStyle: TextStyle(
-                            color: Color(0xFF7C3AED),
-                            fontFamily: 'ProductSans',
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Color(0xFFF7F7FA),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            prefixIcon:
+                                Icon(Icons.payment, color: Color(0xFF7C3AED)),
                           ),
+                          items: _paymentMethods.map((String method) {
+                            return DropdownMenuItem<String>(
+                              value: method,
+                              child: Text(
+                                method.toUpperCase(),
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  color: Color(0xFF222222),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _paymentMethod = newValue;
+                              });
+                            }
+                          },
+                          dropdownColor: Colors.white,
+                          icon: Icon(Icons.arrow_drop_down,
+                              color: Color(0xFF7C3AED)),
+                          isExpanded: true,
                         ),
                       ),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 16),
+
+                  // Notes
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Additional Notes (Optional)',
+                        style: TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7C3AED),
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: _notesController,
+                        maxLines: 3,
+                        style: TextStyle(
+                          color: Color(0xFF222222),
+                          fontFamily: 'ProductSans',
+                        ),
+                        // Notes are optional
+                        validator: (value) => null,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Enter any additional instructions or notes',
+                          filled: true,
+                          fillColor: Color(0xFFF7F7FA),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      ),
+    ]);
   }
 
   Widget _buildInfoCard() {
@@ -2708,7 +2992,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _createTatkalJob,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7C3AED),
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -2716,23 +3000,38 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           elevation: 0,
         ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Text(
-                'Create Tatkal Job',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'ProductSans',
-                ),
-              ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Container(
+            width: double.infinity,
+            height: 52,
+            alignment: Alignment.center,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Create Job',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }
