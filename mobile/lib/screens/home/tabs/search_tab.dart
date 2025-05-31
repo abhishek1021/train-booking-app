@@ -182,19 +182,20 @@ class _SearchTabState extends State<SearchTab> {
                       MaterialPageRoute(
                         builder: (context) => CitySearchScreen(
                           isOrigin: true,
-                          onCitySelected: (city) {
-                            Navigator.pop(context, city);
-                          },
+                          searchType: 'station',
+                          sourceScreen: 'search_tab',
                         ),
                       ),
                     );
                     if (selectedCity != null) {
-                      setState(() {
-                        selectedOrigin = selectedCity['station_code'] ?? '';
-                        selectedOriginName = selectedCity['station_name'] ?? '';
-                        originController.text =
-                            selectedCity['station_name'] ?? '';
-                      });
+                      // Check if the result is intended for this screen
+                      if (selectedCity['sourceScreen'] == 'search_tab' || selectedCity['sourceScreen'] == 'default') {
+                        setState(() {
+                          selectedOrigin = selectedCity['station_code'] ?? selectedCity['code'] ?? '';
+                          selectedOriginName = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                          originController.text = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                        });
+                      }
                     }
                   },
                   onDestinationTap: () async {
@@ -203,21 +204,20 @@ class _SearchTabState extends State<SearchTab> {
                       MaterialPageRoute(
                         builder: (context) => CitySearchScreen(
                           isOrigin: false,
-                          onCitySelected: (city) {
-                            Navigator.pop(context, city);
-                          },
+                          searchType: 'station',
+                          sourceScreen: 'search_tab',
                         ),
                       ),
                     );
                     if (selectedCity != null) {
-                      setState(() {
-                        selectedDestination =
-                            selectedCity['station_code'] ?? '';
-                        selectedDestinationName =
-                            selectedCity['station_name'] ?? '';
-                        destinationController.text =
-                            selectedCity['station_name'] ?? '';
-                      });
+                      // Check if the result is intended for this screen
+                      if (selectedCity['sourceScreen'] == 'search_tab' || selectedCity['sourceScreen'] == 'default') {
+                        setState(() {
+                          selectedDestination = selectedCity['station_code'] ?? selectedCity['code'] ?? '';
+                          selectedDestinationName = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                          destinationController.text = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                        });
+                      }
                     }
                   },
                   passengers: passengers,

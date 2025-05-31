@@ -60,6 +60,11 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                   'code': item['code'] ?? item['station_code'] ?? item['keyword'],
                   'name': item['name'] ?? item['station_name'] ?? item['city'],
                   'state': item['state'] ?? '',
+                  // Add these fields for compatibility with different screens
+                  'station_code': item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'station_name': item['name'] ?? item['station_name'] ?? item['city'],
+                  'city_code': item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'city_name': item['name'] ?? item['station_name'] ?? item['city'],
                 })
             .toList();
         _cities.sort((a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo((b['name'] ?? '').toString().toLowerCase()));
@@ -91,18 +96,27 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
 
   void _onCityTap(Map<String, dynamic> city) {
     // Return a standardized format for both city and station
+    // Include all possible field names that different screens might expect
     final result = {
       'id': city['id'],
       'code': city['code'],
       'name': city['name'],
+      // Fields for search_tab.dart
+      'station_code': city['code'] ?? city['station_code'],
+      'station_name': city['name'] ?? city['station_name'],
+      // Fields for other screens
+      'city_code': city['code'] ?? city['city_code'],
+      'city_name': city['name'] ?? city['city_name'],
       'state': city['state'],
       'sourceScreen': widget.sourceScreen, // Add source screen to identify where to return
     };
     
     if (widget.onCitySelected != null) {
       widget.onCitySelected!(result);
+    } else {
+      // Always return the result to the previous screen
+      Navigator.pop(context, result);
     }
-    Navigator.pop(context, result);
   }
 
   @override

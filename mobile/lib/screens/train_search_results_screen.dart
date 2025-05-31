@@ -246,18 +246,20 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   MaterialPageRoute(
                                     builder: (context) => CitySearchScreen(
                                       isOrigin: true,
-                                      onCitySelected: (city) {
-                                        Navigator.pop(context, city);
-                                      },
+                                      searchType: 'station',
+                                      sourceScreen: 'train_search_results',
                                     ),
                                   ),
                                 );
                                 if (result != null &&
                                     result is Map<String, dynamic>) {
-                                  setModalState(() {
-                                    originController.text =
-                                        '${result['station_code']} - ${result['station_name']}';
-                                  });
+                                  // Check if the result is intended for this screen
+                                  if (result['sourceScreen'] == 'train_search_results' || result['sourceScreen'] == 'default') {
+                                    setModalState(() {
+                                      originController.text =
+                                          '${result['station_code'] ?? result['code']} - ${result['station_name'] ?? result['name']}';
+                                    });
+                                  }
                                 }
                               },
                               decoration: InputDecoration(
@@ -289,18 +291,20 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                   MaterialPageRoute(
                                     builder: (context) => CitySearchScreen(
                                       isOrigin: false,
-                                      onCitySelected: (city) {
-                                        Navigator.pop(context, city);
-                                      },
+                                      searchType: 'station',
+                                      sourceScreen: 'train_search_results',
                                     ),
                                   ),
                                 );
                                 if (result != null &&
                                     result is Map<String, dynamic>) {
-                                  setModalState(() {
-                                    destinationController.text =
-                                        '${result['station_code']} - ${result['station_name']}';
-                                  });
+                                  // Check if the result is intended for this screen
+                                  if (result['sourceScreen'] == 'train_search_results' || result['sourceScreen'] == 'default') {
+                                    setModalState(() {
+                                      destinationController.text =
+                                          '${result['station_code'] ?? result['code']} - ${result['station_name'] ?? result['name']}';
+                                    });
+                                  }
                                 }
                               },
                               decoration: InputDecoration(
