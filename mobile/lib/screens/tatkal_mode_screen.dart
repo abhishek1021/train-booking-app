@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/job_service.dart';
+import '../services/passenger_service.dart';
 import '../config/api_config.dart';
 import '../widgets/success_animation_dialog.dart';
 import 'city_search_screen.dart';
@@ -19,6 +20,13 @@ class TatkalModeScreen extends StatefulWidget {
 class _TatkalModeScreenState extends State<TatkalModeScreen> {
   // Services
   final JobService _jobService = JobService();
+  PassengerService? _passengerService;
+  SharedPreferences? _prefs;
+  
+  // Saved passengers
+  List<Map<String, dynamic>> _savedPassengers = [];
+  bool _isLoadingSavedPassengers = false;
+  Map<String, bool> _usedSavedPassengers = {};
 
   // Step tracking
   int _currentStep = 0;
@@ -49,6 +57,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       'gender': 'Male',
       'berth': 'No Preference',
       'isSenior': false,
+      'idType': 'Aadhar',
+      'idNumber': TextEditingController(),
+      'isExpanded': true, // Track accordion expansion state
     }
   ];
 
@@ -85,6 +96,113 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _initSharedPreferences();
+  }
+  
+  // Initialize shared preferences
+  Future<void> _initSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    await _initPassengerService();
+    await _loadSavedPassengers();
+  }
+  
+  // Initialize passenger service
+  Future<void> _initPassengerService() async {
+    if (_prefs != null) {
+      // Use non-nullable SharedPreferences with the ! operator since we've checked it's not null
+      _passengerService = PassengerService(_prefs!);
+      if (mounted) {
+        setState(() {
+          _isLoadingSavedPassengers = true;
+        });
+      }
+    } else {
+      print('Error: SharedPreferences not initialized');
+    }
+  }
+  
+  // Load saved passengers from database
+  Future<void> _loadSavedPassengers() async {
+    if (_passengerService == null) return;
+
+    // Set loading state
+    setState(() {
+      _isLoadingSavedPassengers = true;
+    });
+
+    try {
+      final passengers = await _passengerService!.getFavoritePassengers();
+      print('Loaded ${passengers.length} saved passengers');
+
+      if (mounted) {
+        setState(() {
+          // Cast the List<dynamic> to List<Map<String, dynamic>> using map function
+          _savedPassengers = passengers.map((passenger) => 
+            Map<String, dynamic>.from(passenger as Map)).toList();
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading saved passengers: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    }
+  }
+  
+  // Use a saved passenger
+  void _useSavedPassenger(Map<String, dynamic> passenger) {
+    if (_passengers.length >= 6) {
+      _showCustomSnackBar(
+        message: 'Maximum 6 passengers allowed',
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    final name = passenger['name'] ?? '';
+    final age = passenger['age']?.toString() ?? '';
+    final gender = passenger['gender'] ?? 'Male';
+    final idType = passenger['id_type'] ?? 'Aadhar';
+    final idNumber = passenger['id_number'] ?? '';
+    
+    // Check if this passenger is already in use
+    if (_usedSavedPassengers.containsKey(idNumber) && _usedSavedPassengers[idNumber] == true) {
+      _showCustomSnackBar(
+        message: 'This passenger is already in your list',
+        icon: Icons.warning,
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+    
+    setState(() {
+      // Add the passenger to the list
+      _passengers.add({
+        'name': TextEditingController(text: name),
+        'age': TextEditingController(text: age),
+        'gender': gender,
+        'berth': 'No Preference',
+        'isSenior': (int.tryParse(age) ?? 0) >= 60,
+        'idType': idType,
+        'idNumber': TextEditingController(text: idNumber),
+        'isExpanded': true, // Expand the new passenger accordion
+        'fromSavedList': true, // Mark that this passenger came from saved list
+      });
+      
+      // Mark this passenger as used
+      _usedSavedPassengers[idNumber] = true;
+    });
+    
+    // Show a custom confirmation message
+    _showCustomSnackBar(
+      message: 'Passenger ${name} added as Passenger ${_passengers.length}',
+      icon: Icons.person_add,
+      backgroundColor: Color(0xFF7C3AED),
+    );
   }
 
   Future<void> _loadUserData() async {
@@ -117,41 +235,241 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _notesController.dispose();
+    
+    // GST controllers
+    _gstNumberController.dispose();
+    _gstNameController.dispose();
+    _gstAddressController.dispose();
 
     // Passenger controllers
     for (var passenger in _passengers) {
       passenger['name'].dispose();
       passenger['age'].dispose();
+      passenger['idNumber'].dispose();
     }
 
     super.dispose();
   }
 
+  // Custom SnackBar for better user feedback
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: EdgeInsets.all(10),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   // Navigate to next step
   void _nextStep() {
-    bool canProceed = false;
+    bool isValid = false;
 
+    // Validate current step
     switch (_currentStep) {
       case 0: // Journey Details
-        canProceed = _journeyFormKey.currentState?.validate() ?? false;
+        isValid = _journeyFormKey.currentState?.validate() ?? false;
+
+        // Additional validation for journey details
+        if (isValid) {
+          // Check if origin and destination are selected
+          if (_selectedOriginCode == null || _selectedOriginCode!.isEmpty) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please select a valid origin station',
+              icon: Icons.error,
+              backgroundColor: Colors.red,
+            );
+          } else if (_selectedDestinationCode == null ||
+              _selectedDestinationCode!.isEmpty) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please select a valid destination station',
+              icon: Icons.error,
+              backgroundColor: Colors.red,
+            );
+          } else if (_selectedOriginCode == _selectedDestinationCode) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Origin and destination cannot be the same',
+              icon: Icons.error,
+              backgroundColor: Colors.red,
+            );
+          }
+
+          // Check if date and time are selected
+          if (_selectedDate == null) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please select a journey date',
+              icon: Icons.calendar_today,
+              backgroundColor: Colors.red,
+            );
+          } else if (_selectedTime == null) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please select a journey time',
+              icon: Icons.access_time,
+              backgroundColor: Colors.red,
+            );
+          }
+        }
         break;
+
       case 1: // Passenger Details
-        canProceed = _passengerFormKey.currentState?.validate() ?? false;
+        isValid = _passengerFormKey.currentState?.validate() ?? false;
+
+        // Additional validation for passenger details
+        if (isValid) {
+          for (var passenger in _passengers) {
+            final name = passenger['name'].text;
+            final age = passenger['age'].text;
+            final idNumber = passenger['idNumber'].text;
+            final idType = passenger['idType'];
+
+            // Name validation
+            if (name.isEmpty) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter name for all passengers',
+                icon: Icons.person,
+                backgroundColor: Colors.red,
+              );
+              break;
+            }
+
+            // Age validation
+            if (age.isEmpty) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter age for all passengers',
+                icon: Icons.cake,
+                backgroundColor: Colors.red,
+              );
+              break;
+            }
+
+            final ageValue = int.tryParse(age);
+            if (ageValue == null || ageValue <= 0 || ageValue > 120) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter a valid age between 1 and 120',
+                icon: Icons.error,
+                backgroundColor: Colors.red,
+              );
+              break;
+            }
+
+            // ID validation
+            if (idNumber.isEmpty) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter ID Number for all passengers',
+                icon: Icons.badge,
+                backgroundColor: Colors.red,
+              );
+              break;
+            }
+
+            if (idType == 'Aadhar' &&
+                (idNumber.length != 12 ||
+                    !RegExp(r'^\d{12}$').hasMatch(idNumber))) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter a valid 12-digit Aadhar number',
+                icon: Icons.numbers,
+                backgroundColor: Colors.red,
+              );
+              break;
+            } else if (idType == 'PAN' &&
+                (idNumber.length != 10 ||
+                    !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$')
+                        .hasMatch(idNumber))) {
+              isValid = false;
+              _showCustomSnackBar(
+                message: 'Please enter a valid 10-character PAN number',
+                icon: Icons.credit_card,
+                backgroundColor: Colors.red,
+              );
+              break;
+            }
+          }
+        }
         break;
+
       case 2: // Contact Details
-        canProceed = _contactFormKey.currentState?.validate() ?? false;
+        isValid = _contactFormKey.currentState?.validate() ?? false;
+        if (isValid) {
+          // Additional validation for contact details if needed
+          // For example, validating phone number format
+          final phoneNumber = _phoneController.text;
+          if (phoneNumber.length != 10 ||
+              !RegExp(r'^[0-9]{10}$').hasMatch(phoneNumber)) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please enter a valid 10-digit phone number',
+              icon: Icons.phone,
+              backgroundColor: Colors.red,
+            );
+          }
+
+          // Email validation
+          final email = _emailController.text;
+          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+            isValid = false;
+            _showCustomSnackBar(
+              message: 'Please enter a valid email address',
+              icon: Icons.email,
+              backgroundColor: Colors.red,
+            );
+          }
+        }
         break;
+
       case 3: // Preferences
-        canProceed = _preferencesFormKey.currentState?.validate() ?? false;
+        isValid = _preferencesFormKey.currentState?.validate() ?? false;
+        // Additional validation for preferences if needed
         break;
     }
 
-    if (canProceed) {
+    if (isValid && _currentStep < _totalSteps - 1) {
       setState(() {
-        if (_currentStep < _totalSteps - 1) {
-          _currentStep++;
-        }
+        _currentStep += 1;
       });
+
+      // Show success message when moving to next step
+      _showCustomSnackBar(
+        message: 'Step ${_currentStep} completed successfully',
+        icon: Icons.check_circle,
+        backgroundColor: Color(0xFF7C3AED),
+      );
     }
   }
 
@@ -173,6 +491,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'gender': 'Male',
         'berth': 'No Preference',
         'isSenior': false,
+        'idType': 'Aadhar',
+        'idNumber': TextEditingController(),
+        'isExpanded': true, // New passengers start expanded
       });
     });
   }
@@ -184,6 +505,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         final passenger = _passengers.removeAt(index);
         passenger['name'].dispose();
         passenger['age'].dispose();
+        passenger['idNumber'].dispose();
       });
     }
   }
@@ -223,6 +545,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                 'gender': passenger['gender'],
                 'berth_preference': passenger['berth'],
                 'is_senior_citizen': passenger['isSenior'],
+                'id_type': passenger['idType'],
+                'id_number': passenger['idNumber'].text,
               })
           .toList();
 
@@ -344,7 +668,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                 valueColor:
                     const AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
                 borderRadius: BorderRadius.circular(10),
-                minHeight: 8,
+                minHeight: 6,
               ),
             ],
           ),
@@ -371,66 +695,86 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              // Back button
-              _currentStep > 0
-                  ? ElevatedButton(
-                      onPressed: _previousStep,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF7C3AED),
-                        elevation: 0,
-                        side: const BorderSide(color: Color(0xFF7C3AED)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+              // Back button row
+              if (_currentStep > 0)
+                Container(
+                  width: double.infinity,
+                  height: 52,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ElevatedButton(
+                    onPressed: _previousStep,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF7C3AED),
+                      elevation: 0,
+                      side: const BorderSide(
+                          color: Color(0xFF7C3AED), width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'Back',
-                        style: TextStyle(
-                          fontFamily: 'ProductSans',
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    child: const Text(
+                      'Back',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                    )
-                  : const SizedBox(width: 100),
-
-              // Next/Submit button
-              ElevatedButton(
-                onPressed: _isLoading
-                    ? null
-                    : (_currentStep == _totalSteps - 1
-                        ? _createTatkalJob
-                        : _nextStep),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+
+              // Next/Submit button
+              Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ElevatedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : (_currentStep == _totalSteps - 1
+                          ? _createTatkalJob
+                          : _nextStep),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          _currentStep == _totalSteps - 1
+                              ? 'Create Job'
+                              : 'Next',
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                      )
-                    : Text(
-                        _currentStep == _totalSteps - 1 ? 'Create Job' : 'Next',
-                        style: const TextStyle(
-                          fontFamily: 'ProductSans',
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                ),
               ),
             ],
           ),
@@ -482,7 +826,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             children: [
               _buildSectionTitle('Journey Details'),
               // Origin Station Card
-              _buildStationCard(
+              _buildCustomStationCard(
                 title: 'From Station',
                 controller: _originController,
                 icon: Icons.train,
@@ -500,7 +844,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
                   if (result != null && result is Map<String, dynamic>) {
                     // Check if the result is intended for this screen
-                    if (result['sourceScreen'] == 'tatkal_mode' || result['sourceScreen'] == 'default') {
+                    if (result['sourceScreen'] == 'tatkal_mode' ||
+                        result['sourceScreen'] == 'default') {
                       setState(() {
                         _originController.text = result['name'] ?? '';
                         _selectedOriginCode = result['code'] ?? '';
@@ -522,7 +867,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               const SizedBox(height: 16),
 
               // Destination Station Card
-              _buildStationCard(
+              _buildCustomStationCard(
                 title: 'To Station',
                 controller: _destinationController,
                 icon: Icons.location_on,
@@ -540,7 +885,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
                   if (result != null && result is Map<String, dynamic>) {
                     // Check if the result is intended for this screen
-                    if (result['sourceScreen'] == 'tatkal_mode' || result['sourceScreen'] == 'default') {
+                    if (result['sourceScreen'] == 'tatkal_mode' ||
+                        result['sourceScreen'] == 'default') {
                       setState(() {
                         _destinationController.text = result['name'] ?? '';
                         _selectedDestinationCode = result['code'] ?? '';
@@ -565,7 +911,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               const SizedBox(height: 16),
 
               // Journey Date Card
-              _buildDateCard(
+              _buildCustomStationCard(
                 title: 'Journey Date',
                 controller: _dateController,
                 icon: Icons.calendar_today,
@@ -583,6 +929,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                             primary: Color(0xFF7C3AED),
                             onPrimary: Colors.white,
                             onSurface: Colors.black,
+                            surface: Colors.white,
                           ),
                         ),
                         child: child!,
@@ -623,6 +970,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                             primary: Color(0xFF7C3AED),
                             onPrimary: Colors.white,
                             onSurface: Colors.black,
+                            surface: Colors.white,
                           ),
                         ),
                         child: child!,
@@ -684,6 +1032,150 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       children: [
         _buildSectionTitle('Passenger Details'),
         const SizedBox(height: 16),
+        
+        // Saved Passengers Section
+        Container(
+          margin: EdgeInsets.only(bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Saved Passengers',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _isLoadingSavedPassengers
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+                    ),
+                  )
+                : _savedPassengers.isEmpty
+                  ? Container(
+                      margin: EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No favourite passenger stored',
+                          style: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      height: 130,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _savedPassengers.length,
+                        padding: EdgeInsets.symmetric(horizontal: 12.0),
+                        itemBuilder: (context, index) {
+                          final passenger = _savedPassengers[index];
+                          // Check if this passenger is already used in the passenger list
+                          final idNumber = passenger['id_number'] ?? '';
+                          final isUsed = _usedSavedPassengers.containsKey(idNumber) && 
+                                        _usedSavedPassengers[idNumber] == true;
+                          
+                          return GestureDetector(
+                            // Only allow tapping if the passenger is not already used
+                            onTap: isUsed ? null : () => _useSavedPassenger(passenger),
+                            child: Container(
+                              width: 200,
+                              margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                              padding: EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                // Gray out the card if already used
+                                color: isUsed ? Color(0xFFF3F4F6) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: isUsed ? Color(0xFFD1D5DB) : Color(0xFFE5E7EB)),
+                                boxShadow: isUsed ? [] : [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    passenger['name'] ?? '',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF111827),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 12,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 12,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Spacer(),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: isUsed ? Color(0xFFE5E7EB) : Color(0xFFF3E8FF),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      isUsed ? 'Already used' : 'Tap to use',
+                                      style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        color: isUsed ? Color(0xFF6B7280) : Color(0xFF7C3AED),
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ],
+          ),
+        ),
+        
         Form(
           key: _passengerFormKey,
           child: Column(
@@ -691,187 +1183,434 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             children: [
               for (int i = 0; i < _passengers.length; i++) ...[
                 Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ExpansionTile(
+                        initiallyExpanded: _passengers[i]['isExpanded'] ?? true,
+                        onExpansionChanged: (expanded) {
+                          setState(() {
+                            _passengers[i]['isExpanded'] = expanded;
+                          });
+                        },
+                        title: Text(
+                          'Passenger ${i + 1}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C3AED),
+                            fontFamily: 'ProductSans',
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Passenger ${i + 1}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7C3AED),
-                                fontFamily: 'ProductSans',
-                              ),
-                            ),
                             if (_passengers.length > 1)
                               IconButton(
                                 icon: const Icon(
                                   Icons.delete,
                                   color: Colors.red,
+                                  size: 22,
                                 ),
                                 onPressed: () => _removePassenger(i),
+                                padding: EdgeInsets.zero,
+                                constraints: BoxConstraints(),
+                                splashRadius: 20,
                               ),
+                            Icon(
+                              _passengers[i]['isExpanded'] ?? true
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Color(0xFF7C3AED),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-
-                        // Passenger Name
-                        TextFormField(
-                          controller: _passengers[i]['name'],
-                          decoration: const InputDecoration(
-                            labelText: 'Full Name',
-                            prefixIcon: Icon(Icons.person),
-                            border: OutlineInputBorder(),
-                            floatingLabelStyle: TextStyle(
-                              color: Color(0xFF7C3AED),
-                              fontFamily: 'ProductSans',
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter passenger name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Age and Gender
-                        Row(
-                          children: [
-                            // Age
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: _passengers[i]['age'],
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Age',
-                                  prefixIcon: Icon(Icons.cake),
-                                  border: OutlineInputBorder(),
-                                  floatingLabelStyle: TextStyle(
-                                    color: Color(0xFF7C3AED),
-                                    fontFamily: 'ProductSans',
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Required';
-                                  }
-                                  final age = int.tryParse(value);
-                                  if (age == null || age <= 0 || age > 120) {
-                                    return 'Invalid age';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-
-                            // Gender
-                            Expanded(
-                              flex: 3,
-                              child: DropdownButtonFormField<String>(
-                                value: _passengers[i]['gender'],
-                                decoration: const InputDecoration(
-                                  labelText: 'Gender',
-                                  prefixIcon: Icon(Icons.people),
-                                  border: OutlineInputBorder(),
-                                  floatingLabelStyle: TextStyle(
-                                    color: Color(0xFF7C3AED),
-                                    fontFamily: 'ProductSans',
-                                  ),
-                                ),
-                                items: _genders.map((String gender) {
-                                  return DropdownMenuItem<String>(
-                                    value: gender,
-                                    child: Text(
-                                      gender,
-                                      style: const TextStyle(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Passenger Name
+                                  TextFormField(
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      color: Color(0xFF222222),
+                                    ),
+                                    controller: _passengers[i]['name'],
+                                    decoration: InputDecoration(
+                                      labelText: 'Full Name',
+                                      labelStyle: TextStyle(
                                         fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                      filled: true,
+                                      fillColor: Color(0xFFF7F7FA),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 16,
+                                      ),
+                                      errorStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  if (newValue != null) {
-                                    setState(() {
-                                      _passengers[i]['gender'] = newValue;
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter passenger name';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
 
-                        // Berth Preference
-                        DropdownButtonFormField<String>(
-                          value: _passengers[i]['berth'],
-                          decoration: const InputDecoration(
-                            labelText: 'Berth Preference',
-                            prefixIcon: Icon(Icons.airline_seat_flat),
-                            border: OutlineInputBorder(),
-                            floatingLabelStyle: TextStyle(
-                              color: Color(0xFF7C3AED),
-                              fontFamily: 'ProductSans',
-                            ),
+                                  // Age and Gender
+                                  Row(
+                                    children: [
+                                      // Age
+                                      Expanded(
+                                        child: TextFormField(
+                                          style: TextStyle(
+                                            fontFamily: 'ProductSans',
+                                            color: Color(0xFF222222),
+                                          ),
+                                          controller: _passengers[i]['age'],
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            labelText: 'Age',
+                                            labelStyle: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                            filled: true,
+                                            fillColor: Color(0xFFF7F7FA),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                            errorStyle: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Required';
+                                            }
+                                            final age = int.tryParse(value);
+                                            if (age == null ||
+                                                age <= 0 ||
+                                                age > 120) {
+                                              return 'Invalid age';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+
+                                      // Gender
+                                      Expanded(
+                                        child: DropdownButtonFormField<String>(
+                                          value: _passengers[i]['gender'],
+                                          style: TextStyle(
+                                            color: Color(0xFF222222),
+                                            fontFamily: 'ProductSans',
+                                          ),
+                                          onChanged: (v) {
+                                            setState(() {
+                                              _passengers[i]['gender'] =
+                                                  v ?? 'Male';
+                                            });
+                                          },
+                                          dropdownColor: Colors.white,
+                                          iconEnabledColor: Color(0xFF7C3AED),
+                                          items: _genders
+                                              .map((g) => DropdownMenuItem(
+                                                  value: g, child: Text(g)))
+                                              .toList(),
+                                          decoration: InputDecoration(
+                                            labelText: 'Gender',
+                                            labelStyle: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                            filled: true,
+                                            fillColor: Color(0xFFF7F7FA),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // ID Type and Number
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: DropdownButtonFormField<String>(
+                                          value: _passengers[i]['idType'],
+                                          style: TextStyle(
+                                            color: Color(0xFF222222),
+                                            fontFamily: 'ProductSans',
+                                          ),
+                                          onChanged: (v) {
+                                            setState(() {
+                                              _passengers[i]['idType'] =
+                                                  v ?? 'Aadhar';
+                                            });
+                                          },
+                                          dropdownColor: Colors.white,
+                                          iconEnabledColor: Color(0xFF7C3AED),
+                                          items: [
+                                            'Aadhar',
+                                            'PAN',
+                                            'Driving License'
+                                          ]
+                                              .map((id) => DropdownMenuItem(
+                                                  value: id, child: Text(id)))
+                                              .toList(),
+                                          decoration: InputDecoration(
+                                            labelText: 'ID Type',
+                                            labelStyle: TextStyle(
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF7C3AED),
+                                            ),
+                                            filled: true,
+                                            fillColor: Color(0xFFF7F7FA),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // ID Number
+                                  TextFormField(
+                                    controller: _passengers[i]['idNumber'],
+                                    style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                    decoration: InputDecoration(
+                                      labelText: 'ID Number',
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                      filled: true,
+                                      fillColor: Color(0xFFF7F7FA),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 16,
+                                      ),
+                                      errorStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      hintText: _passengers[i]['idType'] ==
+                                              'Aadhar'
+                                          ? '12-digit Aadhar number'
+                                          : _passengers[i]['idType'] == 'PAN'
+                                              ? '10-character PAN number'
+                                              : 'Driving License number',
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter ID number';
+                                      }
+
+                                      // Validate based on ID type
+                                      if (_passengers[i]['idType'] ==
+                                          'Aadhar') {
+                                        if (value.length != 12 ||
+                                            !RegExp(r'^\d{12}$')
+                                                .hasMatch(value)) {
+                                          return 'Enter valid 12-digit Aadhar';
+                                        }
+                                      } else if (_passengers[i]['idType'] ==
+                                          'PAN') {
+                                        if (value.length != 10 ||
+                                            !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$')
+                                                .hasMatch(value)) {
+                                          return 'Enter valid 10-char PAN';
+                                        }
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Berth Preference
+                                  DropdownButtonFormField<String>(
+                                    value: _passengers[i]['berth'],
+                                    style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _passengers[i]['berth'] =
+                                            v ?? 'No Preference';
+                                      });
+                                    },
+                                    dropdownColor: Colors.white,
+                                    iconEnabledColor: Color(0xFF7C3AED),
+                                    items: _berthPreferences
+                                        .map((b) => DropdownMenuItem(
+                                            value: b, child: Text(b)))
+                                        .toList(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Berth Preference',
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                      filled: true,
+                                      fillColor: Color(0xFFF7F7FA),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Senior Citizen
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _passengers[i]['isSenior'],
+                                        activeColor: const Color(0xFF7C3AED),
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _passengers[i]['isSenior'] =
+                                                value ?? false;
+                                          });
+                                        },
+                                      ),
+                                      const Text(
+                                        'Senior Citizen',
+                                        style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          color: Color(0xFF222222),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ]),
                           ),
-                          items: _berthPreferences.map((String berth) {
-                            return DropdownMenuItem<String>(
-                              value: berth,
-                              child: Text(
-                                berth,
-                                style: const TextStyle(
-                                  fontFamily: 'ProductSans',
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                _passengers[i]['berth'] = newValue;
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Senior Citizen
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _passengers[i]['isSenior'],
-                              activeColor: const Color(0xFF7C3AED),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _passengers[i]['isSenior'] = value ?? false;
-                                });
-                              },
-                            ),
-                            const Text(
-                              'Senior Citizen',
-                              style: TextStyle(
-                                fontFamily: 'ProductSans',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                        ],
+                      ),
+                    )),
                 if (i < _passengers.length - 1) const SizedBox(height: 16),
               ],
 
@@ -907,6 +1646,14 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     );
   }
 
+  // Variables for travel insurance and GST
+  bool _optForInsurance = false;
+  bool _showTravelInsurance = false;
+  bool _showGstDetails = false;
+  final _gstNumberController = TextEditingController();
+  final _gstNameController = TextEditingController();
+  final _gstAddressController = TextEditingController();
+
   Widget _buildContactDetailsStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -918,10 +1665,19 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              // Contact Information Card
+              Container(
+                margin: EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -942,16 +1698,37 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                       // Email
                       TextFormField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
-                          floatingLabelStyle: TextStyle(
-                            color: Color(0xFF7C3AED),
+                        style: TextStyle(
+                          color: Color(0xFF222222),
+                          fontFamily: 'ProductSans',
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Email (for ticket & alerts)',
+                          labelStyle: TextStyle(
                             fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C3AED),
+                          ),
+                          filled: true,
+                          fillColor: Color(0xFFF7F7FA),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
                           ),
                         ),
+                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter email';
@@ -968,16 +1745,38 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                       // Phone
                       TextFormField(
                         controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone',
-                          prefixIcon: Icon(Icons.phone),
-                          border: OutlineInputBorder(),
-                          floatingLabelStyle: TextStyle(
-                            color: Color(0xFF7C3AED),
-                            fontFamily: 'ProductSans',
-                          ),
+                        style: TextStyle(
+                          color: Color(0xFF222222),
+                          fontFamily: 'ProductSans',
                         ),
+                        decoration: InputDecoration(
+                          labelText: 'Mobile Number',
+                          labelStyle: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C3AED),
+                          ),
+                          filled: true,
+                          fillColor: Color(0xFFF7F7FA),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          prefixIcon: Icon(Icons.phone, color: Color(0xFF7C3AED)),
+                        ),
+                        keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter phone number';
@@ -987,6 +1786,310 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           }
                           return null;
                         },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Additional Preferences Section
+              Container(
+                margin: EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                    childrenPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    backgroundColor: Colors.white,
+                    title: Text(
+                      'Additional Preferences',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
+                        fontSize: 16,
+                      ),
+                    ),
+                    children: [
+                      // Travel Insurance Option
+                      Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF7F7FA),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            title: Text(
+                              'Travel Insurance',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF222222),
+                                fontSize: 14,
+                              ),
+                            ),
+                            subtitle: Text(
+                              _optForInsurance ? 'Selected: Yes' : 'Optional',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: Icon(
+                              _showTravelInsurance ? Icons.expand_less : Icons.expand_more,
+                              color: Color(0xFF7C3AED),
+                            ),
+                            onExpansionChanged: (bool expanded) {
+                              setState(() {
+                                _showTravelInsurance = expanded;
+                              });
+                            },
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'IRCTC Travel Insurance provides coverage for journey-related risks. Premium: ₹10 per passenger (inclusive of taxes).',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      color: Colors.grey[700],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _optForInsurance = true;
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              side: BorderSide(
+                                                color: _optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                          ),
+                                          child: Text(
+                                            'Yes, I want insurance',
+                                            style: TextStyle(
+                                              color: _optForInsurance ? Colors.white : Colors.grey[700],
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _optForInsurance = false;
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: !_optForInsurance ? Color(0xFF7C3AED) : Color(0xFFF7F7FA),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              side: BorderSide(
+                                                color: !_optForInsurance ? Color(0xFF7C3AED) : Colors.grey[300]!,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.symmetric(vertical: 10),
+                                          ),
+                                          child: Text(
+                                            'No, thanks',
+                                            style: TextStyle(
+                                              color: !_optForInsurance ? Colors.white : Colors.grey[700],
+                                              fontFamily: 'ProductSans',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // GST Details Option
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF7F7FA),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            title: Text(
+                              'GST Details (Optional)',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF222222),
+                                fontSize: 14,
+                              ),
+                            ),
+                            subtitle: Text(
+                              _gstNumberController.text.isNotEmpty
+                                  ? 'GSTIN: ${_gstNumberController.text}'
+                                  : 'Add GST details for business travel',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                color: _gstNumberController.text.isNotEmpty ? Color(0xFF7C3AED) : Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: Icon(
+                              _showGstDetails ? Icons.expand_less : Icons.expand_more,
+                              color: Color(0xFF7C3AED),
+                            ),
+                            onExpansionChanged: (bool expanded) {
+                              setState(() {
+                                _showGstDetails = expanded;
+                              });
+                            },
+                            children: [
+                              Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _gstNumberController,
+                                    style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                    decoration: InputDecoration(
+                                      labelText: 'GSTIN',
+                                      hintText: '22AAAAA0000A1Z5',
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                        fontSize: 12,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _gstNameController,
+                                    style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                    decoration: InputDecoration(
+                                      labelText: 'Company Name',
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                        fontSize: 12,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _gstAddressController,
+                                    style: TextStyle(
+                                      color: Color(0xFF222222),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                    maxLines: 2,
+                                    decoration: InputDecoration(
+                                      labelText: 'Company Address',
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7C3AED),
+                                        fontSize: 12,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1258,62 +2361,175 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     required Function() onTap,
     required String? Function(String?) validator,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: const Color(0xFF7C3AED),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF7C3AED),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      icon,
+                      color: const Color(0xFF7C3AED),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
+                        fontFamily: 'ProductSans',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: controller,
+                  readOnly: true,
+                  validator: validator,
+                  decoration: InputDecoration(
+                    hintText: 'Tap to select',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontFamily: 'ProductSans',
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    errorStyle: const TextStyle(
+                      color: Colors.red,
                       fontFamily: 'ProductSans',
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller,
-                readOnly: true,
-                validator: validator,
-                decoration: InputDecoration(
-                  hintText: 'Tap to select',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[400],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'ProductSans',
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  errorStyle: const TextStyle(
-                    color: Colors.red,
-                    fontFamily: 'ProductSans',
+                    color: Colors.black,
                   ),
                 ),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'ProductSans',
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Custom station card with explicit white background and purple accents
+  Widget _buildCustomStationCard({
+    required String title,
+    required TextEditingController controller,
+    required IconData icon,
+    required Function() onTap,
+    required String? Function(String?) validator,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          splashColor: const Color(0xFF7C3AED).withOpacity(0.1),
+          highlightColor: const Color(0xFF7C3AED).withOpacity(0.05),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      icon,
+                      color: const Color(0xFF7C3AED),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
+                        fontFamily: 'ProductSans',
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          controller.text.isEmpty
+                              ? 'Tap to select'
+                              : controller.text,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'ProductSans',
+                            color: controller.text.isEmpty
+                                ? Colors.grey
+                                : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (validator(controller.text) != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      validator(controller.text) ?? '',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontFamily: 'ProductSans',
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1327,65 +2543,13 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     required Function() onTap,
     required String? Function(String?) validator,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: const Color(0xFF7C3AED),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF7C3AED),
-                      fontFamily: 'ProductSans',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller,
-                readOnly: true,
-                validator: validator,
-                decoration: InputDecoration(
-                  hintText: 'Tap to select',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[400],
-                    fontFamily: 'ProductSans',
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  errorStyle: const TextStyle(
-                    color: Colors.red,
-                    fontFamily: 'ProductSans',
-                  ),
-                ),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'ProductSans',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    // Using the custom station card implementation for consistency
+    return _buildCustomStationCard(
+      title: title,
+      controller: controller,
+      icon: icon,
+      onTap: onTap,
+      validator: validator,
     );
   }
 
@@ -1396,10 +2560,18 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     required List<DropdownMenuItem<String>> items,
     required void Function(String?) onChanged,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -1432,12 +2604,17 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
+                fillColor: Colors.white,
+                filled: true,
               ),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'ProductSans',
+                color: Colors.black,
               ),
+              dropdownColor: Colors.white,
+              iconEnabledColor: Color(0xFF7C3AED),
               icon: const Icon(
                 Icons.arrow_drop_down,
                 color: Color(0xFF7C3AED),
