@@ -254,7 +254,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 if (result != null &&
                                     result is Map<String, dynamic>) {
                                   // Check if the result is intended for this screen
-                                  if (result['sourceScreen'] == 'train_search_results' || result['sourceScreen'] == 'default') {
+                                  if (result['sourceScreen'] ==
+                                          'train_search_results' ||
+                                      result['sourceScreen'] == 'default') {
                                     setModalState(() {
                                       originController.text =
                                           '${result['station_code'] ?? result['code']} - ${result['station_name'] ?? result['name']}';
@@ -299,7 +301,9 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                 if (result != null &&
                                     result is Map<String, dynamic>) {
                                   // Check if the result is intended for this screen
-                                  if (result['sourceScreen'] == 'train_search_results' || result['sourceScreen'] == 'default') {
+                                  if (result['sourceScreen'] ==
+                                          'train_search_results' ||
+                                      result['sourceScreen'] == 'default') {
                                     setModalState(() {
                                       destinationController.text =
                                           '${result['station_code'] ?? result['code']} - ${result['station_name'] ?? result['name']}';
@@ -450,11 +454,13 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
 
                                     // Show loading indicator first
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
                                           content: Text(
                                             'Searching for trains...',
-                                            style: TextStyle(fontFamily: 'ProductSans'),
+                                            style: TextStyle(
+                                                fontFamily: 'ProductSans'),
                                           ),
                                         ),
                                       );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'tatkal_mode_screen.dart';
+import '../services/job_service.dart';
 
 class TatkalJobsScreen extends StatefulWidget {
   const TatkalJobsScreen({Key? key}) : super(key: key);
@@ -10,8 +13,14 @@ class TatkalJobsScreen extends StatefulWidget {
 }
 
 class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
-  // Static list of tatkal jobs for display
-  final List<Map<String, dynamic>> _tatkalJobs = [
+  final JobService _jobService = JobService();
+  List<Map<String, dynamic>> _tatkalJobs = [];
+  bool _isLoading = true;
+  String _userId = '';
+  String _errorMessage = '';
+
+  // Example jobs for fallback if API fails
+  final List<Map<String, dynamic>> _exampleJobs = [
     {
       'id': 'TKL-A7B9C3D2',
       'status': 'Scheduled',
@@ -71,44 +80,145 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserIdAndJobs();
+  }
+
+  // Load user ID and then fetch jobs
+  Future<void> _loadUserIdAndJobs() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userProfileString = prefs.getString('user_profile');
+
+      if (userProfileString != null && userProfileString.isNotEmpty) {
+        final userData = json.decode(userProfileString) as Map<String, dynamic>;
+        _userId = userData['UserID'] ?? '';
+
+        if (_userId.isNotEmpty) {
+          await _fetchJobs();
+        } else {
+          setState(() {
+            _errorMessage = 'User ID not found. Please log in again.';
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'User profile not found. Please log in again.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error loading user data: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Fetch jobs from API
+  Future<void> _fetchJobs() async {
+    try {
+      final jobs = await _jobService.getUserJobs(userId: _userId);
+      setState(() {
+        _tatkalJobs = jobs;
+        _isLoading = false;
+        _errorMessage = '';
+      });
+    } catch (e) {
+      print('Error fetching jobs: $e');
+      setState(() {
+        _errorMessage = 'Failed to load jobs. Please try again.';
+        _isLoading = false;
+        // Use example jobs as fallback if needed
+        if (_tatkalJobs.isEmpty) {
+          _tatkalJobs = _exampleJobs;
+        }
+      });
+    }
+  }
+
+  // Refresh jobs
+  Future<void> _refreshJobs() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    await _fetchJobs();
+  }
+
   // Filter options
   String _selectedFilter = 'All';
-  final List<String> _filterOptions = ['All', 'Scheduled', 'In Progress', 'Completed', 'Failed'];
+  final List<String> _filterOptions = [
+    'All',
+    'Scheduled',
+    'In Progress',
+    'Completed',
+    'Failed'
+  ];
 
   // Get filtered jobs based on selected filter
   List<Map<String, dynamic>> get _filteredJobs {
     if (_selectedFilter == 'All') {
       return _tatkalJobs;
     } else {
-      return _tatkalJobs.where((job) => job['status'] == _selectedFilter).toList();
+      return _tatkalJobs
+          .where((job) => job['status'] == _selectedFilter)
+          .toList();
     }
   }
 
-  // Get color for job status
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Scheduled':
-        return Colors.orange;
-      case 'In Progress':
-        return Colors.blue;
-      case 'Completed':
-        return Colors.green;
-      case 'Failed':
-        return Colors.red;
-      default:
-        return Colors.grey;
+  // Get color based on job status with null safety
+  Color _getStatusColor(String? status) {
+    if (status == null) {
+      return Colors.grey;
+    }
+
+    // Normalize status to handle case variations
+    final normalizedStatus = status.toLowerCase();
+
+    if (normalizedStatus.contains('schedule')) {
+      return Colors.blue;
+    } else if (normalizedStatus.contains('progress') ||
+        normalizedStatus.contains('in-progress')) {
+      return Colors.orange;
+    } else if (normalizedStatus.contains('complete')) {
+      return Colors.green;
+    } else if (normalizedStatus.contains('fail')) {
+      return Colors.red;
+    } else {
+      return Colors.grey;
     }
   }
 
-  // Format date
+  // Format date with null safety
   String _formatDate(String dateString) {
-    final date = DateTime.parse(dateString);
-    return DateFormat('dd MMM yyyy').format(date);
+    if (dateString == null || dateString.isEmpty || dateString == 'N/A') {
+      return 'N/A';
+    }
+
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      // Handle invalid date format
+      return dateString;
+    }
   }
 
-  // Format datetime
-  String _formatDateTime(DateTime dateTime) {
-    return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+  // Format datetime with null safety
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) {
+      return 'N/A';
+    }
+    return DateFormat('dd MMM yyyy, h:mm a').format(dateTime);
   }
 
   @override
@@ -128,6 +238,10 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshJobs,
+          ),
+          IconButton(
             icon: const Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
               // Show help dialog
@@ -136,64 +250,74 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Filter chips
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: SizedBox(
-              height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _filterOptions.length,
-                itemBuilder: (context, index) {
-                  final filter = _filterOptions[index];
-                  final isSelected = filter == _selectedFilter;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(
-                        filter,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Color(0xFF7C3AED),
-                          fontFamily: 'ProductSans',
+      body: _isLoading
+          ? _buildLoadingState()
+          : _errorMessage.isNotEmpty
+              ? _buildErrorState()
+              : RefreshIndicator(
+                  onRefresh: _refreshJobs,
+                  color: const Color(0xFF7C3AED),
+                  child: Column(
+                    children: [
+                      // Filter chips
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: SizedBox(
+                          height: 40,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _filterOptions.length,
+                            itemBuilder: (context, index) {
+                              final filter = _filterOptions[index];
+                              final isSelected = filter == _selectedFilter;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: FilterChip(
+                                  label: Text(
+                                    filter,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Color(0xFF7C3AED),
+                                      fontFamily: 'ProductSans',
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedFilter = filter;
+                                    });
+                                  },
+                                  backgroundColor: Colors.grey[200],
+                                  selectedColor: const Color(0xFF7C3AED),
+                                  checkmarkColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
-                      backgroundColor: Colors.grey[200],
-                      selectedColor: const Color(0xFF7C3AED),
-                      checkmarkColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+
+                      // Jobs list
+                      Expanded(
+                        child: _filteredJobs.isEmpty
+                            ? _buildEmptyState()
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _filteredJobs.length,
+                                itemBuilder: (context, index) {
+                                  final job = _filteredJobs[index];
+                                  return _buildJobCard(job);
+                                },
+                              ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          
-          // Jobs list
-          Expanded(
-            child: _filteredJobs.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredJobs.length,
-                    itemBuilder: (context, index) {
-                      final job = _filteredJobs[index];
-                      return _buildJobCard(job);
-                    },
+                    ],
                   ),
-          ),
-        ],
-      ),
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -237,27 +361,144 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TatkalModeScreen()),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text(
-              'Create New Job',
-              style: TextStyle(
-                fontFamily: 'ProductSans',
-                fontWeight: FontWeight.bold,
+          Container(
+            width: 220,
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7C3AED),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const TatkalModeScreen()),
+                );
+              },
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Create New Job',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // Loading state widget
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Loading your Tatkal jobs...',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              fontFamily: 'ProductSans',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Error state widget
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 80,
+            color: Colors.red[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Something went wrong',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+              fontFamily: 'ProductSans',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontFamily: 'ProductSans',
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            width: 180,
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _refreshJobs,
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -267,11 +508,53 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
   }
 
   Widget _buildJobCard(Map<String, dynamic> job) {
-    final statusColor = _getStatusColor(job['status']);
-    
+    // Extract job data with null safety
+    final String jobId = job['id']?.toString() ?? 'Unknown ID';
+    final String status = job['status']?.toString() ?? 'Unknown';
+    final String originCode = job['origin_station_code']?.toString() ??
+        job['origin']?.toString() ??
+        'N/A';
+    final String destCode = job['destination_station_code']?.toString() ??
+        job['destination']?.toString() ??
+        'N/A';
+    final String originName = job['origin_station_name']?.toString() ??
+        job['originName']?.toString() ??
+        originCode;
+    final String destName = job['destination_station_name']?.toString() ??
+        job['destinationName']?.toString() ??
+        destCode;
+    final String journeyDate =
+        job['journey_date']?.toString() ?? job['date']?.toString() ?? 'N/A';
+    final String travelClass =
+        job['travel_class']?.toString() ?? job['class']?.toString() ?? 'N/A';
+
+    // Get passenger count
+    int passengerCount = 0;
+    if (job['passengers'] is List) {
+      passengerCount = (job['passengers'] as List).length;
+    } else if (job['passengers'] is int) {
+      passengerCount = job['passengers'];
+    }
+
+    // Get created time
+    DateTime? createdAt;
+    if (job['created_at'] != null) {
+      try {
+        createdAt = DateTime.parse(job['created_at']);
+      } catch (e) {
+        // Handle parsing error
+      }
+    } else if (job['createdAt'] is DateTime) {
+      createdAt = job['createdAt'];
+    }
+
+    // Get status color
+    final statusColor = _getStatusColor(status);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -292,7 +575,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
               children: [
                 Flexible(
                   child: Text(
-                    job['id'],
+                    jobId,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[800],
@@ -302,7 +585,8 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -319,7 +603,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        job['status'],
+                        status,
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
@@ -333,7 +617,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
               ],
             ),
           ),
-          
+
           // Journey details
           Padding(
             padding: const EdgeInsets.all(16),
@@ -348,7 +632,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            job['origin'],
+                            originCode,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -357,7 +641,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                             ),
                           ),
                           Text(
-                            job['originName'],
+                            originName,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -376,7 +660,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            job['destination'],
+                            destCode,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -385,7 +669,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                             ),
                           ),
                           Text(
-                            job['destinationName'],
+                            destName,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -397,43 +681,58 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Journey date and other details
                 Row(
                   children: [
-                    _buildDetailItem(Icons.calendar_today, _formatDate(job['date'])),
-                    _buildDetailItem(Icons.access_time, job['time']),
-                    _buildDetailItem(Icons.airline_seat_recline_normal, job['class']),
-                    _buildDetailItem(Icons.people, '${job['passengers']} Pax'),
+                    _buildDetailItem(
+                        Icons.calendar_today, _formatDate(journeyDate)),
+                    // Time might be missing in the API response
+                    _buildDetailItem(
+                        Icons.access_time,
+                        job['time']?.toString() ??
+                            job['booking_time']?.toString() ??
+                            'N/A'),
+                    _buildDetailItem(
+                        Icons.airline_seat_recline_normal, travelClass),
+                    _buildDetailItem(Icons.people, '$passengerCount Pax'),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Created at
                 Text(
-                  'Created: ${_formatDateTime(job['createdAt'])}',
+                  'Created: ${createdAt != null ? _formatDateTime(createdAt) : 'N/A'}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
                     fontFamily: 'ProductSans',
                   ),
                 ),
-                
+
                 // Status-specific information
-                if (job['status'] == 'Completed') ...[
+                if (status == 'Completed') ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'Completed: ${_formatDateTime(job['completedAt'])}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontFamily: 'ProductSans',
+
+                  // Handle completed time
+
+                  if (job['completed_at'] != null ||
+                      job['completedAt'] != null) ...[
+                    Text(
+                      'Completed: ${job['completed_at'] != null ? _formatDateTime(DateTime.parse(job['completed_at'])) : job['completedAt'] is DateTime ? _formatDateTime(job['completedAt']) : 'N/A'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontFamily: 'ProductSans',
+                      ),
                     ),
-                  ),
+                  ],
+
                   const SizedBox(height: 16),
+
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -448,7 +747,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                'Booking ID: ${job['bookingId']}',
+                                'Booking ID: ${job['booking_id']?.toString() ?? job['bookingId']?.toString() ?? 'N/A'}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green[800],
@@ -460,7 +759,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                             const SizedBox(width: 8),
                             Flexible(
                               child: Text(
-                                'PNR: ${job['pnr']}',
+                                'PNR: ${job['pnr']?.toString() ?? 'N/A'}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green[800],
@@ -475,18 +774,25 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                     ),
                   ),
                 ],
-                
-                if (job['status'] == 'Failed') ...[
+
+                if (status == 'Failed') ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'Failed: ${_formatDateTime(job['failedAt'])}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontFamily: 'ProductSans',
+
+                  // Handle failed time
+
+                  if (job['failed_at'] != null || job['failedAt'] != null) ...[
+                    Text(
+                      'Failed: ${job['failed_at'] != null ? _formatDateTime(DateTime.parse(job['failed_at'])) : job['failedAt'] is DateTime ? _formatDateTime(job['failedAt']) : 'N/A'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontFamily: 'ProductSans',
+                      ),
                     ),
-                  ),
+                  ],
+
                   const SizedBox(height: 16),
+
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -503,7 +809,9 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            job['failureReason'],
+                            job['failure_reason']?.toString() ??
+                                job['failureReason']?.toString() ??
+                                'Unknown error',
                             style: TextStyle(
                               color: Colors.red[800],
                               fontFamily: 'ProductSans',
@@ -517,7 +825,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
               ],
             ),
           ),
-          
+
           // Action buttons
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -531,10 +839,11 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (job['status'] == 'Scheduled' || job['status'] == 'In Progress') ...[
+                if (status == 'Scheduled' || status == 'In Progress') ...[
                   TextButton.icon(
                     onPressed: () {
                       // Cancel job
+                      // TODO: Implement job cancellation
                     },
                     icon: const Icon(Icons.cancel, size: 18),
                     label: const Text('Cancel'),
@@ -547,11 +856,11 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                   ),
                   const SizedBox(width: 8),
                 ],
-                
-                if (job['status'] == 'Scheduled') ...[
+                if (status == 'Scheduled') ...[
                   TextButton.icon(
                     onPressed: () {
                       // Edit job
+                      // TODO: Implement job editing
                     },
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('Edit'),
@@ -563,11 +872,11 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                     ),
                   ),
                 ],
-                
-                if (job['status'] == 'Completed') ...[
+                if (status == 'Completed') ...[
                   TextButton.icon(
                     onPressed: () {
                       // View booking
+                      // TODO: Implement booking details view
                     },
                     icon: const Icon(Icons.visibility, size: 18),
                     label: const Text('View Booking'),
@@ -579,7 +888,6 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                     ),
                   ),
                 ],
-                
                 if (job['status'] == 'Failed') ...[
                   TextButton.icon(
                     onPressed: () {

@@ -73,7 +73,8 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       final walletData = await _bookingService.getWalletByUserId(userId);
       setState(() {
-        _walletBalance = double.tryParse(walletData['balance'].toString()) ?? 0.0;
+        _walletBalance =
+            double.tryParse(walletData['balance'].toString()) ?? 0.0;
         _walletId = walletData['wallet_id'] ?? '';
       });
     } catch (e) {
@@ -89,7 +90,8 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       if (_walletId.isEmpty) return;
 
-      final transactionsData = await _bookingService.getWalletTransactions(_walletId);
+      final transactionsData =
+          await _bookingService.getWalletTransactions(_walletId);
       List<Map<String, dynamic>> transactions = [];
 
       for (var txn in transactionsData) {
@@ -162,14 +164,15 @@ class _WalletScreenState extends State<WalletScreen> {
 
       // Clear the amount field
       _amountController.clear();
-      
+
       // Show success animation dialog
       if (mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => SuccessAnimationDialog(
-            message: 'Wallet topped up successfully\n₹${amount.toStringAsFixed(2)} added to your wallet',
+            message:
+                'Wallet topped up successfully\n₹${amount.toStringAsFixed(2)} added to your wallet',
             onAnimationComplete: () {
               // Dialog will auto-dismiss after animation
             },
@@ -218,7 +221,7 @@ class _WalletScreenState extends State<WalletScreen> {
   // Get transaction title based on source
   String _getTransactionTitle(String type, String source, String notes) {
     if (notes.isNotEmpty) return notes;
-    
+
     if (type == 'credit') {
       if (source == 'topup') return 'Wallet Top-up';
       if (source == 'refund') return 'Refund';
@@ -509,11 +512,10 @@ class _WalletScreenState extends State<WalletScreen> {
               child: const Text(
                 'Add Money',
                 style: TextStyle(
-                  fontFamily: 'ProductSans',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color.fromARGB(255, 255, 255, 255)
-                ),
+                    fontFamily: 'ProductSans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color.fromARGB(255, 255, 255, 255)),
               ),
             ),
           ),

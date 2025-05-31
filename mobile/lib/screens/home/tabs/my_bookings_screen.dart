@@ -12,7 +12,8 @@ class MyBookingsScreen extends StatefulWidget {
   _MyBookingsScreenState createState() => _MyBookingsScreenState();
 }
 
-class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerProviderStateMixin {
+class _MyBookingsScreenState extends State<MyBookingsScreen>
+    with SingleTickerProviderStateMixin {
   final BookingService _bookingService = BookingService();
   late TabController _tabController;
   bool _isLoading = true;
@@ -78,16 +79,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
   Future<void> _fetchBookings(String userId) async {
     try {
       final bookingsData = await _bookingService.getBookingsByUserId(userId);
-      
+
       List<Map<String, dynamic>> allBookings = [];
       List<Map<String, dynamic>> upcomingBookings = [];
       List<Map<String, dynamic>> pastBookings = [];
-      
+
       final now = DateTime.now();
-      
+
       for (var booking in bookingsData) {
-        final Map<String, dynamic> bookingMap = Map<String, dynamic>.from(booking);
-        
+        final Map<String, dynamic> bookingMap =
+            Map<String, dynamic>.from(booking);
+
         // Parse journey date
         DateTime? journeyDate;
         try {
@@ -97,9 +99,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
         } catch (e) {
           print('Error parsing journey date: $e');
         }
-        
+
         allBookings.add(bookingMap);
-        
+
         // Separate upcoming and past bookings
         if (journeyDate != null) {
           if (journeyDate.isAfter(now) || journeyDate.day == now.day) {
@@ -112,7 +114,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
           upcomingBookings.add(bookingMap);
         }
       }
-      
+
       setState(() {
         _allBookings = allBookings;
         _upcomingBookings = upcomingBookings;
@@ -126,58 +128,79 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
         _upcomingBookings = [];
         _pastBookings = [];
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load bookings: $e')),
       );
     }
   }
-  
+
   // Sort bookings based on selected sort option
   void _sortBookings() {
     final comparisonFunction = _getSortComparison();
-    
+
     _allBookings.sort(comparisonFunction);
     _upcomingBookings.sort(comparisonFunction);
     _pastBookings.sort(comparisonFunction);
   }
-  
+
   // Get comparison function for sorting
-  int Function(Map<String, dynamic>, Map<String, dynamic>) _getSortComparison() {
+  int Function(Map<String, dynamic>, Map<String, dynamic>)
+      _getSortComparison() {
     switch (_sortBy) {
       case 'date_asc':
         return (a, b) {
-          final dateA = a['journey_date'] != null ? DateTime.parse(a['journey_date']) : DateTime(2000);
-          final dateB = b['journey_date'] != null ? DateTime.parse(b['journey_date']) : DateTime(2000);
+          final dateA = a['journey_date'] != null
+              ? DateTime.parse(a['journey_date'])
+              : DateTime(2000);
+          final dateB = b['journey_date'] != null
+              ? DateTime.parse(b['journey_date'])
+              : DateTime(2000);
           return dateA.compareTo(dateB);
         };
       case 'date_desc':
         return (a, b) {
-          final dateA = a['journey_date'] != null ? DateTime.parse(a['journey_date']) : DateTime(2000);
-          final dateB = b['journey_date'] != null ? DateTime.parse(b['journey_date']) : DateTime(2000);
+          final dateA = a['journey_date'] != null
+              ? DateTime.parse(a['journey_date'])
+              : DateTime(2000);
+          final dateB = b['journey_date'] != null
+              ? DateTime.parse(b['journey_date'])
+              : DateTime(2000);
           return dateB.compareTo(dateA);
         };
       case 'price_asc':
         return (a, b) {
-          final priceA = a['fare'] != null ? double.tryParse(a['fare'].toString()) ?? 0.0 : 0.0;
-          final priceB = b['fare'] != null ? double.tryParse(b['fare'].toString()) ?? 0.0 : 0.0;
+          final priceA = a['fare'] != null
+              ? double.tryParse(a['fare'].toString()) ?? 0.0
+              : 0.0;
+          final priceB = b['fare'] != null
+              ? double.tryParse(b['fare'].toString()) ?? 0.0
+              : 0.0;
           return priceA.compareTo(priceB);
         };
       case 'price_desc':
         return (a, b) {
-          final priceA = a['fare'] != null ? double.tryParse(a['fare'].toString()) ?? 0.0 : 0.0;
-          final priceB = b['fare'] != null ? double.tryParse(b['fare'].toString()) ?? 0.0 : 0.0;
+          final priceA = a['fare'] != null
+              ? double.tryParse(a['fare'].toString()) ?? 0.0
+              : 0.0;
+          final priceB = b['fare'] != null
+              ? double.tryParse(b['fare'].toString()) ?? 0.0
+              : 0.0;
           return priceB.compareTo(priceA);
         };
       default:
         return (a, b) {
-          final dateA = a['journey_date'] != null ? DateTime.parse(a['journey_date']) : DateTime(2000);
-          final dateB = b['journey_date'] != null ? DateTime.parse(b['journey_date']) : DateTime(2000);
+          final dateA = a['journey_date'] != null
+              ? DateTime.parse(a['journey_date'])
+              : DateTime(2000);
+          final dateB = b['journey_date'] != null
+              ? DateTime.parse(b['journey_date'])
+              : DateTime(2000);
           return dateB.compareTo(dateA);
         };
     }
   }
-  
+
   // Format date
   String _formatDate(String dateString) {
     try {
@@ -187,7 +210,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
       return dateString;
     }
   }
-  
+
   // Get status color
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -266,7 +289,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
               children: [
                 // Sort options
                 _buildSortOptions(),
-                
+
                 // Bookings list
                 Expanded(
                   child: TabBarView(
@@ -274,7 +297,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
                     children: [
                       // Upcoming bookings
                       _buildBookingsList(_upcomingBookings),
-                      
+
                       // Past bookings
                       _buildBookingsList(_pastBookings),
                     ],
@@ -284,7 +307,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
             ),
     );
   }
-  
+
   Widget _buildSortOptions() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -317,10 +340,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
       ),
     );
   }
-  
+
   Widget _buildSortChip(String label, String sortValue) {
     final isSelected = _sortBy == sortValue;
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
@@ -347,7 +370,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
       ),
     );
   }
-  
+
   Widget _buildBookingsList(List<Map<String, dynamic>> bookings) {
     if (bookings.isEmpty) {
       return Center(
@@ -382,7 +405,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
         ),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: bookings.length,
@@ -390,25 +413,26 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
         final booking = bookings[index];
         final bookingId = booking['booking_id'] ?? '';
         final pnr = booking['pnr'] ?? 'N/A';
-        final journeyDate = booking['journey_date'] != null 
-            ? _formatDate(booking['journey_date']) 
+        final journeyDate = booking['journey_date'] != null
+            ? _formatDate(booking['journey_date'])
             : 'N/A';
         final originStation = booking['origin_station_code'] ?? 'N/A';
         final destinationStation = booking['destination_station_code'] ?? 'N/A';
         final status = booking['booking_status'] ?? 'Unknown';
         final travelClass = booking['class'] ?? 'N/A';
-        final fare = booking['fare'] != null 
-            ? double.tryParse(booking['fare'].toString()) ?? 0.0 
+        final fare = booking['fare'] != null
+            ? double.tryParse(booking['fare'].toString()) ?? 0.0
             : 0.0;
         final passengers = booking['passengers'] ?? [];
         final passengerCount = passengers.length;
-        
+
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => BookingDetailsScreen(bookingId: bookingId),
+                builder: (context) =>
+                    BookingDetailsScreen(bookingId: bookingId),
               ),
             );
           },
@@ -481,7 +505,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
                     ],
                   ),
                 ),
-                
+
                 // Booking details
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -560,11 +584,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 12),
-                      
+
                       // Additional details
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -589,11 +613,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
                     ],
                   ),
                 ),
-                
+
                 // View details button
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: const BoxDecoration(
                     border: Border(
                       top: BorderSide(color: Color(0xFFEEEEEE)),
@@ -627,7 +652,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
       },
     );
   }
-  
+
   Widget _buildDetailItem(String label, String value, IconData icon) {
     return Column(
       children: [

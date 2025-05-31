@@ -23,8 +23,6 @@ void main() {
 }
 
 class TrainBookingApp extends StatefulWidget {
-
-
   @override
   State<TrainBookingApp> createState() => _TrainBookingAppState();
 }
@@ -47,8 +45,6 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
       });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,11 +74,13 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
         '/home': (context) => const HomeScreen(),
         '/login_email': (context) => const LoginWithEmailScreen(),
         '/create_new_account': (context) => const CreateNewAccountEmailScreen(),
-        '/create_new_account_email': (context) => const CreateNewAccountEmailScreen(),
+        '/create_new_account_email': (context) =>
+            const CreateNewAccountEmailScreen(),
         '/signup_step1': (context) => const SignupStep1EmailScreen(),
         '/signup_step2': (context) => const SignupStep2VerifyEmailScreen(),
         '/signup_step3': (context) => const SignupStep3PasswordScreen(),
-        '/signup_step3_password': (context) => const SignupStep3PasswordScreen(),
+        '/signup_step3_password': (context) =>
+            const SignupStep3PasswordScreen(),
         '/signup_step3_mobile_otp': (context) => SignupStep3SendOtpScreen(),
         '/signup_step3_sendotp': (context) => SignupStep3SendOtpScreen(),
         '/wallet': (context) => const WalletScreen(),

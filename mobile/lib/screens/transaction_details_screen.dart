@@ -7,21 +7,24 @@ class TransactionDetailsScreen extends StatelessWidget {
 
   // Helper to build the QR data as JSON
   String _buildQrData() {
-  // Use a compact, flat string for QR code reliability
-  final passengerNames = passengers.map((p) => p.fullName.isNotEmpty ? p.fullName : 'Passenger').join('|');
-  final passengerSeats = passengers.map((p) => p.seat.isNotEmpty ? p.seat : 'B2-34').join('|');
-  // Compose a compact string (pipe-separated)
-  return [
-    bookingId,
-    trainName,
-    trainClass,
-    departureStation,
-    arrivalStation,
-    departureDate,
-    passengerNames,
-    passengerSeats
-  ].join(';');
-}
+    // Use a compact, flat string for QR code reliability
+    final passengerNames = passengers
+        .map((p) => p.fullName.isNotEmpty ? p.fullName : 'Passenger')
+        .join('|');
+    final passengerSeats =
+        passengers.map((p) => p.seat.isNotEmpty ? p.seat : 'B2-34').join('|');
+    // Compose a compact string (pipe-separated)
+    return [
+      bookingId,
+      trainName,
+      trainClass,
+      departureStation,
+      arrivalStation,
+      departureDate,
+      passengerNames,
+      passengerSeats
+    ].join(';');
+  }
 
   final String bookingId;
   final String barcodeData;
@@ -127,7 +130,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 18, color: Color(0xFF7C3AED)),
+                  icon: const Icon(Icons.copy,
+                      size: 18, color: Color(0xFF7C3AED)),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: () {
@@ -181,7 +185,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.train, color: Color(0xFF7C3AED), size: 36),
+                      const Icon(Icons.train,
+                          color: Color(0xFF7C3AED), size: 36),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -345,7 +350,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person, color: Color(0xFF7C3AED)),
+                              const Icon(Icons.person,
+                                  color: Color(0xFF7C3AED)),
                               const SizedBox(width: 8),
                               Text(
                                 'Passenger ${i + 1}',
@@ -359,11 +365,23 @@ class TransactionDetailsScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          _infoRow('Full Name', (passengers[i].fullName.isNotEmpty ? passengers[i].fullName : 'Passenger ${i + 1}')),
+                          _infoRow(
+                              'Full Name',
+                              (passengers[i].fullName.isNotEmpty
+                                  ? passengers[i].fullName
+                                  : 'Passenger ${i + 1}')),
                           _infoRow('ID Type', passengers[i].idType),
                           _infoRow('ID Number', passengers[i].idNumber),
-                          _infoRow('Passenger Type', (passengers[i].passengerType.isNotEmpty ? passengers[i].passengerType : 'Adult')),
-                          _infoRow('Seat', (passengers[i].seat.isNotEmpty ? passengers[i].seat : 'B2-${34 + i}')),
+                          _infoRow(
+                              'Passenger Type',
+                              (passengers[i].passengerType.isNotEmpty
+                                  ? passengers[i].passengerType
+                                  : 'Adult')),
+                          _infoRow(
+                              'Seat',
+                              (passengers[i].seat.isNotEmpty
+                                  ? passengers[i].seat
+                                  : 'B2-${34 + i}')),
                         ],
                       ),
                     ),
@@ -556,14 +574,13 @@ class Passenger {
   });
 
   Map<String, dynamic> toJson() => {
-    'fullName': fullName,
-    'idType': idType,
-    'idNumber': idNumber,
-    'passengerType': passengerType,
-    'seat': seat,
-    'age': age,
-    'gender': gender,
-    'isSenior': isSenior,
-  };
+        'fullName': fullName,
+        'idType': idType,
+        'idNumber': idNumber,
+        'passengerType': passengerType,
+        'seat': seat,
+        'age': age,
+        'gender': gender,
+        'isSenior': isSenior,
+      };
 }
-

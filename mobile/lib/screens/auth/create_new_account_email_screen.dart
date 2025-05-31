@@ -155,11 +155,15 @@ class _CreateNewAccountEmailScreenState
                                     );
                                   } else {
                                     // Store Google user info in prefs for later account creation
-                                    final prefs = await SharedPreferences.getInstance();
-                                    await prefs.setString('signup_email', result['email']);
-                                    await prefs.setString('signup_fullName', result['name'] ?? '');
-                                    await prefs.setString('signup_username', result['email'].split('@')[0]);
-                                    
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                        'signup_email', result['email']);
+                                    await prefs.setString('signup_fullName',
+                                        result['name'] ?? '');
+                                    await prefs.setString('signup_username',
+                                        result['email'].split('@')[0]);
+
                                     // Show success snackbar
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -180,13 +184,15 @@ class _CreateNewAccountEmailScreenState
                                         behavior: SnackBarBehavior.floating,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
-                                        margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 32, vertical: 16),
                                         duration: const Duration(seconds: 2),
                                       ),
                                     );
-                                    
+
                                     // Navigate to phone number/OTP screen
                                     Navigator.pushReplacementNamed(
                                       context,

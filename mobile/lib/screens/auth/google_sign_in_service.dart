@@ -29,7 +29,7 @@ class GoogleSignInService {
     try {
       // Sign out first to ensure the account picker dialog shows every time
       await forceSignOut();
-      
+
       // Now initiate a new sign-in
       final account = await _googleSignIn.signIn();
       if (account == null) {

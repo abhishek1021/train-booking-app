@@ -60,7 +60,8 @@ class PassengerService {
         print('Unauthorized - please login again');
         return [];
       } else {
-        print('Failed to load favorites: ${response.statusCode} - ${response.body}');
+        print(
+            'Failed to load favorites: ${response.statusCode} - ${response.body}');
         return [];
       }
     } catch (e) {
@@ -70,7 +71,8 @@ class PassengerService {
   }
 
   // Add a new favorite passenger
-  Future<Map<String, dynamic>> addFavoritePassenger(Map<String, dynamic> passenger) async {
+  Future<Map<String, dynamic>> addFavoritePassenger(
+      Map<String, dynamic> passenger) async {
     try {
       // Make sure passenger has user_id
       if (!passenger.containsKey('user_id')) {
@@ -79,7 +81,7 @@ class PassengerService {
           passenger['user_id'] = userId;
         }
       }
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl/passengers/'),
         headers: {
@@ -144,14 +146,15 @@ class PassengerService {
   }
 
   // Save multiple passengers in one go
-  Future<List<Map<String, dynamic>>> saveMultiplePassengers(List<Map<String, dynamic>> passengers) async {
+  Future<List<Map<String, dynamic>>> saveMultiplePassengers(
+      List<Map<String, dynamic>> passengers) async {
     final userId = _userId;
     if (userId == null || userId.isEmpty) {
       throw Exception('User ID not found');
     }
-    
+
     List<Map<String, dynamic>> results = [];
-    
+
     for (var passenger in passengers) {
       try {
         final result = await addFavoritePassenger(passenger);
@@ -160,12 +163,13 @@ class PassengerService {
         print('Error saving passenger ${passenger['name']}: $e');
       }
     }
-    
+
     return results;
   }
-  
+
   // Update an existing favorite passenger
-  Future<Map<String, dynamic>> updateFavoritePassenger(String passengerId, Map<String, dynamic> passenger) async {
+  Future<Map<String, dynamic>> updateFavoritePassenger(
+      String passengerId, Map<String, dynamic> passenger) async {
     try {
       // Make sure passenger has user_id
       if (!passenger.containsKey('user_id')) {
@@ -174,7 +178,7 @@ class PassengerService {
           passenger['user_id'] = userId;
         }
       }
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl/passengers/?passenger_id=$passengerId'),
         headers: {
@@ -186,7 +190,8 @@ class PassengerService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         return jsonDecode(utf8.decode(response.bodyBytes));
       } else {
-        throw Exception('Failed to update favorite passenger: ${response.statusCode}');
+        throw Exception(
+            'Failed to update favorite passenger: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error updating passenger: $e');

@@ -5,7 +5,7 @@ import '../services/booking_service.dart';
 
 class BookingDetailsScreen extends StatefulWidget {
   final String bookingId;
-  
+
   const BookingDetailsScreen({
     Key? key,
     required this.bookingId,
@@ -20,26 +20,27 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _bookingDetails = {};
   List<dynamic> _passengers = [];
-  
+
   @override
   void initState() {
     super.initState();
     _fetchBookingDetails();
   }
-  
+
   Future<void> _fetchBookingDetails() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final bookingData = await _bookingService.getBookingById(widget.bookingId);
-      
+      final bookingData =
+          await _bookingService.getBookingById(widget.bookingId);
+
       // Debug: Print the full booking data to see what fields are available
       print('Booking Data: $bookingData');
       print('Email: ${bookingData['booking_email']}');
       print('Phone: ${bookingData['booking_phone']}');
-      
+
       setState(() {
         _bookingDetails = bookingData;
         _passengers = bookingData['passengers'] ?? [];
@@ -50,13 +51,13 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load booking details: $e')),
       );
     }
   }
-  
+
   String _formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
@@ -65,14 +66,14 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       return dateString;
     }
   }
-  
+
   String _formatTime(String timeString) {
     try {
       final time = TimeOfDay(
         hour: int.parse(timeString.split(':')[0]),
         minute: int.parse(timeString.split(':')[1]),
       );
-      
+
       final now = DateTime.now();
       final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
       return DateFormat('hh:mm a').format(dt);
@@ -80,7 +81,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       return timeString;
     }
   }
-  
+
   String _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'confirmed':
@@ -93,7 +94,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
         return '#6B7280'; // Gray
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,23 +146,23 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                   // Booking Status Card
                   _buildStatusCard(),
                   const SizedBox(height: 20),
-                  
+
                   // Journey Details
                   _buildJourneyDetails(),
                   const SizedBox(height: 20),
-                  
+
                   // Passenger Details
                   _buildPassengerDetails(),
                   const SizedBox(height: 20),
-                  
+
                   // Contact Details
                   _buildContactDetails(),
                   const SizedBox(height: 20),
-                  
+
                   // Payment Details
                   _buildPaymentDetails(),
                   const SizedBox(height: 20),
-                  
+
                   // Action Buttons
                   _buildActionButtons(),
                 ],
@@ -169,15 +170,15 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
             ),
     );
   }
-  
+
   Widget _buildStatusCard() {
     final status = _bookingDetails['booking_status'] ?? 'Unknown';
     final pnr = _bookingDetails['pnr'] ?? 'N/A';
     final bookingId = _bookingDetails['booking_id'] ?? 'N/A';
-    final createdAt = _bookingDetails['created_at'] != null 
-        ? _formatDate(_bookingDetails['created_at']) 
+    final createdAt = _bookingDetails['created_at'] != null
+        ? _formatDate(_bookingDetails['created_at'])
         : 'N/A';
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -203,7 +204,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -311,16 +313,17 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ),
     );
   }
-  
+
   Widget _buildJourneyDetails() {
     final trainId = _bookingDetails['train_id'] ?? 'N/A';
-    final journeyDate = _bookingDetails['journey_date'] != null 
-        ? _formatDate(_bookingDetails['journey_date']) 
+    final journeyDate = _bookingDetails['journey_date'] != null
+        ? _formatDate(_bookingDetails['journey_date'])
         : 'N/A';
     final originStation = _bookingDetails['origin_station_code'] ?? 'N/A';
-    final destinationStation = _bookingDetails['destination_station_code'] ?? 'N/A';
+    final destinationStation =
+        _bookingDetails['destination_station_code'] ?? 'N/A';
     final travelClass = _bookingDetails['class'] ?? 'N/A';
-    
+
     return _buildSectionCard(
       title: 'Journey Details',
       icon: Icons.train,
@@ -333,7 +336,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ],
     );
   }
-  
+
   Widget _buildPassengerDetails() {
     return _buildSectionCard(
       title: 'Passenger Details',
@@ -352,7 +355,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.person, color: Color(0xFF7C3AED), size: 18),
+                    const Icon(Icons.person,
+                        color: Color(0xFF7C3AED), size: 18),
                     const SizedBox(width: 8),
                     Text(
                       'Passenger ${i + 1}',
@@ -367,7 +371,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                 ),
                 const SizedBox(height: 8),
                 _buildInfoRow('Name', _passengers[i]['name'] ?? 'N/A'),
-                _buildInfoRow('Age', (_passengers[i]['age'] ?? 'N/A').toString()),
+                _buildInfoRow(
+                    'Age', (_passengers[i]['age'] ?? 'N/A').toString()),
                 _buildInfoRow('Gender', _passengers[i]['gender'] ?? 'N/A'),
                 _buildInfoRow('Seat', _passengers[i]['seat'] ?? 'N/A'),
                 _buildInfoRow('Status', _passengers[i]['status'] ?? 'N/A'),
@@ -377,20 +382,22 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ],
     );
   }
-  
+
   Widget _buildContactDetails() {
     // Try different field names that might be in the response
-    final email = _bookingDetails['booking_email'] ?? 
-                 _bookingDetails['email'] ?? 
-                 _bookingDetails['user_email'] ?? 'N/A';
-    final phone = _bookingDetails['booking_phone'] ?? 
-                 _bookingDetails['phone'] ?? 
-                 _bookingDetails['user_phone'] ?? 'N/A';
-    
+    final email = _bookingDetails['booking_email'] ??
+        _bookingDetails['email'] ??
+        _bookingDetails['user_email'] ??
+        'N/A';
+    final phone = _bookingDetails['booking_phone'] ??
+        _bookingDetails['phone'] ??
+        _bookingDetails['user_phone'] ??
+        'N/A';
+
     // Print debug info
     print('Contact Details - Email: $email, Phone: $phone');
     print('All booking keys: ${_bookingDetails.keys.toList()}');
-    
+
     return _buildSectionCard(
       title: 'Contact Details',
       icon: Icons.contact_mail_outlined,
@@ -400,11 +407,11 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ],
     );
   }
-  
+
   Widget _buildPaymentDetails() {
     final fare = _bookingDetails['fare'] ?? 0.0;
     final paymentId = _bookingDetails['payment_id'] ?? 'N/A';
-    
+
     return _buildSectionCard(
       title: 'Payment Details',
       icon: Icons.payment_outlined,
@@ -414,7 +421,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ],
     );
   }
-  
+
   Widget _buildActionButtons() {
     return Column(
       children: [
@@ -437,7 +444,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ],
     );
   }
-  
+
   Widget _buildSectionCard({
     required String title,
     required IconData icon,
@@ -481,7 +488,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ),
     );
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -515,7 +522,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       ),
     );
   }
-  
+
   Widget _buildActionButton(
     String label,
     IconData icon, {
@@ -528,8 +535,10 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDestructive ? const Color(0xFFFEE2E2) : const Color(0xFF7C3AED),
-          foregroundColor: isDestructive ? const Color(0xFFB91C1C) : Colors.white,
+          backgroundColor:
+              isDestructive ? const Color(0xFFFEE2E2) : const Color(0xFF7C3AED),
+          foregroundColor:
+              isDestructive ? const Color(0xFFB91C1C) : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

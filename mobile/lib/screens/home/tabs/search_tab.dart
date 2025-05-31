@@ -189,11 +189,19 @@ class _SearchTabState extends State<SearchTab> {
                     );
                     if (selectedCity != null) {
                       // Check if the result is intended for this screen
-                      if (selectedCity['sourceScreen'] == 'search_tab' || selectedCity['sourceScreen'] == 'default') {
+                      if (selectedCity['sourceScreen'] == 'search_tab' ||
+                          selectedCity['sourceScreen'] == 'default') {
                         setState(() {
-                          selectedOrigin = selectedCity['station_code'] ?? selectedCity['code'] ?? '';
-                          selectedOriginName = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
-                          originController.text = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                          selectedOrigin = selectedCity['station_code'] ??
+                              selectedCity['code'] ??
+                              '';
+                          selectedOriginName = selectedCity['station_name'] ??
+                              selectedCity['name'] ??
+                              '';
+                          originController.text =
+                              selectedCity['station_name'] ??
+                                  selectedCity['name'] ??
+                                  '';
                         });
                       }
                     }
@@ -211,11 +219,20 @@ class _SearchTabState extends State<SearchTab> {
                     );
                     if (selectedCity != null) {
                       // Check if the result is intended for this screen
-                      if (selectedCity['sourceScreen'] == 'search_tab' || selectedCity['sourceScreen'] == 'default') {
+                      if (selectedCity['sourceScreen'] == 'search_tab' ||
+                          selectedCity['sourceScreen'] == 'default') {
                         setState(() {
-                          selectedDestination = selectedCity['station_code'] ?? selectedCity['code'] ?? '';
-                          selectedDestinationName = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
-                          destinationController.text = selectedCity['station_name'] ?? selectedCity['name'] ?? '';
+                          selectedDestination = selectedCity['station_code'] ??
+                              selectedCity['code'] ??
+                              '';
+                          selectedDestinationName =
+                              selectedCity['station_name'] ??
+                                  selectedCity['name'] ??
+                                  '';
+                          destinationController.text =
+                              selectedCity['station_name'] ??
+                                  selectedCity['name'] ??
+                                  '';
                         });
                       }
                     }
@@ -507,7 +524,7 @@ class _SearchTabState extends State<SearchTab> {
                       ),
                     ),
                   ),
-                  
+
                   // Tatkal Mode Banner
                   const SizedBox(height: 24),
                   _buildTatkalModeBanner(context),
@@ -519,7 +536,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Tatkal Mode Banner
   Widget _buildTatkalModeBanner(BuildContext context) {
     return Padding(
@@ -576,7 +593,7 @@ class _SearchTabState extends State<SearchTab> {
                   ),
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -627,7 +644,7 @@ class _SearchTabState extends State<SearchTab> {
                         ],
                       ),
                     ),
-                    
+
                     // Right side with button
                     Expanded(
                       flex: 3,

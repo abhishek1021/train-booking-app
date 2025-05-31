@@ -43,12 +43,12 @@ class JobService {
         'notes': notes,
         'opt_for_insurance': optForInsurance,
       };
-      
+
       // Add GST details if provided
       if (gstDetails != null) {
         requestBody['gst_details'] = gstDetails;
       }
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/jobs/'),
         headers: {
@@ -60,7 +60,8 @@ class JobService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to create job: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to create job: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error creating job: $e');
@@ -76,19 +77,19 @@ class JobService {
   }) async {
     try {
       String url = '$baseUrl/jobs/?user_id=$userId';
-      
+
       if (status != null) {
         url += '&status=$status';
       }
-      
+
       if (journeyDateFrom != null) {
         url += '&journey_date_from=$journeyDateFrom';
       }
-      
+
       if (journeyDateTo != null) {
         url += '&journey_date_to=$journeyDateTo';
       }
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -100,7 +101,8 @@ class JobService {
         final List<dynamic> jobsJson = jsonDecode(response.body);
         return jobsJson.map((job) => job as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Failed to load jobs: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to load jobs: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error loading jobs: $e');
@@ -120,7 +122,8 @@ class JobService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to load job details: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to load job details: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error loading job details: $e');
@@ -140,7 +143,8 @@ class JobService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to cancel job: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to cancel job: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error cancelling job: $e');
@@ -160,7 +164,8 @@ class JobService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to retry job: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to retry job: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error retrying job: $e');

@@ -53,7 +53,8 @@ class SelectPaymentMethodScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<SelectPaymentMethodScreen> createState() => _SelectPaymentMethodScreenState();
+  State<SelectPaymentMethodScreen> createState() =>
+      _SelectPaymentMethodScreenState();
 }
 
 class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
@@ -64,22 +65,22 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
   late SharedPreferences _prefs;
   double _actualWalletBalance = 0.0; // Actual wallet balance from API
   bool _isLoadingWallet = true; // Flag to track wallet balance loading state
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-  
+
   // Load user data from SharedPreferences
   Future<void> _loadUserData() async {
     setState(() {
       _isLoadingWallet = true;
     });
-    
+
     _prefs = await SharedPreferences.getInstance();
     final userProfileJson = _prefs.getString('user_profile');
-    
+
     if (userProfileJson != null && userProfileJson.isNotEmpty) {
       try {
         final userProfile = jsonDecode(userProfileJson);
@@ -87,7 +88,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
         setState(() {
           _userId = userId;
         });
-        
+
         if (userId.isNotEmpty) {
           // Fetch wallet balance
           await _fetchWalletBalance(userId);
@@ -104,7 +105,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
       });
     }
   }
-  
+
   // Fetch wallet balance from API
   Future<void> _fetchWalletBalance(String userId) async {
     try {
@@ -171,7 +172,8 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                 ],
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 leading: Container(
                   width: 44,
                   height: 44,
@@ -181,7 +183,8 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
+                  child: const Icon(Icons.account_balance_wallet_rounded,
+                      color: Colors.white, size: 28),
                 ),
                 title: Text(
                   'My Wallet',
@@ -197,23 +200,24 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _isLoadingWallet
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF7C3AED)),
+                            ),
+                          )
+                        : Text(
+                            '\u20B9${_actualWalletBalance.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2563EB),
+                              fontSize: 16,
+                            ),
                           ),
-                        )
-                      : Text(
-                          '\u20B9${_actualWalletBalance.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2563EB),
-                            fontSize: 16,
-                          ),
-                        ),
                     const SizedBox(width: 12),
                     Radio<int>(
                       value: 0,
@@ -230,117 +234,129 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _isProcessing ? null : () async {
-                  setState(() {
-                    _isProcessing = true;
-                  });
-                  
-                  try {
-                    // Check if user ID is available
-                    if (_userId.isEmpty) {
-                      // Try to load user ID again
-                      final userProfileJson = _prefs.getString('user_profile');
-                      if (userProfileJson != null && userProfileJson.isNotEmpty) {
+                onPressed: _isProcessing
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isProcessing = true;
+                        });
+
                         try {
-                          final userProfile = jsonDecode(userProfileJson);
-                          _userId = userProfile['UserID'] ?? '';
-                        } catch (e) {
-                          print('Error parsing user profile: $e');
-                        }
-                      }
-                      
-                      // If still empty, show error
-                      if (_userId.isEmpty) {
-                        throw Exception('User ID not found. Please log in again.');
-                      }
-                    }
-                    
-                    // Process the booking with payment
-                    final result = await _bookingService.processBookingWithPayment(
-                      userId: _userId,
-                      trainId: 'train_${widget.trainName.replaceAll(" ", "_").toLowerCase()}', // Generate train ID from name
-                      trainName: widget.trainName,
-                      journeyDate: widget.departureDate,
-                      originStationCode: widget.departureStation,
-                      destinationStationCode: widget.arrivalStation,
-                      travelClass: widget.trainClass,
-                      fare: widget.price,
-                      tax: widget.tax,
-                      totalAmount: widget.totalPrice,
-                      passengers: widget.passengers,
-                      paymentMethod: 'wallet',
-                      email: widget.email,
-                      phone: widget.phone,
-                    );
-                    
-                    // Get the booking and payment details
-                    final bookingDetails = result['booking'];
-                    final paymentDetails = result['payment'];
-                    final transactionDetails = result['transaction'];
-                    
-                    // Update state and show success dialog
-                    setState(() {
-                      _isProcessing = false;
-                    });
-                    
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => TicketSuccessDialog(
-                        onViewTransaction: () {
-                          Navigator.of(context).pop();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TransactionDetailsScreen(
-                                bookingId: bookingDetails['booking_id'],
-                                barcodeData: '', // Not used, QR is generated from all fields
-                                trainName: widget.trainName,
-                                trainClass: widget.trainClass,
-                                departureStation: widget.departureStation,
-                                arrivalStation: widget.arrivalStation,
-                                departureTime: widget.departureTime,
-                                arrivalTime: widget.arrivalTime,
-                                departureDate: widget.departureDate,
-                                arrivalDate: widget.arrivalDate,
-                                duration: widget.duration,
-                                price: widget.price,
-                                tax: widget.tax,
-                                totalPrice: widget.totalPrice,
-                                status: 'confirmed',
-                                transactionId: paymentDetails['payment_id'],
-                                merchantId: transactionDetails['txn_id'],
-                                paymentMethod: 'wallet',
-                                passengers: widget.passengers,
-                              ),
+                          // Check if user ID is available
+                          if (_userId.isEmpty) {
+                            // Try to load user ID again
+                            final userProfileJson =
+                                _prefs.getString('user_profile');
+                            if (userProfileJson != null &&
+                                userProfileJson.isNotEmpty) {
+                              try {
+                                final userProfile = jsonDecode(userProfileJson);
+                                _userId = userProfile['UserID'] ?? '';
+                              } catch (e) {
+                                print('Error parsing user profile: $e');
+                              }
+                            }
+
+                            // If still empty, show error
+                            if (_userId.isEmpty) {
+                              throw Exception(
+                                  'User ID not found. Please log in again.');
+                            }
+                          }
+
+                          // Process the booking with payment
+                          final result =
+                              await _bookingService.processBookingWithPayment(
+                            userId: _userId,
+                            trainId:
+                                'train_${widget.trainName.replaceAll(" ", "_").toLowerCase()}', // Generate train ID from name
+                            trainName: widget.trainName,
+                            journeyDate: widget.departureDate,
+                            originStationCode: widget.departureStation,
+                            destinationStationCode: widget.arrivalStation,
+                            travelClass: widget.trainClass,
+                            fare: widget.price,
+                            tax: widget.tax,
+                            totalAmount: widget.totalPrice,
+                            passengers: widget.passengers,
+                            paymentMethod: 'wallet',
+                            email: widget.email,
+                            phone: widget.phone,
+                          );
+
+                          // Get the booking and payment details
+                          final bookingDetails = result['booking'];
+                          final paymentDetails = result['payment'];
+                          final transactionDetails = result['transaction'];
+
+                          // Update state and show success dialog
+                          setState(() {
+                            _isProcessing = false;
+                          });
+
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => TicketSuccessDialog(
+                              onViewTransaction: () {
+                                Navigator.of(context).pop();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TransactionDetailsScreen(
+                                      bookingId: bookingDetails['booking_id'],
+                                      barcodeData:
+                                          '', // Not used, QR is generated from all fields
+                                      trainName: widget.trainName,
+                                      trainClass: widget.trainClass,
+                                      departureStation: widget.departureStation,
+                                      arrivalStation: widget.arrivalStation,
+                                      departureTime: widget.departureTime,
+                                      arrivalTime: widget.arrivalTime,
+                                      departureDate: widget.departureDate,
+                                      arrivalDate: widget.arrivalDate,
+                                      duration: widget.duration,
+                                      price: widget.price,
+                                      tax: widget.tax,
+                                      totalPrice: widget.totalPrice,
+                                      status: 'confirmed',
+                                      transactionId:
+                                          paymentDetails['payment_id'],
+                                      merchantId: transactionDetails['txn_id'],
+                                      paymentMethod: 'wallet',
+                                      passengers: widget.passengers,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onBackToHome: () {
+                                Navigator.of(context)
+                                    .popUntil((route) => route.isFirst);
+                              },
                             ),
                           );
-                        },
-                        onBackToHome: () {
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                        },
-                      ),
-                    );
-                  } catch (e) {
-                    // Show error dialog on failure
-                    setState(() {
-                      _isProcessing = false;
-                    });
-                    
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => TicketFailureDialog(
-                        onRetry: () {
-                          Navigator.of(context).pop();
-                        },
-                        onBackToHome: () {
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                        },
-                      ),
-                    );
-                  }
-                },
+                        } catch (e) {
+                          // Show error dialog on failure
+                          setState(() {
+                            _isProcessing = false;
+                          });
+
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => TicketFailureDialog(
+                              onRetry: () {
+                                Navigator.of(context).pop();
+                              },
+                              onBackToHome: () {
+                                Navigator.of(context)
+                                    .popUntil((route) => route.isFirst);
+                              },
+                            ),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -348,7 +364,8 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                   ),
                   padding: EdgeInsets.zero,
                 ).copyWith(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                  backgroundColor:
+                      MaterialStateProperty.resolveWith<Color>((states) {
                     return Colors.transparent;
                   }),
                   elevation: MaterialStateProperty.all(0),
@@ -364,23 +381,23 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                   child: Container(
                     alignment: Alignment.center,
                     child: _isProcessing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : const Text(
+                            'Continue',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontFamily: 'ProductSans',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
                   ),
                 ),
               ),
@@ -489,7 +506,8 @@ class TicketFailureDialog extends StatelessWidget {
                   ),
                   padding: EdgeInsets.zero,
                 ).copyWith(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                  backgroundColor:
+                      MaterialStateProperty.resolveWith<Color>((states) {
                     return const Color(0xFFB91C1C);
                   }),
                   elevation: MaterialStateProperty.all(0),
@@ -610,7 +628,8 @@ class TicketSuccessDialog extends StatelessWidget {
                   ),
                   padding: EdgeInsets.zero,
                 ).copyWith(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                  backgroundColor:
+                      MaterialStateProperty.resolveWith<Color>((states) {
                     return Colors.transparent;
                   }),
                   elevation: MaterialStateProperty.all(0),

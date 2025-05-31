@@ -52,7 +52,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
     super.initState();
     _passengers = List.from(widget.passengers);
   }
-  
+
   // Remove passenger at the specified index
   void _removePassenger(int index) {
     // Only allow removal if there's more than one passenger
@@ -62,12 +62,12 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
       });
     }
   }
-  
+
   String _calculateDuration(String dep, String arr) {
     // Dummy implementation, you can replace with actual duration logic
     return '4h';
   }
-  
+
   // Helper method to get seat count safely
   int _getSeatCount() {
     // Try to get seat count from train data first
@@ -79,23 +79,26 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
         return int.tryParse(widget.train['seat_count']) ?? 0;
       }
     }
-    
+
     // Check seat availability for the selected class if available
-    if (widget.train.containsKey('seat_availability') && 
-        widget.train['seat_availability'] is Map && 
+    if (widget.train.containsKey('seat_availability') &&
+        widget.train['seat_availability'] is Map &&
         widget.train['seat_availability'].containsKey(widget.selectedClass)) {
-      final seatAvailability = widget.train['seat_availability'][widget.selectedClass];
+      final seatAvailability =
+          widget.train['seat_availability'][widget.selectedClass];
       if (seatAvailability is int) {
         return seatAvailability;
       } else if (seatAvailability is String) {
         return int.tryParse(seatAvailability) ?? 0;
       }
     }
-    
+
     // Last fallback based on price
-    return widget.price > 3000 ? 77 : 120; // If price is high, seats are likely filling up fast
+    return widget.price > 3000
+        ? 77
+        : 120; // If price is high, seats are likely filling up fast
   }
-  
+
   // Station text marquee widget for scrolling text
   Widget _stationTextMarquee(String text,
       {TextAlign align = TextAlign.left,
@@ -145,7 +148,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   double _calculateTotalPrice() {
     double basePrice = widget.price.toDouble();
     double totalPrice = basePrice + widget.tax;
-    
+
     // Apply coin discount if toggle is on
     if (_useCoins) {
       // Calculate how many coins to use (up to the user's available coins)
@@ -155,7 +158,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
       // Apply discount (ensure total doesn't go below 0)
       totalPrice = max(0, totalPrice - coinDiscount);
     }
-    
+
     return totalPrice;
   }
 
@@ -192,7 +195,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                 color: Colors.white,
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 child: Padding(
                   padding: const EdgeInsets.all(18.0),
                   child: Column(
@@ -208,7 +212,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                               color: Color(0xFFF7F7FA),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.train, color: Color(0xFF7C3AED), size: 28),
+                            child: Icon(Icons.train,
+                                color: Color(0xFF7C3AED), size: 28),
                           ),
                           SizedBox(width: 16),
                           Expanded(
@@ -226,7 +231,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  widget.train['train_number'] != null ? 'Train No: ${widget.train['train_number']}' : '',
+                                  widget.train['train_number'] != null
+                                      ? 'Train No: ${widget.train['train_number']}'
+                                      : '',
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
@@ -234,7 +241,6 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     color: Colors.black54,
                                   ),
                                 ),
-                              
                                 SizedBox(height: 2),
                                 Text(
                                   'Class: ${widget.selectedClass}',
@@ -260,11 +266,14 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           ),
                           // Availability indicator based on seat count
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: _getSeatCount() < 100 
-                                  ? Color(0xFFFEE2E2) // Light red background for 'Filling up fast'
-                                  : Color(0xFFE8F5E9), // Light green background for 'Available'
+                              color: _getSeatCount() < 100
+                                  ? Color(
+                                      0xFFFEE2E2) // Light red background for 'Filling up fast'
+                                  : Color(
+                                      0xFFE8F5E9), // Light green background for 'Available'
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -367,7 +376,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -415,10 +425,13 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                         final idx = entry.key;
                         final p = entry.value;
                         // Check if passenger is a senior based on age
-                        final isSenior = (p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60;
+                        final isSenior = (p['age'] is int
+                                ? p['age']
+                                : int.tryParse(p['age'].toString()) ?? 0) >=
+                            60;
                         // Determine if remove button should be enabled (only if more than 1 passenger)
                         final canRemove = _passengers.length > 1;
-                        
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16.0),
                           decoration: BoxDecoration(
@@ -450,11 +463,13 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 p['fullName'] ?? '',
@@ -468,31 +483,40 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                             ],
                                           ),
                                         ),
-                                        
+
                                         // Remove passenger button
                                         GestureDetector(
-                                          onTap: canRemove ? () => _removePassenger(idx) : null,
+                                          onTap: canRemove
+                                              ? () => _removePassenger(idx)
+                                              : null,
                                           child: Container(
                                             width: 24,
                                             height: 24,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: canRemove ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                                              color: canRemove
+                                                  ? Colors.red.withOpacity(0.1)
+                                                  : Colors.grey
+                                                      .withOpacity(0.1),
                                             ),
                                             child: Icon(
                                               Icons.remove,
-                                              color: canRemove ? Colors.red : Colors.grey,
+                                              color: canRemove
+                                                  ? Colors.red
+                                                  : Colors.grey,
                                               size: 16,
                                             ),
                                           ),
                                         ),
-                                        
+
                                         // Seat indicator (placeholder)
                                         Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Color(0xFFF3E8FF),
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
                                           ),
                                           child: Text(
                                             p['seat'] ?? 'B2-34',
@@ -511,7 +535,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Name',
@@ -536,7 +561,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                         ),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Gender',
@@ -561,7 +587,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                         ),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Age',
@@ -591,7 +618,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'ID Type',
@@ -617,7 +645,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                         Expanded(
                                           flex: 2,
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'ID Number',
@@ -668,7 +697,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.account_balance_wallet, color: Color(0xFF7C3AED)),
+                          Icon(Icons.account_balance_wallet,
+                              color: Color(0xFF7C3AED)),
                           SizedBox(width: 10),
                           Text('My Wallet',
                               style: TextStyle(
@@ -682,9 +712,12 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => SelectPaymentMethodScreen(
-                                    walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
-                                    bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
+                                  builder: (context) =>
+                                      SelectPaymentMethodScreen(
+                                    walletBalance:
+                                        946.50, // TODO: Replace with actual wallet balance from user profile/state
+                                    bookingId:
+                                        'PNR${DateTime.now().millisecondsSinceEpoch}',
                                     trainName: widget.train['train_name'] ?? '',
                                     trainClass: widget.selectedClass,
                                     departureStation: widget.originName,
@@ -693,31 +726,58 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     arrivalTime: widget.arrTime,
                                     departureDate: widget.date,
                                     arrivalDate: widget.date,
-                                    duration: _calculateDuration(widget.depTime, widget.arrTime),
+                                    duration: _calculateDuration(
+                                        widget.depTime, widget.arrTime),
                                     price: widget.price.toDouble(),
                                     tax: widget.tax,
                                     totalPrice: _calculateTotalPrice(),
                                     status: 'Paid',
-                                    transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                                    transactionId:
+                                        'TXN${DateTime.now().millisecondsSinceEpoch}',
                                     merchantId: 'MERCHANT123',
                                     paymentMethod: 'Wallet',
                                     email: widget.email,
                                     phone: widget.phone,
-                                    passengers: widget.passengers.map((p) => Passenger(
-                                      fullName: p['name'] ?? '',
-                                      idType: p['id_type'] ?? '',
-                                      idNumber: p['id_number'] ?? '',
-                                      passengerType: (p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60 ? 'Senior' : 'Adult',
-                                      seat: p['seat'] ?? 'B2-34',
-                                      age: p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 30,
-                                      gender: p['gender'] ?? 'male',
-                                      isSenior: p['is_senior'] ?? ((p['age'] is int ? p['age'] : int.tryParse(p['age'].toString()) ?? 0) >= 60),
-                                    )).toList(),
+                                    passengers: widget.passengers
+                                        .map((p) => Passenger(
+                                              fullName: p['name'] ?? '',
+                                              idType: p['id_type'] ?? '',
+                                              idNumber: p['id_number'] ?? '',
+                                              passengerType: (p['age'] is int
+                                                          ? p['age']
+                                                          : int.tryParse(p[
+                                                                      'age']
+                                                                  .toString()) ??
+                                                              0) >=
+                                                      60
+                                                  ? 'Senior'
+                                                  : 'Adult',
+                                              seat: p['seat'] ?? 'B2-34',
+                                              age: p['age'] is int
+                                                  ? p['age']
+                                                  : int.tryParse(p['age']
+                                                          .toString()) ??
+                                                      30,
+                                              gender: p['gender'] ?? 'male',
+                                              isSenior: p['is_senior'] ??
+                                                  ((p['age'] is int
+                                                          ? p['age']
+                                                          : int.tryParse(p[
+                                                                      'age']
+                                                                  .toString()) ??
+                                                              0) >=
+                                                      60),
+                                            ))
+                                        .toList(),
                                   ),
                                 ),
                               );
                             },
-                            child: Text('Change', style: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
+                            child: Text('Change',
+                                style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    color: Color(0xFF7C3AED),
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -734,7 +794,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -757,16 +818,20 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                             child: TextField(
                               decoration: InputDecoration(
                                 hintText: 'Enter Code',
-                                hintStyle: TextStyle(fontFamily: 'ProductSans', color: Colors.black38),
+                                hintStyle: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    color: Colors.black38),
                                 filled: true,
                                 fillColor: Color(0xFFF7F7FA),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
                               ),
-                              style: TextStyle(fontFamily: 'ProductSans', fontSize: 15),
+                              style: TextStyle(
+                                  fontFamily: 'ProductSans', fontSize: 15),
                             ),
                           ),
                           SizedBox(width: 12),
@@ -777,10 +842,14 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => SelectPaymentMethodScreen(
-                                      walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
-                                      bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
-                                      trainName: widget.train['train_name'] ?? '',
+                                    builder: (context) =>
+                                        SelectPaymentMethodScreen(
+                                      walletBalance:
+                                          946.50, // TODO: Replace with actual wallet balance from user profile/state
+                                      bookingId:
+                                          'PNR${DateTime.now().millisecondsSinceEpoch}',
+                                      trainName:
+                                          widget.train['train_name'] ?? '',
                                       trainClass: widget.selectedClass,
                                       departureStation: widget.originName,
                                       arrivalStation: widget.destinationName,
@@ -788,40 +857,52 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       arrivalTime: widget.arrTime,
                                       departureDate: widget.date,
                                       arrivalDate: widget.date,
-                                      duration: _calculateDuration(widget.depTime, widget.arrTime),
+                                      duration: _calculateDuration(
+                                          widget.depTime, widget.arrTime),
                                       price: widget.price.toDouble(),
                                       tax: widget.tax,
                                       totalPrice: _calculateTotalPrice(),
                                       status: 'Paid',
-                                      transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                                      transactionId:
+                                          'TXN${DateTime.now().millisecondsSinceEpoch}',
                                       merchantId: 'MERCHANT123',
                                       paymentMethod: 'Wallet',
                                       email: widget.email,
                                       phone: widget.phone,
-                                      passengers: widget.passengers.map((p) => Passenger(
-                                        fullName: p['fullName'],
-                                        idType: p['idType'],
-                                        idNumber: p['idNumber'],
-                                        passengerType: p['passengerType'],
-                                        seat: p['seat'] ?? 'B2-34',
-                                      )).toList(),
+                                      passengers: widget.passengers
+                                          .map((p) => Passenger(
+                                                fullName: p['fullName'],
+                                                idType: p['idType'],
+                                                idNumber: p['idNumber'],
+                                                passengerType:
+                                                    p['passengerType'],
+                                                seat: p['seat'] ?? 'B2-34',
+                                              ))
+                                          .toList(),
                                     ),
                                   ),
                                 );
                               },
                               style: ButtonStyle(
-                                shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                                shape: MaterialStateProperty.all(
+                                    RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 )),
-                                padding: MaterialStateProperty.all(EdgeInsets.zero),
+                                padding:
+                                    MaterialStateProperty.all(EdgeInsets.zero),
                                 elevation: MaterialStateProperty.all(0),
-                                backgroundColor: MaterialStateProperty.all(Colors.transparent),
-                                overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
+                                backgroundColor: MaterialStateProperty.all(
+                                    Colors.transparent),
+                                overlayColor: MaterialStateProperty.all(
+                                    Color(0xFF9F7AEA).withOpacity(0.08)),
                               ),
                               child: Ink(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                    colors: [
+                                      Color(0xFF7C3AED),
+                                      Color(0xFF9F7AEA)
+                                    ],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
@@ -829,8 +910,10 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                 ),
                                 child: Container(
                                   alignment: Alignment.center,
-                                  constraints: BoxConstraints(minWidth: 90, minHeight: 42),
-                                  child: Text('Redeem',
+                                  constraints: BoxConstraints(
+                                      minWidth: 90, minHeight: 42),
+                                  child: Text(
+                                    'Redeem',
                                     style: TextStyle(
                                       fontFamily: 'ProductSans',
                                       fontWeight: FontWeight.bold,
@@ -893,7 +976,8 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 18.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -904,11 +988,16 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
                       SizedBox(height: 18),
-                      _priceRow('Price (Adult x ${_passengers.length})', widget.price),
+                      _priceRow('Price (Adult x ${_passengers.length})',
+                          widget.price),
                       _priceRow('Tax', widget.tax),
-                      _useCoins ? _priceRow('Coin Discount', -widget.coins, color: Colors.green) : SizedBox(),
+                      _useCoins
+                          ? _priceRow('Coin Discount', -widget.coins,
+                              color: Colors.green)
+                          : SizedBox(),
                       Divider(),
-                      _priceRow('Total Price', _calculateTotalPrice(), bold: true),
+                      _priceRow('Total Price', _calculateTotalPrice(),
+                          bold: true),
                     ],
                   ),
                 ),
@@ -924,16 +1013,20 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                     )),
                     padding: MaterialStateProperty.all(EdgeInsets.zero),
                     elevation: MaterialStateProperty.all(0),
-                    backgroundColor: MaterialStateProperty.all(Colors.transparent),
-                    overlayColor: MaterialStateProperty.all(Color(0xFF9F7AEA).withOpacity(0.08)),
+                    backgroundColor:
+                        MaterialStateProperty.all(Colors.transparent),
+                    overlayColor: MaterialStateProperty.all(
+                        Color(0xFF9F7AEA).withOpacity(0.08)),
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => SelectPaymentMethodScreen(
-                          walletBalance: 946.50, // TODO: Replace with actual wallet balance from user profile/state
-                          bookingId: 'PNR${DateTime.now().millisecondsSinceEpoch}',
+                          walletBalance:
+                              946.50, // TODO: Replace with actual wallet balance from user profile/state
+                          bookingId:
+                              'PNR${DateTime.now().millisecondsSinceEpoch}',
                           trainName: widget.train['train_name'] ?? '',
                           trainClass: widget.selectedClass,
                           departureStation: widget.originName,
@@ -942,24 +1035,29 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           arrivalTime: widget.arrTime,
                           departureDate: widget.date,
                           arrivalDate: widget.date,
-                          duration: _calculateDuration(widget.depTime, widget.arrTime),
+                          duration: _calculateDuration(
+                              widget.depTime, widget.arrTime),
                           price: widget.price.toDouble(),
                           tax: widget.tax,
                           totalPrice: _calculateTotalPrice(),
                           status: 'Paid',
-                          transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                          transactionId:
+                              'TXN${DateTime.now().millisecondsSinceEpoch}',
                           merchantId: 'MERCHANT123',
                           paymentMethod: 'Wallet',
-                          passengers: _passengers.map((p) => Passenger(
-                            fullName: p['name'] ?? '',
-                            idType: p['id_type'] ?? '',
-                            idNumber: p['id_number'] ?? '',
-                            passengerType: p['passenger_type'] ?? 'adult',
-                            seat: p['seat'] ?? 'B2-34',
-                            age: p['age'] ?? 30,
-                            gender: p['gender'] ?? 'male',
-                            isSenior: p['is_senior'] ?? false,
-                          )).toList(),
+                          passengers: _passengers
+                              .map((p) => Passenger(
+                                    fullName: p['name'] ?? '',
+                                    idType: p['id_type'] ?? '',
+                                    idNumber: p['id_number'] ?? '',
+                                    passengerType:
+                                        p['passenger_type'] ?? 'adult',
+                                    seat: p['seat'] ?? 'B2-34',
+                                    age: p['age'] ?? 30,
+                                    gender: p['gender'] ?? 'male',
+                                    isSenior: p['is_senior'] ?? false,
+                                  ))
+                              .toList(),
                           email: widget.email,
                           phone: widget.phone,
                         ),
@@ -991,7 +1089,6 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
         ), // <-- End of Padding
       ), // <-- End of SingleChildScrollView
     ); // <-- End of Scaffold
-  
   }
 
   Widget _infoRow(String label, String value) {
@@ -999,17 +1096,31 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
       children: [
         SizedBox(
             width: 110,
-            child: Text(label, style: TextStyle(fontFamily: 'ProductSans', color: Colors.black54, fontSize: 13))),
+            child: Text(label,
+                style: TextStyle(
+                    fontFamily: 'ProductSans',
+                    color: Colors.black54,
+                    fontSize: 13))),
         Expanded(
-            child: Text(value, style: TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 14))),
+            child: Text(value,
+                style: TextStyle(
+                    fontFamily: 'ProductSans',
+                    color: Colors.black87,
+                    fontSize: 14))),
       ],
     );
   }
 
-  TextStyle _headerStyle() => TextStyle(fontFamily: 'ProductSans', fontWeight: FontWeight.bold, color: Color(0xFF7C3AED), fontSize: 13);
-  TextStyle _cellStyle() => TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
+  TextStyle _headerStyle() => TextStyle(
+      fontFamily: 'ProductSans',
+      fontWeight: FontWeight.bold,
+      color: Color(0xFF7C3AED),
+      fontSize: 13);
+  TextStyle _cellStyle() =>
+      TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
 
-  Widget _priceRow(String label, dynamic value, {bool bold = false, Color? color}) {
+  Widget _priceRow(String label, dynamic value,
+      {bool bold = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(

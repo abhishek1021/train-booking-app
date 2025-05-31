@@ -60,7 +60,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   bool _showGstDetails = false;
   bool _showTravelInsurance = false;
   bool _optForInsurance = false;
-  
+
   // Default country for phone number
   Country _selectedCountry = Country(
     phoneCode: '91',
@@ -79,11 +79,11 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   PassengerService? _passengerService;
   List<dynamic> _savedPassengers = [];
   bool _isLoadingSavedPassengers = false;
-  
+
   // Track which saved passengers are already used in passenger list
   // Key is ID number, value is true if used
   Map<String, bool> _usedSavedPassengers = {};
-  
+
   // Track expansion state of passenger accordions
   List<bool> _customTileExpanded = [];
 
@@ -101,7 +101,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     _customTileExpanded = []; // Initialize expansion state list
     _savedPassengers = []; // Initialize saved passengers list
     _isLoadingSavedPassengers = true; // Set loading state to true
-    
+
     // Pre-initialize passenger list based on passenger count from home screen
     // Only create multiple accordions if more than 1 passenger is needed
     if (widget.passengers > 1) {
@@ -124,46 +124,50 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     // Then load saved passengers
     _loadSavedPassengers();
   }
-  
+
   // Load user profile data to pre-populate email and phone fields
   void _loadUserProfileData() {
     try {
       final userProfileJson = _prefs.getString('user_profile');
       print('Loading user profile: $userProfileJson');
-      
+
       if (userProfileJson != null && userProfileJson.isNotEmpty) {
         final userProfile = jsonDecode(userProfileJson);
-        
+
         // Check for email in different possible fields
         if (userProfile.containsKey('email') && userProfile['email'] != null) {
           setState(() {
             _emailController.text = userProfile['email'];
           });
           print('Pre-populated email: ${userProfile['email']}');
-        } else if (userProfile.containsKey('Email') && userProfile['Email'] != null) {
+        } else if (userProfile.containsKey('Email') &&
+            userProfile['Email'] != null) {
           setState(() {
             _emailController.text = userProfile['Email'];
           });
           print('Pre-populated email: ${userProfile['Email']}');
         }
-        
+
         // Check for phone in different possible fields and strip any country code
         String? phoneNumber;
-        
+
         if (userProfile.containsKey('phone') && userProfile['phone'] != null) {
           phoneNumber = userProfile['phone'];
           print('Found phone: $phoneNumber');
-        } else if (userProfile.containsKey('Phone') && userProfile['Phone'] != null) {
+        } else if (userProfile.containsKey('Phone') &&
+            userProfile['Phone'] != null) {
           phoneNumber = userProfile['Phone'];
           print('Found phone: $phoneNumber');
-        } else if (userProfile.containsKey('mobile') && userProfile['mobile'] != null) {
+        } else if (userProfile.containsKey('mobile') &&
+            userProfile['mobile'] != null) {
           phoneNumber = userProfile['mobile'];
           print('Found phone: $phoneNumber');
-        } else if (userProfile.containsKey('Mobile') && userProfile['Mobile'] != null) {
+        } else if (userProfile.containsKey('Mobile') &&
+            userProfile['Mobile'] != null) {
           phoneNumber = userProfile['Mobile'];
           print('Found phone: $phoneNumber');
         }
-        
+
         // Process phone number if found
         if (phoneNumber != null && phoneNumber.isNotEmpty) {
           // Strip any country code (extract last 10 digits if phone has country code)
@@ -179,15 +183,16 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
             // If it doesn't start with + but is longer than 10 digits (e.g., 919876543210)
             phoneNumber = phoneNumber.substring(phoneNumber.length - 10);
           }
-          
+
           // Set the phone controller text
           setState(() {
             _phoneController.text = phoneNumber!;
           });
           print('Pre-populated phone (without country code): $phoneNumber');
-          
+
           // Also try to determine country code from the original number
-          if (userProfile.containsKey('country_code') && userProfile['country_code'] != null) {
+          if (userProfile.containsKey('country_code') &&
+              userProfile['country_code'] != null) {
             // If country code is stored separately
             try {
               final countryCode = userProfile['country_code'].toString();
@@ -267,9 +272,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     final gender = passenger['gender'] ?? 'Male';
     final idType = passenger['id_type'] ?? 'Aadhar';
     final idNumber = passenger['id_number'] ?? '';
-    
+
     // Check if this passenger is already in use
-    if (_usedSavedPassengers.containsKey(idNumber) && _usedSavedPassengers[idNumber] == true) {
+    if (_usedSavedPassengers.containsKey(idNumber) &&
+        _usedSavedPassengers[idNumber] == true) {
       _showCustomSnackBar(
         message: 'This passenger is already in your list',
         icon: Icons.warning,
@@ -277,10 +283,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       );
       return;
     }
-    
+
     // Find the next available passenger index - always populate in order
     int targetIndex = _passengerList.length;
-    
+
     setState(() {
       // Add the passenger to the list
       if (targetIndex >= _passengerList.length) {
@@ -289,10 +295,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         _idNumberControllers.add(TextEditingController(text: idNumber));
         _idTypeValues.add(idType);
         _genderValues.add(gender);
-        _favouritePassengers.add(true); // Mark as a favorite since it came from saved list
-        _addToPassengerList.add(false); // Disable checkbox since it's already saved
+        _favouritePassengers
+            .add(true); // Mark as a favorite since it came from saved list
+        _addToPassengerList
+            .add(false); // Disable checkbox since it's already saved
         _customTileExpanded.add(true); // Expand the new passenger accordion
-        
+
         _passengerList.add({
           'name': name,
           'age': age,
@@ -300,15 +308,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
           'id_type': idType,
           'id_number': idNumber,
           'is_senior': (int.tryParse(age) ?? 0) >= 60,
-          'from_saved_list': true, // Mark that this passenger came from saved list
-          'saved_passenger_index': _findSavedPassengerIndex(idNumber), // Store the index for reference
+          'from_saved_list':
+              true, // Mark that this passenger came from saved list
+          'saved_passenger_index': _findSavedPassengerIndex(
+              idNumber), // Store the index for reference
         });
       }
-      
+
       // Mark this passenger as used
       _usedSavedPassengers[idNumber] = true;
     });
-    
+
     // Show a custom confirmation message
     _showCustomSnackBar(
       message: 'Passenger ${name} added as Passenger ${targetIndex + 1}',
@@ -316,7 +326,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       backgroundColor: Color(0xFF7C3AED),
     );
   }
-  
+
   // Find the index of a saved passenger by ID number
   int _findSavedPassengerIndex(String idNumber) {
     for (int i = 0; i < _savedPassengers.length; i++) {
@@ -326,7 +336,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     }
     return -1;
   }
-  
+
   // Find a saved passenger by ID
   Map<String, dynamic>? _findSavedPassengerById(String passengerId) {
     for (final passenger in _savedPassengers) {
@@ -336,28 +346,30 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     }
     return null;
   }
-  
+
   // Update a saved passenger when details are edited
   Future<void> _updateSavedPassenger(int passengerIndex) async {
     if (_passengerService == null) return;
-    
+
     // Check if this passenger is from the saved list
     if (passengerIndex < 0 || passengerIndex >= _passengerList.length) return;
-    
+
     final passenger = _passengerList[passengerIndex];
-    final fromSavedList = passenger.containsKey('from_saved_list') && passenger['from_saved_list'] == true;
-    
+    final fromSavedList = passenger.containsKey('from_saved_list') &&
+        passenger['from_saved_list'] == true;
+
     if (!fromSavedList) return; // Only update passengers from saved list
-    
+
     // Find the saved passenger index
     final savedPassengerIndex = passenger['saved_passenger_index'];
-    if (savedPassengerIndex < 0 || savedPassengerIndex >= _savedPassengers.length) return;
-    
+    if (savedPassengerIndex < 0 ||
+        savedPassengerIndex >= _savedPassengers.length) return;
+
     // Get the saved passenger ID
     final savedPassenger = _savedPassengers[savedPassengerIndex];
     final passengerId = savedPassenger['id'];
     if (passengerId == null) return;
-    
+
     // Create updated passenger data
     final updatedPassenger = {
       'user_id': savedPassenger['user_id'],
@@ -366,18 +378,20 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       'gender': _genderValues[passengerIndex],
       'id_type': _idTypeValues[passengerIndex],
       'id_number': _idNumberControllers[passengerIndex].text,
-      'is_senior': (int.tryParse(_ageControllers[passengerIndex].text) ?? 0) >= 60,
+      'is_senior':
+          (int.tryParse(_ageControllers[passengerIndex].text) ?? 0) >= 60,
     };
-    
+
     try {
       // Call the API to update the passenger
-      final result = await _passengerService!.updateFavoritePassenger(passengerId, updatedPassenger);
-      
+      final result = await _passengerService!
+          .updateFavoritePassenger(passengerId, updatedPassenger);
+
       // Update the local saved passengers list
       setState(() {
         _savedPassengers[savedPassengerIndex] = result;
       });
-      
+
       // Show success message
       _showCustomSnackBar(
         message: 'Passenger details updated successfully',
@@ -393,16 +407,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       );
     }
   }
-  
+
   // Remove a passenger from the list
   void _removePassenger(int index) {
     if (index < 0 || index >= _passengerList.length) return;
-    
+
     // Get the passenger's ID number before removing
     final idNumber = _idNumberControllers[index].text;
-    final fromSavedList = _passengerList[index].containsKey('from_saved_list') && 
-                         _passengerList[index]['from_saved_list'] == true;
-    
+    final fromSavedList =
+        _passengerList[index].containsKey('from_saved_list') &&
+            _passengerList[index]['from_saved_list'] == true;
+
     setState(() {
       // Remove the passenger from the list
       _nameControllers.removeAt(index);
@@ -413,15 +428,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       _favouritePassengers.removeAt(index);
       _addToPassengerList.removeAt(index);
       _customTileExpanded.removeAt(index); // Remove expansion state
-      
+
       // If the passenger came from saved list, mark it as available again
       if (fromSavedList && idNumber.isNotEmpty) {
         _usedSavedPassengers[idNumber] = false;
       }
-      
+
       _passengerList.removeAt(index);
     });
-    
+
     _showCustomSnackBar(
       message: 'Passenger removed',
       icon: Icons.person_remove,
@@ -434,13 +449,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (idNumber.isEmpty) {
       return null; // Empty validation will be handled separately
     }
-    
+
     if (idType == 'Aadhar') {
       // Aadhar should be 12 digits
       if (idNumber.length != 12) {
         return 'Aadhar must be 12 digits';
       }
-      
+
       // Check if Aadhar contains only numbers
       if (!RegExp(r'^[0-9]{12}$').hasMatch(idNumber)) {
         return 'Aadhar must contain only digits';
@@ -450,9 +465,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       if (idNumber.length != 10) {
         return 'PAN must be 10 characters';
       }
-      
+
       // PAN format: AAAAA1234A (5 letters, 4 numbers, 1 letter)
-      if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(idNumber.toUpperCase())) {
+      if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$')
+          .hasMatch(idNumber.toUpperCase())) {
         return 'Invalid PAN format';
       }
     } else if (idType == 'Driving License') {
@@ -460,7 +476,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       if (idNumber.length < 13 || idNumber.length > 16) {
         return 'Driving License must be 13-16 characters';
       }
-      
+
       // Driving License format: Usually alphanumeric
       // Format varies by state but generally follows a pattern
       // Most have 2 letters (state code) + 2 digits (RTO code) + 10 digits (unique number)
@@ -468,7 +484,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         return 'Invalid Driving License format';
       }
     }
-    
+
     return null;
   }
 
@@ -501,7 +517,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       if (idType == null || idType.isEmpty) {
         return 'Please select ID type for passenger ${i + 1}';
       }
-      
+
       // Validate ID number format based on ID type
       String? idError = _validateIdNumber(idNum, idType);
       if (idError != null) {
@@ -523,12 +539,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     if (phone.isEmpty) {
       return 'Please enter your mobile number';
     }
-    
+
     // Phone number should be exactly 10 digits without country code
     if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
       return 'Please enter a valid 10-digit mobile number';
     }
-    
+
     // Get the full phone number with country code for passing to the next screen
     final fullPhoneNumber = '+${_selectedCountry.phoneCode}$phone';
     // Support format like +919326808458
@@ -573,7 +589,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     setState(() {
       // Add a new passenger using the helper method
       _addPassengerWithoutNotification();
-      
+
       // Show confirmation message
       _showCustomSnackBar(
         message: 'New passenger added',
@@ -635,7 +651,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       ),
       margin: EdgeInsets.all(10),
     );
-    
+
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
@@ -872,7 +888,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   ),
                 ),
               ),
-              
+
               // Saved Passengers Horizontal Scroll
               Container(
                 margin: EdgeInsets.only(bottom: 16),
@@ -880,7 +896,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -895,7 +912,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           ),
                           if (!_isLoadingSavedPassengers)
                             IconButton(
-                              icon: Icon(Icons.refresh, color: Color(0xFF7C3AED)),
+                              icon:
+                                  Icon(Icons.refresh, color: Color(0xFF7C3AED)),
                               onPressed: _loadSavedPassengers,
                               tooltip: 'Refresh saved passengers',
                               padding: EdgeInsets.zero,
@@ -906,125 +924,150 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       ),
                     ),
                     _isLoadingSavedPassengers
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
-                          ),
-                        )
-                      : _savedPassengers.isEmpty
-                        ? Container(
-                            margin: EdgeInsets.symmetric(horizontal: 16.0),
-                            padding: EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'No favourite passenger stored',
-                                style: TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontSize: 14,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(
+                                  color: Color(0xFF7C3AED)),
                             ),
                           )
-                        : Container(
-                            height: 130,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _savedPassengers.length,
-                              padding: EdgeInsets.symmetric(horizontal: 12.0),
-                              itemBuilder: (context, index) {
-                                final passenger = _savedPassengers[index];
-                                // Check if this passenger is already used in the passenger list
-                                final idNumber = passenger['id_number'] ?? '';
-                                final isUsed = _usedSavedPassengers.containsKey(idNumber) && 
-                                              _usedSavedPassengers[idNumber] == true;
-                                
-                                return GestureDetector(
-                                  // Only allow tapping if the passenger is not already used
-                                  onTap: isUsed ? null : () => _useSavedPassenger(passenger),
-                                  child: Container(
-                                    width: 200,
-                                    margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                                    padding: EdgeInsets.all(12.0),
-                                    decoration: BoxDecoration(
-                                      // Gray out the card if already used
-                                      color: isUsed ? Color(0xFFF3F4F6) : Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: isUsed ? Color(0xFFD1D5DB) : Color(0xFFE5E7EB)),
-                                      boxShadow: isUsed ? [] : [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          passenger['name'] ?? '',
-                                          style: TextStyle(
-                                            fontFamily: 'ProductSans',
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF111827),
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
-                                          style: TextStyle(
-                                            fontFamily: 'ProductSans',
-                                            fontSize: 12,
-                                            color: Color(0xFF6B7280),
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
-                                          style: TextStyle(
-                                            fontFamily: 'ProductSans',
-                                            fontSize: 12,
-                                            color: Color(0xFF6B7280),
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Spacer(),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: isUsed ? Color(0xFFE5E7EB) : Color(0xFFF3E8FF),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            isUsed ? 'Already used' : 'Tap to use',
-                                            style: TextStyle(
-                                              fontFamily: 'ProductSans',
-                                              color: isUsed ? Color(0xFF6B7280) : Color(0xFF7C3AED),
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                        : _savedPassengers.isEmpty
+                            ? Container(
+                                margin: EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'No favourite passenger stored',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 14,
+                                      color: Color(0xFF6B7280),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                ),
+                              )
+                            : Container(
+                                height: 130,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _savedPassengers.length,
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 12.0),
+                                  itemBuilder: (context, index) {
+                                    final passenger = _savedPassengers[index];
+                                    // Check if this passenger is already used in the passenger list
+                                    final idNumber =
+                                        passenger['id_number'] ?? '';
+                                    final isUsed = _usedSavedPassengers
+                                            .containsKey(idNumber) &&
+                                        _usedSavedPassengers[idNumber] == true;
+
+                                    return GestureDetector(
+                                      // Only allow tapping if the passenger is not already used
+                                      onTap: isUsed
+                                          ? null
+                                          : () => _useSavedPassenger(passenger),
+                                      child: Container(
+                                        width: 200,
+                                        margin: EdgeInsets.symmetric(
+                                            horizontal: 4.0, vertical: 4.0),
+                                        padding: EdgeInsets.all(12.0),
+                                        decoration: BoxDecoration(
+                                          // Gray out the card if already used
+                                          color: isUsed
+                                              ? Color(0xFFF3F4F6)
+                                              : Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: isUsed
+                                                  ? Color(0xFFD1D5DB)
+                                                  : Color(0xFFE5E7EB)),
+                                          boxShadow: isUsed
+                                              ? []
+                                              : [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.05),
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 2),
+                                                  ),
+                                                ],
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              passenger['name'] ?? '',
+                                              style: TextStyle(
+                                                fontFamily: 'ProductSans',
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF111827),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              '${passenger['age'] ?? ''} yrs • ${passenger['gender'] ?? ''}',
+                                              style: TextStyle(
+                                                fontFamily: 'ProductSans',
+                                                fontSize: 12,
+                                                color: Color(0xFF6B7280),
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              '${passenger['id_type'] ?? ''}: ${passenger['id_number'] ?? ''}',
+                                              style: TextStyle(
+                                                fontFamily: 'ProductSans',
+                                                fontSize: 12,
+                                                color: Color(0xFF6B7280),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Spacer(),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: isUsed
+                                                    ? Color(0xFFE5E7EB)
+                                                    : Color(0xFFF3E8FF),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                isUsed
+                                                    ? 'Already used'
+                                                    : 'Tap to use',
+                                                style: TextStyle(
+                                                  fontFamily: 'ProductSans',
+                                                  color: isUsed
+                                                      ? Color(0xFF6B7280)
+                                                      : Color(0xFF7C3AED),
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                   ],
                 ),
               ),
-              
+
               // Passenger Details Accordion Section
               ListView.builder(
                 shrinkWrap: true,
@@ -1077,15 +1120,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           children: [
                             // Remove button - call the _removePassenger method
                             IconButton(
-                              icon: Icon(Icons.remove_circle, color: Colors.red),
+                              icon:
+                                  Icon(Icons.remove_circle, color: Colors.red),
                               onPressed: () => _removePassenger(index),
                               padding: EdgeInsets.zero,
                               constraints: BoxConstraints(),
                               splashRadius: 20,
                               tooltip: 'Remove passenger',
                             ),
-                            Icon(_customTileExpanded[index] ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
-                                 color: Color(0xFF7C3AED)),
+                            Icon(
+                                _customTileExpanded[index]
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: Color(0xFF7C3AED)),
                           ],
                         ),
                         onExpansionChanged: (expanded) {
@@ -1121,8 +1168,10 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                             ),
                             onChanged: (value) {
                               // Check if this is a saved passenger and update if needed
-                              if (_passengerList[index].containsKey('from_saved_list') && 
-                                  _passengerList[index]['from_saved_list'] == true) {
+                              if (_passengerList[index]
+                                      .containsKey('from_saved_list') &&
+                                  _passengerList[index]['from_saved_list'] ==
+                                      true) {
                                 // Debounce the update to avoid too many API calls
                                 Future.delayed(Duration(milliseconds: 500), () {
                                   _updateSavedPassenger(index);
@@ -1162,10 +1211,14 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     // Check if this is a saved passenger and update if needed
-                                    if (_passengerList[index].containsKey('from_saved_list') && 
-                                        _passengerList[index]['from_saved_list'] == true) {
+                                    if (_passengerList[index]
+                                            .containsKey('from_saved_list') &&
+                                        _passengerList[index]
+                                                ['from_saved_list'] ==
+                                            true) {
                                       // Debounce the update to avoid too many API calls
-                                      Future.delayed(Duration(milliseconds: 500), () {
+                                      Future.delayed(
+                                          Duration(milliseconds: 500), () {
                                         _updateSavedPassenger(index);
                                       });
                                     }
@@ -1183,10 +1236,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     setState(() {
                                       _idTypeValues[index] = v ?? 'Aadhar';
                                     });
-                                    
+
                                     // Check if this is a saved passenger and update if needed
-                                    if (_passengerList[index].containsKey('from_saved_list') && 
-                                        _passengerList[index]['from_saved_list'] == true) {
+                                    if (_passengerList[index]
+                                            .containsKey('from_saved_list') &&
+                                        _passengerList[index]
+                                                ['from_saved_list'] ==
+                                            true) {
                                       _updateSavedPassenger(index);
                                     }
                                   },
@@ -1233,10 +1289,13 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     setState(() {
                                       _genderValues[index] = v ?? 'Male';
                                     });
-                                    
+
                                     // Check if this is a saved passenger and update if needed
-                                    if (_passengerList[index].containsKey('from_saved_list') && 
-                                        _passengerList[index]['from_saved_list'] == true) {
+                                    if (_passengerList[index]
+                                            .containsKey('from_saved_list') &&
+                                        _passengerList[index]
+                                                ['from_saved_list'] ==
+                                            true) {
                                       _updateSavedPassenger(index);
                                     }
                                   },
@@ -1295,11 +1354,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   borderSide: BorderSide.none),
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
-                              hintText: _idTypeValues[index] == 'Aadhar' 
-                                  ? '12-digit Aadhar number' 
-                                  : _idTypeValues[index] == 'PAN' 
-                                      ? '10-character PAN number' 
-                                      : _idTypeValues[index] == 'Driving License'
+                              hintText: _idTypeValues[index] == 'Aadhar'
+                                  ? '12-digit Aadhar number'
+                                  : _idTypeValues[index] == 'PAN'
+                                      ? '10-character PAN number'
+                                      : _idTypeValues[index] ==
+                                              'Driving License'
                                           ? '13-16 character Driving License'
                                           : 'Enter ID number',
                               errorStyle: TextStyle(
@@ -1310,22 +1370,24 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                               ),
                             ),
                             // Auto-capitalize for PAN card
-                            textCapitalization: _idTypeValues[index] == 'PAN' 
-                                ? TextCapitalization.characters 
+                            textCapitalization: _idTypeValues[index] == 'PAN'
+                                ? TextCapitalization.characters
                                 : TextCapitalization.none,
                             // Set keyboard type based on ID type
-                            keyboardType: _idTypeValues[index] == 'Aadhar' 
-                                ? TextInputType.number 
+                            keyboardType: _idTypeValues[index] == 'Aadhar'
+                                ? TextInputType.number
                                 : TextInputType.text,
                             // Update validation on text change
                             onChanged: (value) {
                               setState(() {
                                 // This will trigger a rebuild to show validation errors
                               });
-                              
+
                               // Check if this is a saved passenger and update if needed
-                              if (_passengerList[index].containsKey('from_saved_list') && 
-                                  _passengerList[index]['from_saved_list'] == true) {
+                              if (_passengerList[index]
+                                      .containsKey('from_saved_list') &&
+                                  _passengerList[index]['from_saved_list'] ==
+                                      true) {
                                 // Debounce the update to avoid too many API calls
                                 Future.delayed(Duration(milliseconds: 500), () {
                                   _updateSavedPassenger(index);
@@ -1372,18 +1434,23 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                     ? _addToPassengerList[index]
                                     : false),
                                 // Disable checkbox if passenger is from saved list
-                                onChanged: _passengerList.length > index && 
-                                          _passengerList[index].containsKey('from_saved_list') && 
-                                          _passengerList[index]['from_saved_list'] == true
+                                onChanged: _passengerList.length > index &&
+                                        _passengerList[index]
+                                            .containsKey('from_saved_list') &&
+                                        _passengerList[index]
+                                                ['from_saved_list'] ==
+                                            true
                                     ? null // Null makes the checkbox disabled
                                     : (v) {
                                         setState(() {
-                                          while (
-                                              _addToPassengerList.length <= index) {
+                                          while (_addToPassengerList.length <=
+                                              index) {
                                             _addToPassengerList.add(false);
                                           }
-                                          if (index < _addToPassengerList.length) {
-                                            _addToPassengerList[index] = v ?? false;
+                                          if (index <
+                                              _addToPassengerList.length) {
+                                            _addToPassengerList[index] =
+                                                v ?? false;
                                           }
                                         });
                                       },
@@ -1397,9 +1464,12 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
                                   // Gray out text if checkbox is disabled
-                                  color: _passengerList.length > index && 
-                                        _passengerList[index].containsKey('from_saved_list') && 
-                                        _passengerList[index]['from_saved_list'] == true
+                                  color: _passengerList.length > index &&
+                                          _passengerList[index]
+                                              .containsKey('from_saved_list') &&
+                                          _passengerList[index]
+                                                  ['from_saved_list'] ==
+                                              true
                                       ? Colors.grey[400]
                                       : Color(0xFF222222),
                                   fontSize: 14,
@@ -1558,7 +1628,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 16),
                           prefixIcon: Padding(
-                            padding: const EdgeInsets.only(left: 4.0, right: 8.0),
+                            padding:
+                                const EdgeInsets.only(left: 4.0, right: 8.0),
                             child: GestureDetector(
                               onTap: () {
                                 showCountryPicker(
@@ -1582,8 +1653,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: const BorderSide(
-                                            color: Color(0xFF7C3AED),
-                                            width: 1),
+                                            color: Color(0xFF7C3AED), width: 1),
                                       ),
                                     ),
                                   ),
@@ -1611,8 +1681,8 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10.0, vertical: 6.0),
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 2.0),
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 2.0),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -2053,155 +2123,174 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                       return Colors.white;
                     }),
                   ),
-                   onPressed: _passengerList.isEmpty ? null : () async {
-                    final error = _validateAllFields();
-                    if (error != null) {
-                      _showCustomSnackBar(
-                        message: error,
-                        icon: Icons.error_outline,
-                        backgroundColor: Colors.red,
-                      );
-                      return;
-                    }
-
-                    // Gather all passengers for navigation, and only checked for saving
-                    final passengers = <Map<String, dynamic>>[];
-                    final passengersToSave = <Map<String, dynamic>>[];
-                    for (int i = 0; i < _passengerList.length; i++) {
-                      final passengerMap = {
-                        'name': _nameControllers[i].text.trim(),
-                        'age': int.tryParse(_ageControllers[i].text.trim()) ?? 0,
-                        'gender': _genderValues[i],
-                        'id_type': _idTypeValues[i],
-                        'id_number': _idNumberControllers[i].text.trim(),
-                        'is_senior': (int.tryParse(_ageControllers[i].text.trim()) ?? 0) >= 60,
-                        'carriage': '-', // Placeholder
-                        'seat': '-', // Placeholder
-                      };
-                      passengers.add(passengerMap);
-                      // Check if this passenger should be saved to the list
-                      if (_addToPassengerList[i]) {
-                        // Get UserID from the stored user_profile in SharedPreferences
-                        String userId = '';
-                        final userProfileJson = _prefs.getString('user_profile');
-                        if (userProfileJson != null && userProfileJson.isNotEmpty) {
-                          try {
-                            final userProfile = jsonDecode(userProfileJson);
-                            userId = userProfile['UserID'] ?? '';
-                          } catch (e) {
-                            print('Error parsing user profile: $e');
+                  onPressed: _passengerList.isEmpty
+                      ? null
+                      : () async {
+                          final error = _validateAllFields();
+                          if (error != null) {
+                            _showCustomSnackBar(
+                              message: error,
+                              icon: Icons.error_outline,
+                              backgroundColor: Colors.red,
+                            );
+                            return;
                           }
-                        }
-                        if (userId.isNotEmpty) {
-                          final passengerToSave = {
-                            ...passengerMap,
-                            'user_id': userId,
-                          };
-                          passengersToSave.add(passengerToSave);
-                        }
-                      }
-                    }
 
-                    if (passengersToSave.isNotEmpty) {
-                      try {
-                        // Use the correct backend endpoint path
-                        final baseUrl = ApiConstants.baseUrl;
-                        int savedCount = 0;
-                        
-                        // Show loading indicator
-                        _showCustomSnackBar(
-                          message: 'Saving passengers to your list...',
-                          icon: Icons.save,
-                          backgroundColor: Color(0xFF7C3AED),
-                        );
-                        
-                        for (var passenger in passengersToSave) {
-                          final response = await http.post(
-                            Uri.parse('$baseUrl/api/v1/passengers'),
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: jsonEncode(passenger),
-                          );
-                          print('Passenger save response: ${response.statusCode} - ${response.body}');
-                          if (response.statusCode >= 200 && response.statusCode < 300) {
-                            savedCount++;
+                          // Gather all passengers for navigation, and only checked for saving
+                          final passengers = <Map<String, dynamic>>[];
+                          final passengersToSave = <Map<String, dynamic>>[];
+                          for (int i = 0; i < _passengerList.length; i++) {
+                            final passengerMap = {
+                              'name': _nameControllers[i].text.trim(),
+                              'age': int.tryParse(
+                                      _ageControllers[i].text.trim()) ??
+                                  0,
+                              'gender': _genderValues[i],
+                              'id_type': _idTypeValues[i],
+                              'id_number': _idNumberControllers[i].text.trim(),
+                              'is_senior': (int.tryParse(
+                                          _ageControllers[i].text.trim()) ??
+                                      0) >=
+                                  60,
+                              'carriage': '-', // Placeholder
+                              'seat': '-', // Placeholder
+                            };
+                            passengers.add(passengerMap);
+                            // Check if this passenger should be saved to the list
+                            if (_addToPassengerList[i]) {
+                              // Get UserID from the stored user_profile in SharedPreferences
+                              String userId = '';
+                              final userProfileJson =
+                                  _prefs.getString('user_profile');
+                              if (userProfileJson != null &&
+                                  userProfileJson.isNotEmpty) {
+                                try {
+                                  final userProfile =
+                                      jsonDecode(userProfileJson);
+                                  userId = userProfile['UserID'] ?? '';
+                                } catch (e) {
+                                  print('Error parsing user profile: $e');
+                                }
+                              }
+                              if (userId.isNotEmpty) {
+                                final passengerToSave = {
+                                  ...passengerMap,
+                                  'user_id': userId,
+                                };
+                                passengersToSave.add(passengerToSave);
+                              }
+                            }
                           }
-                        }
-                        
-                        // Reload saved passengers after save
-                        await _loadSavedPassengers();
-                        
-                        // Show success message with custom snackbar
-                        _showCustomSnackBar(
-                          message: 'Saved $savedCount ${savedCount == 1 ? 'passenger' : 'passengers'} to your list!',
-                          icon: Icons.check_circle,
-                          backgroundColor: Colors.green,
-                        );
-                      } catch (e) {
-                        print('Error saving passengers: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to save passengers',
-                                style: TextStyle(
-                                  color: Color(0xFFD32F2F),
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'ProductSans',
-                                )),
-                            backgroundColor: Color(0xFFF3E8FF),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+
+                          if (passengersToSave.isNotEmpty) {
+                            try {
+                              // Use the correct backend endpoint path
+                              final baseUrl = ApiConstants.baseUrl;
+                              int savedCount = 0;
+
+                              // Show loading indicator
+                              _showCustomSnackBar(
+                                message: 'Saving passengers to your list...',
+                                icon: Icons.save,
+                                backgroundColor: Color(0xFF7C3AED),
+                              );
+
+                              for (var passenger in passengersToSave) {
+                                final response = await http.post(
+                                  Uri.parse('$baseUrl/api/v1/passengers'),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: jsonEncode(passenger),
+                                );
+                                print(
+                                    'Passenger save response: ${response.statusCode} - ${response.body}');
+                                if (response.statusCode >= 200 &&
+                                    response.statusCode < 300) {
+                                  savedCount++;
+                                }
+                              }
+
+                              // Reload saved passengers after save
+                              await _loadSavedPassengers();
+
+                              // Show success message with custom snackbar
+                              _showCustomSnackBar(
+                                message:
+                                    'Saved $savedCount ${savedCount == 1 ? 'passenger' : 'passengers'} to your list!',
+                                icon: Icons.check_circle,
+                                backgroundColor: Colors.green,
+                              );
+                            } catch (e) {
+                              print('Error saving passengers: $e');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to save passengers',
+                                      style: TextStyle(
+                                        color: Color(0xFFD32F2F),
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'ProductSans',
+                                      )),
+                                  backgroundColor: Color(0xFFF3E8FF),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              );
+                            }
+                          }
+
+                          // Gather contact details
+                          final contactName = _nameControllers.isNotEmpty
+                              ? _nameControllers[0].text.trim()
+                              : '';
+                          final contactEmail = _emailController.text.trim();
+                          final contactPhone = _phoneController.text.trim();
+                          // Always add country code to phone number when passing to next screen
+                          final fullPhoneNumber =
+                              '+${_selectedCountry.phoneCode}$contactPhone';
+                          // Update the train data to include seat count
+                          final updatedTrain =
+                              Map<String, dynamic>.from(widget.train);
+                          // Ensure seat_count is included in the train data
+                          if (!updatedTrain.containsKey('seat_count')) {
+                            updatedTrain['seat_count'] = widget.seatCount;
+                          }
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewSummaryScreen(
+                                train:
+                                    updatedTrain, // Pass the updated train data with seat count
+                                originName: widget.originName,
+                                destinationName: widget.destinationName,
+                                depTime: (widget.train['schedule'] != null &&
+                                        widget.train['schedule'].isNotEmpty)
+                                    ? (widget.train['schedule']
+                                            .first['departure'] ??
+                                        '')
+                                    : '',
+                                arrTime: (widget.train['schedule'] != null &&
+                                        widget.train['schedule'].isNotEmpty)
+                                    ? (widget.train['schedule']
+                                            .last['arrival'] ??
+                                        '')
+                                    : '',
+                                date: widget.date,
+                                selectedClass: widget.selectedClass,
+                                price: widget.price,
+                                passengers: passengers,
+                                email: contactEmail,
+                                phone: fullPhoneNumber,
+                                coins: 25, // Placeholder
+                                tax: 2.0, // Placeholder
+                              ),
                             ),
-                            elevation: 0,
-                          ),
-                        );
-                      }
-                    }
-
-                    // Gather contact details
-                    final contactName = _nameControllers.isNotEmpty
-                        ? _nameControllers[0].text.trim()
-                        : '';
-                    final contactEmail = _emailController.text.trim();
-                    final contactPhone = _phoneController.text.trim();
-                    // Always add country code to phone number when passing to next screen
-                    final fullPhoneNumber = '+${_selectedCountry.phoneCode}$contactPhone';
-                    // Update the train data to include seat count
-                    final updatedTrain = Map<String, dynamic>.from(widget.train);
-                    // Ensure seat_count is included in the train data
-                    if (!updatedTrain.containsKey('seat_count')) {
-                      updatedTrain['seat_count'] = widget.seatCount;
-                    }
-                    
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReviewSummaryScreen(
-                          train: updatedTrain, // Pass the updated train data with seat count
-                          originName: widget.originName,
-                          destinationName: widget.destinationName,
-                          depTime: (widget.train['schedule'] != null &&
-                                  widget.train['schedule'].isNotEmpty)
-                              ? (widget.train['schedule'].first['departure'] ??
-                                  '')
-                              : '',
-                          arrTime: (widget.train['schedule'] != null &&
-                                  widget.train['schedule'].isNotEmpty)
-                              ? (widget.train['schedule'].last['arrival'] ?? '')
-                              : '',
-                          date: widget.date,
-                          selectedClass: widget.selectedClass,
-                          price: widget.price,
-                          passengers: passengers,
-                          email: contactEmail,
-                          phone: fullPhoneNumber,
-                          coins: 25, // Placeholder
-                          tax: 2.0, // Placeholder
-                        ),
-                      ),
-                    );
-                  },
+                          );
+                        },
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: _passengerList.isEmpty
@@ -2209,7 +2298,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                           : LinearGradient(
                               colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
                             ),
-                      color: _passengerList.isEmpty ? Color(0xFFE0E0E0) : null, // Light gray background when disabled
+                      color: _passengerList.isEmpty
+                          ? Color(0xFFE0E0E0)
+                          : null, // Light gray background when disabled
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
@@ -2219,7 +2310,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                         fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: _passengerList.isEmpty ? Color(0xFF9E9E9E) : Colors.white, // Gray text when disabled
+                        color: _passengerList.isEmpty
+                            ? Color(0xFF9E9E9E)
+                            : Colors.white, // Gray text when disabled
                       ),
                     ),
                   ),

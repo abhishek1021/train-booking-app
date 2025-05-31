@@ -71,15 +71,18 @@ class SearchCard extends StatelessWidget {
                 controller: originController,
                 decoration: InputDecoration(
                   labelText: 'Origin',
-                  labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                  labelStyle: TextStyle(
+                      fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF5F5F5), // Light gray background
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
-                  suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
+                  suffixIcon: const Icon(Icons.arrow_drop_down,
+                      color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
                     fontFamily: 'ProductSans',
@@ -115,13 +118,15 @@ class SearchCard extends StatelessWidget {
                 controller: destinationController,
                 decoration: InputDecoration(
                   labelText: 'Destination',
-                  labelStyle: TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
+                  labelStyle: TextStyle(
+                      fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                   filled: true,
                   fillColor: Color(0xFFF5F5F5), // Light gray background
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   prefixIcon: Icon(Icons.location_on, color: Color(0xFF7C3AED)),
                 ),
                 style: const TextStyle(
@@ -141,8 +146,8 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
-                    labelStyle:
-                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
+                    labelStyle: TextStyle(
+                        fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                     filled: true,
                     fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
@@ -169,8 +174,8 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Departure Date',
-                    labelStyle:
-                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
+                    labelStyle: TextStyle(
+                        fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                     filled: true,
                     fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
@@ -197,8 +202,8 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Return Date',
-                    labelStyle:
-                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
+                    labelStyle: TextStyle(
+                        fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                     filled: true,
                     fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
@@ -228,8 +233,8 @@ class SearchCard extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Passengers',
-                    labelStyle:
-                        TextStyle(fontFamily: 'ProductSans', color: Color(0xFF7C3AED)), 
+                    labelStyle: TextStyle(
+                        fontFamily: 'ProductSans', color: Color(0xFF7C3AED)),
                     filled: true,
                     fillColor: Color(0xFFF5F5F5), // Light gray background
                     border: OutlineInputBorder(
@@ -305,7 +310,8 @@ class SearchCard extends StatelessWidget {
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                               strokeWidth: 3.0,
                             ),
                           )

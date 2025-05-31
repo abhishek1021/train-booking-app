@@ -1,10 +1,10 @@
 class ApiConfig {
   // Base URL for the API
   static const String baseUrl = 'https://services.tatkalpro.in/api/v1';
-  
+
   // Timeout duration in seconds
   static const int timeout = 60;
-  
+
   // API endpoints
   static const String trainEndpoint = '/trains';
   static const String bookingEndpoint = '/bookings';

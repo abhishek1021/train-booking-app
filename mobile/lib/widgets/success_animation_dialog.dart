@@ -139,11 +139,11 @@ class CheckmarkPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final double checkmarkAnimationValue = math.min(1.0, animation * 1.5);
-    
+
     // Draw the circle
     final double circleAnimation = math.min(1.0, animation * 2);
     final double circleRadius = size.width / 2;
-    
+
     final Path circlePath = Path()
       ..addArc(
         Rect.fromCircle(
@@ -153,42 +153,40 @@ class CheckmarkPainter extends CustomPainter {
         0,
         2 * math.pi * circleAnimation,
       );
-    
+
     canvas.drawPath(circlePath, paint);
 
     // Only start drawing the checkmark after the circle is 60% complete
     if (animation > 0.6) {
       // Calculate checkmark animation progress (scale from 0.6-1.0 to 0.0-1.0)
       final double checkProgress = (animation - 0.6) / 0.4;
-      
+
       // Draw the checkmark
       final Path checkPath = Path();
-      
+
       // First line of the checkmark (down-left)
-      final double firstLineEnd = checkProgress < 0.5 
-          ? checkProgress * 2 
-          : 1.0;
-          
+      final double firstLineEnd = checkProgress < 0.5 ? checkProgress * 2 : 1.0;
+
       checkPath.moveTo(
         size.width * 0.3,
         size.height * 0.5,
       );
-      
+
       checkPath.lineTo(
         size.width * 0.3 + (size.width * 0.15) * firstLineEnd,
         size.height * 0.5 + (size.height * 0.15) * firstLineEnd,
       );
-      
+
       // Second line of the checkmark (up-right)
       if (checkProgress > 0.5) {
         final double secondLineProgress = (checkProgress - 0.5) * 2;
-        
+
         checkPath.lineTo(
           size.width * 0.45 + (size.width * 0.25) * secondLineProgress,
           size.height * 0.65 - (size.height * 0.3) * secondLineProgress,
         );
       }
-      
+
       canvas.drawPath(checkPath, paint);
     }
   }

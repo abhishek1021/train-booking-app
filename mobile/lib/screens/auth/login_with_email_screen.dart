@@ -50,7 +50,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
             'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
-            
+
         // Show success animation before navigating
         showDialog(
           context: context,
@@ -115,7 +115,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                               const Text(
                                 'Log into account',
                                 style: TextStyle(
-                                  fontFamily: 'Lato',
+                                  fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 22,
                                   color: Colors.black,
@@ -128,7 +128,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                             'Log in to book IRCTC Tatkal tickets quickly and securely. Access your account to manage bookings, check PNR status, and enjoy a seamless ticketing experience.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontFamily: 'Lato',
+                              fontFamily: 'ProductSans',
                               fontWeight: FontWeight.normal,
                               fontSize: 16,
                               color: Colors.black87,
@@ -143,7 +143,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                 const Text(
                                   'Email',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
                                     color: Colors.black,
@@ -156,13 +156,13 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                     controller: _emailController,
                                     keyboardType: TextInputType.emailAddress,
                                     style: const TextStyle(
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         color: Colors.black),
                                     decoration: InputDecoration(
                                       hintText: 'example@example',
                                       hintStyle: const TextStyle(
                                           color: Colors.black38,
-                                          fontFamily: 'Lato'),
+                                          fontFamily: 'ProductSans'),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
                                               horizontal: 18, vertical: 18),
@@ -213,7 +213,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                 const Text(
                                   'Password',
                                   style: TextStyle(
-                                    fontFamily: 'Lato',
+                                    fontFamily: 'ProductSans',
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
                                     color: Colors.black,
@@ -226,13 +226,13 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                     controller: _passwordController,
                                     obscureText: _obscurePassword,
                                     style: const TextStyle(
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         color: Colors.black),
                                     decoration: InputDecoration(
                                       hintText: 'Enter password',
                                       hintStyle: const TextStyle(
                                           color: Colors.black38,
-                                          fontFamily: 'Lato'),
+                                          fontFamily: 'ProductSans'),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
                                               horizontal: 18, vertical: 18),
@@ -331,7 +331,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                                   'Log in',
                                                   style: TextStyle(
                                                     color: Colors.white,
-                                                    fontFamily: 'Lato',
+                                                    fontFamily: 'ProductSans',
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 17,
                                                   ),
@@ -351,7 +351,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                       'Forgot password?',
                                       style: TextStyle(
                                         color: Colors.black,
-                                        fontFamily: 'Lato',
+                                        fontFamily: 'ProductSans',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
@@ -370,7 +370,7 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                 textAlign: TextAlign.center,
                                 text: const TextSpan(
                                   style: TextStyle(
-                                      fontFamily: 'Lato',
+                                      fontFamily: 'ProductSans',
                                       color: Colors.black45,
                                       fontSize: 13),
                                   children: [

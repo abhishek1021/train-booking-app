@@ -7,11 +7,11 @@ class CitySearchScreen extends StatefulWidget {
   final bool isOrigin;
   final Function(Map<String, dynamic>)? onCitySelected;
   final String sourceScreen; // To identify which screen called this
-  
+
   const CitySearchScreen({
-    Key? key, 
+    Key? key,
     this.searchType = 'city',
-    this.isOrigin = true, 
+    this.isOrigin = true,
     this.onCitySelected,
     this.sourceScreen = 'default',
   }) : super(key: key);
@@ -48,26 +48,34 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   Future<void> _fetchCities() async {
     try {
       final dio = Dio();
-      final String endpoint = widget.searchType == 'station' 
+      final String endpoint = widget.searchType == 'station'
           ? "${ApiConfig.baseUrl}${ApiConfig.stationEndpoint}"
           : "${ApiConfig.baseUrl}${ApiConfig.cityEndpoint}";
-      
+
       final response = await dio.get(endpoint);
       setState(() {
         _cities = (response.data as List)
             .map((item) => {
                   'id': item['id'] ?? item['city_id'] ?? item['station_id'],
-                  'code': item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'code':
+                      item['code'] ?? item['station_code'] ?? item['keyword'],
                   'name': item['name'] ?? item['station_name'] ?? item['city'],
                   'state': item['state'] ?? '',
                   // Add these fields for compatibility with different screens
-                  'station_code': item['code'] ?? item['station_code'] ?? item['keyword'],
-                  'station_name': item['name'] ?? item['station_name'] ?? item['city'],
-                  'city_code': item['code'] ?? item['station_code'] ?? item['keyword'],
-                  'city_name': item['name'] ?? item['station_name'] ?? item['city'],
+                  'station_code':
+                      item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'station_name':
+                      item['name'] ?? item['station_name'] ?? item['city'],
+                  'city_code':
+                      item['code'] ?? item['station_code'] ?? item['keyword'],
+                  'city_name':
+                      item['name'] ?? item['station_name'] ?? item['city'],
                 })
             .toList();
-        _cities.sort((a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo((b['name'] ?? '').toString().toLowerCase()));
+        _cities.sort((a, b) => (a['name'] ?? '')
+            .toString()
+            .toLowerCase()
+            .compareTo((b['name'] ?? '').toString().toLowerCase()));
         _filteredCities = _cities;
         _loading = false;
       });
@@ -108,9 +116,10 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       'city_code': city['code'] ?? city['city_code'],
       'city_name': city['name'] ?? city['city_name'],
       'state': city['state'],
-      'sourceScreen': widget.sourceScreen, // Add source screen to identify where to return
+      'sourceScreen':
+          widget.sourceScreen, // Add source screen to identify where to return
     };
-    
+
     if (widget.onCitySelected != null) {
       widget.onCitySelected!(result);
     } else {
@@ -127,11 +136,16 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         backgroundColor: const Color(0xFF7C3AED),
         elevation: 0,
         title: Padding(
-          padding: const EdgeInsets.only(top: 30.0), // Add 30px top margin to header
+          padding:
+              const EdgeInsets.only(top: 30.0), // Add 30px top margin to header
           child: Text(
             widget.searchType == 'station'
-                ? (widget.isOrigin ? 'Select Origin Station' : 'Select Destination Station')
-                : (widget.isOrigin ? 'Select Origin City' : 'Select Destination City'),
+                ? (widget.isOrigin
+                    ? 'Select Origin Station'
+                    : 'Select Destination Station')
+                : (widget.isOrigin
+                    ? 'Select Origin City'
+                    : 'Select Destination City'),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -176,15 +190,17 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
             ),
           ),
-          
+
           // Results list
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED)))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF7C3AED)))
                 : _filteredCities.isEmpty
                     ? Center(
                         child: Text(
@@ -216,7 +232,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     final name = city['name'] ?? '';
     final code = city['code'] ?? '';
     final state = city['state'] ?? '';
-    
+
     return InkWell(
       onTap: () => _onCityTap(city),
       child: Padding(
@@ -243,7 +259,8 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 // Code aligned to the right with fixed width
                 Container(
                   width: 70, // Fixed width to align all codes
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF7C3AED).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),

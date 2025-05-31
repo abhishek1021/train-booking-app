@@ -42,7 +42,6 @@ class SignupStep3SendOtpScreen extends StatefulWidget {
       _SignupStep3SendOtpScreenState();
 }
 
-
 class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
   bool _fromGoogle = false;
   String? _googleEmail;
@@ -56,6 +55,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
       _googleEmail = args['email'] as String?;
     }
   }
+
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _otpSent = false;
@@ -114,14 +114,15 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
           customPurpleSnackbar('OTP sent to your mobile number'),
         );
       } else {
-        final detail = jsonDecode(response.body)['detail']?.toString() ?? 'Failed to send OTP';
+        final detail = jsonDecode(response.body)['detail']?.toString() ??
+            'Failed to send OTP';
         showDialog(
           context: context,
           builder: (context) => WrongOtpDialog(error: detail),
         );
       }
     } catch (e) {
-        showDialog(
+      showDialog(
         context: context,
         builder: (context) => WrongOtpDialog(error: 'Error: $e'),
       );
@@ -140,7 +141,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       // Always use E.164 format for verification, matching send-otp
-      final mobile = '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}';
+      final mobile =
+          '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}';
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -168,14 +170,14 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
           final email = _googleEmail ?? prefs.getString('signup_email') ?? '';
           final name = prefs.getString('signup_fullName') ?? '';
           final verifiedMobile = prefs.getString('signup_mobile') ?? mobile;
-          
+
           // Show loading indicator
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (_) => const Center(child: CircularProgressIndicator()),
           );
-          
+
           try {
             // Call the API to create the user with Google credentials
             final created = await GoogleSignInService.createUserWithGoogle(
@@ -183,10 +185,10 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
               name: name,
               mobile: verifiedMobile, // Always pass the verified phone number
             );
-            
+
             // Remove loading indicator
             Navigator.of(context).pop();
-            
+
             if (created) {
               // Show account created dialog
               await showDialog(
@@ -194,7 +196,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                 barrierDismissible: false,
                 builder: (ctx) => AccountCreatedDialog(email: email),
               );
-              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/home', (route) => false);
             } else {
               // Show error dialog if account creation failed
               showDialog(
@@ -226,7 +229,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
           );
         }
       } else {
-        final detail = jsonDecode(response.body)['detail']?.toString() ?? 'Verification failed';
+        final detail = jsonDecode(response.body)['detail']?.toString() ??
+            'Verification failed';
         showDialog(
           context: context,
           builder: (context) => WrongOtpDialog(error: detail),
@@ -351,8 +355,9 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                                           color: Colors.black,
                                         ),
                                         bottomSheetHeight: 500,
-                                        borderRadius: const BorderRadius.vertical(
-                                            top: Radius.circular(18)),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                                top: Radius.circular(18)),
                                         inputDecoration: InputDecoration(
                                           hintText: 'Search country',
                                           hintStyle: const TextStyle(

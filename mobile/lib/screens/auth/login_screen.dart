@@ -144,17 +144,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final prefs =
                                       await SharedPreferences.getInstance();
                                   // Store the complete user profile data
-                                  await prefs.setString('user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+                                  await prefs.setString('user_profile',
+                                      jsonEncode(userInfo['user'] ?? userInfo));
                                   // Also store token if available
                                   if (result['token'] != null) {
-                                    await prefs.setString('auth_token', result['token']);
+                                    await prefs.setString(
+                                        'auth_token', result['token']);
                                   }
 
                                   // Show success animation before navigating
                                   showDialog(
                                     context: context,
                                     barrierDismissible: false,
-                                    builder: (context) => SuccessAnimationDialog(
+                                    builder: (context) =>
+                                        SuccessAnimationDialog(
                                       message: 'Login Successful',
                                       onAnimationComplete: () {
                                         // Navigate to home screen after animation

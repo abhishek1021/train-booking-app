@@ -33,19 +33,29 @@ class BookingService {
           'origin_station_code': originStationCode,
           'destination_station_code': destinationStationCode,
           'travel_class': travelClass,
-          'fare': fare.toString(), // Convert to string to avoid float type errors
+          'fare':
+              fare.toString(), // Convert to string to avoid float type errors
           'booking_email': email,
           'booking_phone': phone,
-          'passengers': passengers.map((passenger) => {
-            'name': passenger.fullName.isNotEmpty ? passenger.fullName : 'Passenger',
-            'age': passenger.age,
-            'gender': passenger.gender,
-            'id_type': passenger.idType.isNotEmpty ? passenger.idType : 'aadhar',
-            'id_number': passenger.idNumber.isNotEmpty ? passenger.idNumber : 'XXXX-XXXX-XXXX',
-            'seat': passenger.seat.isNotEmpty ? passenger.seat : 'B2-34',
-            'status': 'confirmed',
-            'is_senior': passenger.isSenior
-          }).toList(),
+          'passengers': passengers
+              .map((passenger) => {
+                    'name': passenger.fullName.isNotEmpty
+                        ? passenger.fullName
+                        : 'Passenger',
+                    'age': passenger.age,
+                    'gender': passenger.gender,
+                    'id_type': passenger.idType.isNotEmpty
+                        ? passenger.idType
+                        : 'aadhar',
+                    'id_number': passenger.idNumber.isNotEmpty
+                        ? passenger.idNumber
+                        : 'XXXX-XXXX-XXXX',
+                    'seat':
+                        passenger.seat.isNotEmpty ? passenger.seat : 'B2-34',
+                    'status': 'confirmed',
+                    'is_senior': passenger.isSenior
+                  })
+              .toList(),
         }),
       );
 
@@ -126,7 +136,8 @@ class BookingService {
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to create wallet transaction: ${response.body}');
+        throw Exception(
+            'Failed to create wallet transaction: ${response.body}');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -158,7 +169,7 @@ class BookingService {
       throw Exception('Failed to get wallet: $e');
     }
   }
-  
+
   // Get wallet balance
   Future<double> getWalletBalance(String userId) async {
     try {
@@ -174,12 +185,13 @@ class BookingService {
       return 0.0;
     }
   }
-  
+
   // Get wallet transactions
   Future<List<dynamic>> getWalletTransactions(String walletId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl${ApiConfig.walletTransactionEndpoint}/wallet/$walletId'),
+        Uri.parse(
+            '$baseUrl${ApiConfig.walletTransactionEndpoint}/wallet/$walletId'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -199,7 +211,7 @@ class BookingService {
       return [];
     }
   }
-  
+
   // Get bookings by user ID
   Future<List<dynamic>> getBookingsByUserId(String userId) async {
     try {
@@ -224,7 +236,7 @@ class BookingService {
       return [];
     }
   }
-  
+
   // Get booking by ID
   Future<Map<String, dynamic>> getBookingById(String bookingId) async {
     try {
@@ -242,7 +254,7 @@ class BookingService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> booking = jsonDecode(response.body);
-        
+
         // Ensure booking_email and booking_phone are included
         if (booking['booking_email'] == null) {
           if (kDebugMode) {
@@ -254,7 +266,7 @@ class BookingService {
             print('Warning: booking_phone is null in the API response');
           }
         }
-        
+
         return booking;
       } else {
         throw Exception('Failed to get booking: ${response.body}');
@@ -305,7 +317,7 @@ class BookingService {
       // Step 2: Get the user's wallet
       final walletResponse = await getWalletByUserId(userId);
       final String walletId = walletResponse['wallet_id'];
-      
+
       // Step 3: Create the payment
       final paymentResponse = await createPayment(
         userId: userId,
@@ -315,7 +327,7 @@ class BookingService {
       );
 
       final String paymentId = paymentResponse['payment_id'];
-      
+
       // Step 4: Create wallet transaction (debit)
       final transactionResponse = await createWalletTransaction(
         walletId: walletId,
