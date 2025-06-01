@@ -16,78 +16,27 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
-# DynamoDB table for Terraform state locking
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-locks"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
+# Reference existing DynamoDB table for Terraform state locking
+data "aws_dynamodb_table" "terraform_locks" {
+  name = "terraform-locks"
 }
 
-# IAM role for the cron-app Lambda
-resource "aws_iam_role" "cron_lambda_exec" {
+# Reference existing IAM role for the cron-app Lambda
+data "aws_iam_role" "cron_lambda_exec" {
   name = "cron_lambda_exec_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
-    }]
-  })
 }
 
-# IAM policy for DynamoDB access
-resource "aws_iam_policy" "dynamodb_access" {
-  name        = "lambda_dynamodb_access"
-  description = "IAM policy for accessing DynamoDB tables"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Scan",
-          "dynamodb:Query",
-          "dynamodb:BatchGetItem",
-          "dynamodb:BatchWriteItem"
-        ]
-        Effect = "Allow"
-        Resource = [
-          "arn:aws:dynamodb:${var.aws_region}:*:table/jobs",
-          "arn:aws:dynamodb:${var.aws_region}:*:table/job_executions",
-          "arn:aws:dynamodb:${var.aws_region}:*:table/job_logs"
-        ]
-      }
-    ]
-  })
+# Reference existing IAM policy for DynamoDB access
+data "aws_iam_policy" "dynamodb_access" {
+  name = "lambda_dynamodb_access"
 }
 
-# Attach policies to the cron Lambda role
-resource "aws_iam_role_policy_attachment" "cron_lambda_policy" {
-  role       = aws_iam_role.cron_lambda_exec.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy_attachment" "cron_dynamodb_policy" {
-  role       = aws_iam_role.cron_lambda_exec.name
-  policy_arn = aws_iam_policy.dynamodb_access.arn
-}
+# Skip policy attachments as they already exist
 
 # Lambda function for the cron-app
 resource "aws_lambda_function" "cron_app" {
   function_name = "train-booking-cronjob"
-  role          = aws_iam_role.cron_lambda_exec.arn
+  role          = data.aws_iam_role.cron_lambda_exec.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.9"
   timeout       = 180  # 3 minutes

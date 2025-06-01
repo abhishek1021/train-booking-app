@@ -31,6 +31,7 @@ jobs:
           # Create zip package
           cd ..
           zip -r cron-app.zip cron-app -x '*.pyc' '*.pyo' '*__pycache__*' 'cron-app/.git/*' 'cron-app/venv/*'
+          echo "Created cron-app.zip with updated code"
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
