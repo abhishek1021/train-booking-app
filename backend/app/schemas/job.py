@@ -20,6 +20,13 @@ class GSTDetails(BaseModel):
     company_name: str
     company_address: Optional[str] = None
 
+class TrainDetails(BaseModel):
+    train_number: str
+    train_name: str
+    departure_time: Optional[str] = None
+    arrival_time: Optional[str] = None
+    duration: Optional[str] = None
+
 class PassengerInfo(BaseModel):
     name: str
     age: int
@@ -46,6 +53,7 @@ class JobCreate(BaseModel):
     notes: Optional[str] = None
     opt_for_insurance: Optional[bool] = False  # Whether to opt for travel insurance
     gst_details: Optional[GSTDetails] = None  # GST details for billing
+    train_details: Optional[TrainDetails] = None  # Selected train details
 
     @validator('journey_date')
     def validate_journey_date(cls, v):

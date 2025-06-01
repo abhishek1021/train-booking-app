@@ -75,6 +75,10 @@ async def create_job(job: JobCreate):
         # Add GST details if provided
         if job.gst_details:
             job_item['gst_details'] = job.gst_details.dict()
+            
+        # Add train details if provided
+        if job.train_details:
+            job_item['train_details'] = job.train_details.dict()
         
         # Calculate next execution time based on booking_time and journey_date
         try:

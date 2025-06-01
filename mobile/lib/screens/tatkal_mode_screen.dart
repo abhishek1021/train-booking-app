@@ -10,6 +10,7 @@ import '../services/job_service.dart';
 import '../services/passenger_service.dart';
 import '../config/api_config.dart';
 import '../widgets/success_animation_dialog.dart';
+import '../widgets/train_selection_popup.dart';
 import 'city_search_screen.dart';
 
 class TatkalModeScreen extends StatefulWidget {
@@ -85,6 +86,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   bool _isJobCreated = false;
   String _jobId = '';
   String _userId = '';
+  Map<String, dynamic>? _selectedTrain; // Store the selected train
 
   // Lists for dropdowns
   final List<String> _trainClasses = ['SL', '3A', '2A', '1A', 'CC', 'EC'];
@@ -349,6 +351,12 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               backgroundColor: Colors.red,
             );
           }
+          
+          // If all validations pass, show the train selection popup
+          if (isValid) {
+            _showTrainSelectionPopup();
+            return; // Don't proceed to next step yet
+          }
         }
         break;
 
@@ -529,6 +537,55 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+  
+  // Show train selection popup
+  void _showTrainSelectionPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return TrainSelectionPopup(
+          originCode: _selectedOriginCode!,
+          destinationCode: _selectedDestinationCode!,
+          journeyDate: _dateController.text,
+          onTrainSelected: (train) {
+            setState(() {
+              _selectedTrain = train;
+            });
+            
+            // Show confirmation message
+            _showCustomSnackBar(
+              message: 'Train ${train!['train_number']} - ${train['train_name']} selected',
+              icon: Icons.train,
+              backgroundColor: const Color(0xFF7C3AED),
+            );
+            
+            // Proceed to next step
+            setState(() {
+              _currentStep++;
+            });
+          },
+          onSkip: () {
+            setState(() {
+              _selectedTrain = null; // Clear any previously selected train
+            });
+            
+            // Show confirmation message
+            _showCustomSnackBar(
+              message: 'Train selection skipped. Will book any available train.',
+              icon: Icons.info_outline,
+              backgroundColor: Colors.blue,
+            );
+            
+            // Proceed to next step
+            setState(() {
+              _currentStep++;
+            });
+          },
+        );
+      },
+    );
   }
 
   // Create a new Tatkal job
@@ -775,11 +832,22 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'to_station': _destinationController.text,
         'journey_date': _dateController.text,
         'preferred_time': _timeController.text,
-        'train_number': trainNumber,
-        'train_name': trainName,
         'class': _selectedClass,
         'quota': selectedQuota,
       };
+      
+      // Add selected train information if available
+      if (_selectedTrain != null) {
+        journeyData['train_number'] = _selectedTrain!['train_number'] ?? trainNumber;
+        journeyData['train_name'] = _selectedTrain!['train_name'] ?? trainName;
+        journeyData['departure_time'] = _selectedTrain!['departure_time'];
+        journeyData['arrival_time'] = _selectedTrain!['arrival_time'];
+        journeyData['duration'] = _selectedTrain!['duration'];
+      } else {
+        // Use default train information
+        journeyData['train_number'] = trainNumber;
+        journeyData['train_name'] = trainName;
+      }
 
       // Prepare preferences data
       Map<String, dynamic> preferencesData = {
@@ -823,6 +891,18 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           };
         }
 
+        // Prepare selected train info if available
+        Map<String, dynamic>? selectedTrainInfo;
+        if (_selectedTrain != null) {
+          selectedTrainInfo = {
+            'train_number': _selectedTrain!['train_number'],
+            'train_name': _selectedTrain!['train_name'],
+            'departure_time': _selectedTrain!['departure_time'],
+            'arrival_time': _selectedTrain!['arrival_time'],
+            'duration': _selectedTrain!['duration'],
+          };
+        }
+
         // Make the API call with correct job_type capitalization
         final response = await _jobService.createJob(
           userId: _userId,
@@ -841,6 +921,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           notes: preferencesData['notes'],
           optForInsurance: _optForInsurance,
           gstDetails: gstDetails,
+          selectedTrain: selectedTrainInfo, // Add selected train info
         );
 
         // Update jobId with the one returned from the server if available
@@ -1083,7 +1164,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         return const SizedBox.shrink();
     }
   }
-
+  
   Widget _buildJourneyDetailsStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,6 +1177,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionTitle('Journey Details'),
+              // Show selected train info if available
+              if (_selectedTrain != null) _buildSelectedTrainInfo(),
               // Origin Station Card
               _buildCustomStationCard(
                 title: 'From Station',
@@ -3253,6 +3336,139 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                 fontFamily: 'ProductSans',
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Build selected train info card
+  Widget _buildSelectedTrainInfo() {
+    final trainNumber = _selectedTrain!['train_number'] ?? 'Unknown';
+    final trainName = _selectedTrain!['train_name'] ?? 'Unknown';
+    final departureTime = _selectedTrain!['departure_time'] ?? 'Unknown';
+    final arrivalTime = _selectedTrain!['arrival_time'] ?? 'Unknown';
+    final duration = _selectedTrain!['duration'] ?? 'Unknown';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7C3AED).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Selected Train',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF7C3AED),
+                  fontFamily: 'ProductSans',
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Show train selection popup again
+                  _showTrainSelectionPopup();
+                },
+                child: const Text(
+                  'Change',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF7C3AED),
+                    fontFamily: 'ProductSans',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '$trainNumber - $trainName',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'ProductSans',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Departure',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                  Text(
+                    departureTime,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    duration,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 80,
+                    height: 1,
+                    color: Colors.grey.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 4),
+                  const Icon(
+                    Icons.train,
+                    size: 14,
+                    color: Color(0xFF7C3AED),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Arrival',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                  Text(
+                    arrivalTime,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

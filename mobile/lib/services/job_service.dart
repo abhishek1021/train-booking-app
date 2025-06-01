@@ -23,6 +23,7 @@ class JobService {
     String? notes,
     bool optForInsurance = false,
     Map<String, dynamic>? gstDetails,
+    Map<String, dynamic>? selectedTrain,
   }) async {
     try {
       // Create the request body
@@ -47,6 +48,11 @@ class JobService {
       // Add GST details if provided
       if (gstDetails != null) {
         requestBody['gst_details'] = gstDetails;
+      }
+      
+      // Add selected train info if provided
+      if (selectedTrain != null) {
+        requestBody['selected_train'] = selectedTrain;
       }
 
       final response = await http.post(
