@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - 'cron-app/**'
-      - 'terraform/cron-app.tf'
+      - 'terraform-cron-app/**'
       - '.github/workflows/cron-app-deploy.yml'
 
 jobs:
@@ -46,62 +46,30 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd terraform
+          cd terraform-cron-app
           # Use -reconfigure flag to avoid state migration prompts
           terraform init -reconfigure
+          
+          # Create a terraform.tfvars file to avoid prompts for variables
+          echo 'aws_region = "ap-south-1"' > terraform.tfvars
 
       - name: Terraform Plan
         run: |
-          cd terraform
-          # Plan for DynamoDB table (S3 bucket already exists)
-          echo "Planning DynamoDB resources..."
-          terraform plan \
-            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -target=aws_s3_bucket_versioning.terraform_state \
-            -target=aws_dynamodb_table.terraform_locks
-            
-          # Then plan for Lambda and EventBridge resources
-          echo "\nPlanning Lambda and EventBridge resources..."
-          terraform plan \
-            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -target=aws_iam_role.cron_lambda_exec \
-            -target=aws_iam_policy.dynamodb_access \
-            -target=aws_iam_role_policy_attachment.cron_lambda_policy \
-            -target=aws_iam_role_policy_attachment.cron_dynamodb_policy \
-            -target=aws_iam_role_policy_attachment.backend_dynamodb_policy \
-            -target=aws_lambda_function.cron_app \
-            -target=aws_cloudwatch_event_rule.cron_schedule \
-            -target=aws_cloudwatch_event_target.cron_lambda_target \
-            -target=aws_lambda_permission.allow_eventbridge \
-            -target=aws_cloudwatch_log_group.cron_lambda_logs
+          cd terraform-cron-app
+          # Create a plan file to use for apply
+          echo "Planning cron-app resources..."
+          terraform plan -out=cron-app.tfplan \
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}"
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: services.tatkalpro.in
 
       - name: Terraform Apply
         run: |
-          cd terraform
-          # Create DynamoDB table (S3 bucket already exists)
-          echo "Creating DynamoDB resources..."
-          terraform apply -auto-approve \
-            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -target=aws_s3_bucket_versioning.terraform_state \
-            -target=aws_dynamodb_table.terraform_locks
-            
-          # Then create Lambda and EventBridge resources
-          echo "\nCreating Lambda and EventBridge resources..."
-          terraform apply -auto-approve \
-            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -target=aws_iam_role.cron_lambda_exec \
-            -target=aws_iam_policy.dynamodb_access \
-            -target=aws_iam_role_policy_attachment.cron_lambda_policy \
-            -target=aws_iam_role_policy_attachment.cron_dynamodb_policy \
-            -target=aws_iam_role_policy_attachment.backend_dynamodb_policy \
-            -target=aws_lambda_function.cron_app \
-            -target=aws_cloudwatch_event_rule.cron_schedule \
-            -target=aws_cloudwatch_event_target.cron_lambda_target \
-            -target=aws_lambda_permission.allow_eventbridge \
-            -target=aws_cloudwatch_log_group.cron_lambda_logs
+          cd terraform-cron-app
+          # Apply the plan file
+          echo "Applying cron-app resources..."
+          terraform apply cron-app.tfplan
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: services.tatkalpro.in
@@ -125,6 +93,6 @@ jobs:
           
           echo "\n----------------------------------------------"
           echo "NEXT STEPS:"
-          echo "1. If this was the first successful deployment, uncomment the S3 backend configuration in backend.tf"
-          echo "2. Run 'terraform init -migrate-state' to move the state to S3"
+          echo "1. If this was the first successful deployment, uncomment the S3 backend configuration in terraform-cron-app/backend.tf"
+          echo "2. Run 'terraform init -migrate-state' in the terraform-cron-app directory to move the state to S3"
           echo "----------------------------------------------"

@@ -1,6 +1,6 @@
-###############################################
-# Cron-App Lambda Function Resources
-###############################################
+provider "aws" {
+  region = var.aws_region
+}
 
 # Reference the existing S3 bucket for Terraform state management
 data "aws_s3_bucket" "terraform_state" {
@@ -46,7 +46,7 @@ resource "aws_iam_role" "cron_lambda_exec" {
 # IAM policy for DynamoDB access
 resource "aws_iam_policy" "dynamodb_access" {
   name        = "lambda_dynamodb_access"
-  description = "Policy for Lambda to access DynamoDB tables"
+  description = "IAM policy for accessing DynamoDB tables"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -57,10 +57,12 @@ resource "aws_iam_policy" "dynamodb_access" {
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
+          "dynamodb:Scan",
           "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem"
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           "arn:aws:dynamodb:${var.aws_region}:*:table/jobs",
           "arn:aws:dynamodb:${var.aws_region}:*:table/job_executions",
@@ -79,12 +81,6 @@ resource "aws_iam_role_policy_attachment" "cron_lambda_policy" {
 
 resource "aws_iam_role_policy_attachment" "cron_dynamodb_policy" {
   role       = aws_iam_role.cron_lambda_exec.name
-  policy_arn = aws_iam_policy.dynamodb_access.arn
-}
-
-# Also attach DynamoDB policy to the main backend Lambda
-resource "aws_iam_role_policy_attachment" "backend_dynamodb_policy" {
-  role       = aws_iam_role.lambda_exec.name
   policy_arn = aws_iam_policy.dynamodb_access.arn
 }
 
@@ -113,18 +109,18 @@ resource "aws_lambda_function" "cron_app" {
 # EventBridge rule to trigger the cron Lambda every 5 minutes
 resource "aws_cloudwatch_event_rule" "cron_schedule" {
   name                = "train-booking-cronjob-schedule"
-  description         = "Trigger train booking cronjob every 5 minutes"
+  description         = "Triggers the train-booking-cronjob Lambda every 5 minutes"
   schedule_expression = "rate(5 minutes)"
 }
 
-# Set the cron Lambda as the target for the EventBridge rule
+# Target the Lambda function from the EventBridge rule
 resource "aws_cloudwatch_event_target" "cron_lambda_target" {
   rule      = aws_cloudwatch_event_rule.cron_schedule.name
   target_id = "train-booking-cronjob"
   arn       = aws_lambda_function.cron_app.arn
 }
 
-# Permission for EventBridge to invoke the cron Lambda
+# Permission for EventBridge to invoke the Lambda
 resource "aws_lambda_permission" "allow_eventbridge" {
   statement_id  = "AllowExecutionFromEventBridge"
   action        = "lambda:InvokeFunction"
@@ -133,7 +129,7 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   source_arn    = aws_cloudwatch_event_rule.cron_schedule.arn
 }
 
-# CloudWatch Log Group for the cron Lambda
+# CloudWatch Log Group for the Lambda
 resource "aws_cloudwatch_log_group" "cron_lambda_logs" {
   name              = "/aws/lambda/${aws_lambda_function.cron_app.function_name}"
   retention_in_days = 30
