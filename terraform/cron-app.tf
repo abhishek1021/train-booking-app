@@ -2,17 +2,14 @@
 # Cron-App Lambda Function Resources
 ###############################################
 
-# S3 bucket for Terraform state management
-resource "aws_s3_bucket" "terraform_state" {
+# Reference the existing S3 bucket for Terraform state management
+data "aws_s3_bucket" "terraform_state" {
   bucket = "train-booking-terraform-state"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
+# Enable versioning on the existing bucket if not already enabled
 resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+  bucket = data.aws_s3_bucket.terraform_state.id
   
   versioning_configuration {
     status = "Enabled"

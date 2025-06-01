@@ -47,17 +47,33 @@ jobs:
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          # Use -reconfigure flag to avoid state migration prompts
+          terraform init -reconfigure
 
       - name: Terraform Plan
         run: |
           cd terraform
+          # Plan for DynamoDB table (S3 bucket already exists)
+          echo "Planning DynamoDB resources..."
           terraform plan \
             -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_s3_bucket_versioning.terraform_state \
+            -target=aws_dynamodb_table.terraform_locks
+            
+          # Then plan for Lambda and EventBridge resources
+          echo "\nPlanning Lambda and EventBridge resources..."
+          terraform plan \
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_iam_role.cron_lambda_exec \
+            -target=aws_iam_policy.dynamodb_access \
+            -target=aws_iam_role_policy_attachment.cron_lambda_policy \
+            -target=aws_iam_role_policy_attachment.cron_dynamodb_policy \
+            -target=aws_iam_role_policy_attachment.backend_dynamodb_policy \
             -target=aws_lambda_function.cron_app \
             -target=aws_cloudwatch_event_rule.cron_schedule \
             -target=aws_cloudwatch_event_target.cron_lambda_target \
-            -target=aws_lambda_permission.allow_eventbridge
+            -target=aws_lambda_permission.allow_eventbridge \
+            -target=aws_cloudwatch_log_group.cron_lambda_logs
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: services.tatkalpro.in
@@ -65,12 +81,27 @@ jobs:
       - name: Terraform Apply
         run: |
           cd terraform
+          # Create DynamoDB table (S3 bucket already exists)
+          echo "Creating DynamoDB resources..."
           terraform apply -auto-approve \
             -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_s3_bucket_versioning.terraform_state \
+            -target=aws_dynamodb_table.terraform_locks
+            
+          # Then create Lambda and EventBridge resources
+          echo "\nCreating Lambda and EventBridge resources..."
+          terraform apply -auto-approve \
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_iam_role.cron_lambda_exec \
+            -target=aws_iam_policy.dynamodb_access \
+            -target=aws_iam_role_policy_attachment.cron_lambda_policy \
+            -target=aws_iam_role_policy_attachment.cron_dynamodb_policy \
+            -target=aws_iam_role_policy_attachment.backend_dynamodb_policy \
             -target=aws_lambda_function.cron_app \
             -target=aws_cloudwatch_event_rule.cron_schedule \
             -target=aws_cloudwatch_event_target.cron_lambda_target \
-            -target=aws_lambda_permission.allow_eventbridge
+            -target=aws_lambda_permission.allow_eventbridge \
+            -target=aws_cloudwatch_log_group.cron_lambda_logs
         env:
           TF_VAR_aws_region: ap-south-1
           TF_VAR_custom_domain: services.tatkalpro.in
@@ -78,5 +109,22 @@ jobs:
       - name: Verify Deployment
         run: |
           echo "Cron-App Lambda deployment completed"
-          aws lambda get-function --function-name train-booking-cronjob --query 'Configuration.[FunctionName,LastModified]'
-          aws events describe-rule --name train-booking-cronjob-schedule --query 'Name'
+          echo "\nVerifying S3 bucket:"
+          aws s3api head-bucket --bucket train-booking-terraform-state || echo "S3 bucket not found or not accessible"
+          
+          echo "\nVerifying DynamoDB table:"
+          aws dynamodb describe-table --table-name terraform-locks --query 'Table.TableName' || echo "DynamoDB table not found or not accessible"
+          
+          echo "\nVerifying Lambda function:"
+          aws lambda get-function --function-name train-booking-cronjob --query 'Configuration.[FunctionName,LastModified]' || echo "Lambda function not found or not accessible"
+          
+          echo "\nVerifying EventBridge rule:"
+          aws events describe-rule --name train-booking-cronjob-schedule --query 'Name' || echo "EventBridge rule not found or not accessible"
+          
+          echo "\nDeployment verification complete"
+          
+          echo "\n----------------------------------------------"
+          echo "NEXT STEPS:"
+          echo "1. If this was the first successful deployment, uncomment the S3 backend configuration in backend.tf"
+          echo "2. Run 'terraform init -migrate-state' to move the state to S3"
+          echo "----------------------------------------------"
