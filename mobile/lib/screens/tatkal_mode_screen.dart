@@ -46,11 +46,16 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   final _destinationController = TextEditingController();
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
+  final _jobDateController = TextEditingController();
+  final _jobTimeController = TextEditingController();
   String _selectedClass = 'SL';
+  String _selectedJobType = 'Tatkal';
   String? _selectedOriginCode;
   String? _selectedDestinationCode;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  DateTime? _selectedJobDate;
+  TimeOfDay? _selectedJobTime;
 
   // Passenger Details
   List<Map<String, dynamic>> _passengers = [
@@ -90,6 +95,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
   // Lists for dropdowns
   final List<String> _trainClasses = ['SL', '3A', '2A', '1A', 'CC', 'EC'];
+  final List<String> _jobTypes = ['General', 'Tatkal', 'Premium Tatkal'];
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _berthPreferences = [
     'No Preference',
@@ -104,10 +110,23 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _initSharedPreferences();
+    _initializeServices();
+    _loadSavedPassengers();
+    final now = DateTime.now();
+    _selectedJobDate = now;
+    _jobDateController.text = _formatDate(now);
+    _selectedJobTime = TimeOfDay.now();
+    _jobTimeController.text = _formatTime(_selectedJobTime!);
   }
 
+  // Initialize services
+  Future<void> _initializeServices() async {
+    _prefs = await SharedPreferences.getInstance();
+    _userId = _prefs?.getString('user_id') ?? '';
+    // _jobService is already initialized as a final field
+    await _initPassengerService();
+  }
+  
   // Initialize shared preferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
@@ -596,13 +615,17 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     bool dateValid = _dateController.text.isNotEmpty;
     bool timeValid = _timeController.text.isNotEmpty;
     bool classValid = _selectedClass.isNotEmpty;
+    bool jobDateValid = _jobDateController.text.isNotEmpty;
+    bool jobTimeValid = _jobTimeController.text.isNotEmpty;
 
     // Validate journey details manually
     if (!originValid ||
         !destinationValid ||
         !dateValid ||
         !timeValid ||
-        !classValid) {
+        !classValid ||
+        !jobDateValid ||
+        !jobTimeValid) {
       _showCustomSnackBar(
         message: 'Please fill all journey details correctly',
         icon: Icons.error,
@@ -834,6 +857,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'preferred_time': _timeController.text,
         'class': _selectedClass,
         'quota': selectedQuota,
+        'job_date': _jobDateController.text,
+        'job_execution_time': _jobTimeController.text,
+        'job_type': _selectedJobType,
       };
       
       // Add selected train information if available
@@ -872,8 +898,14 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       final prefs = await SharedPreferences.getInstance();
       List<String> existingJobs = prefs.getStringList('tatkal_jobs') ?? [];
 
-      // Generate a job ID
-      String jobId = 'TJ-${DateTime.now().millisecondsSinceEpoch}';
+        // Generate a job ID with prefix based on job type
+        String prefix = 'TKL';
+        if (_selectedJobType == 'General') {
+          prefix = 'GEN';
+        } else if (_selectedJobType == 'Premium Tatkal') {
+          prefix = 'PTK';
+        }
+        String jobId = '$prefix-${DateTime.now().millisecondsSinceEpoch % 10000}';
       jobData['job_id'] = jobId;
 
       existingJobs.add(jsonEncode(jobData));
@@ -912,7 +944,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           bookingTime: journeyData['preferred_time'],
           travelClass: journeyData['class'],
           passengers: passengersData,
-          jobType: 'Tatkal', // Capitalized to match backend enum
+          jobType: _selectedJobType, // Use selected job type
           bookingEmail: contactData['email'],
           bookingPhone: contactData['phone'],
           autoUpgrade: preferencesData['auto_upgrade'],
@@ -922,6 +954,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           optForInsurance: _optForInsurance,
           gstDetails: gstDetails,
           selectedTrain: selectedTrainInfo, // Add selected train info
+          jobDate: _jobDateController.text,
+          jobExecutionTime: _jobTimeController.text
         );
 
         // Update jobId with the one returned from the server if available
@@ -1176,6 +1210,119 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildSectionTitle('Booking Mode'),
+              // Booking Mode Selection
+              _buildDropdownCard(
+                title: 'Booking Mode',
+                icon: Icons.bookmark,
+                value: _selectedJobType,
+                items: _jobTypes.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontFamily: 'ProductSans',
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedJobType = newValue;
+                    });
+                  }
+                },
+              ),
+              
+              const SizedBox(height: 24),
+              
+              _buildSectionTitle('Job Execution Details'),
+              // Job Date Card
+              _buildCustomStationCard(
+                title: 'Job Date',
+                controller: _jobDateController,
+                icon: Icons.event,
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedJobDate ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFF7C3AED),
+                            onPrimary: Colors.white,
+                            onSurface: Colors.black,
+                            surface: Colors.white,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+
+                  if (picked != null) {
+                    setState(() {
+                      _selectedJobDate = picked;
+                      _jobDateController.text = _formatDate(picked);
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select job date';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Job Execution Time Card
+              _buildDateCard(
+                title: 'Job Execution Time',
+                controller: _jobTimeController,
+                icon: Icons.access_alarm,
+                onTap: () async {
+                  final TimeOfDay? picked = await showTimePicker(
+                    context: context,
+                    initialTime: _selectedJobTime ?? TimeOfDay.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFF7C3AED),
+                            onPrimary: Colors.white,
+                            onSurface: Colors.black,
+                            surface: Colors.white,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+
+                  if (picked != null) {
+                    setState(() {
+                      _selectedJobTime = picked;
+                      _jobTimeController.text = _formatTime(picked);
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select job execution time';
+                  }
+                  return null;
+                },
+              ),
+              
+              const SizedBox(height: 24),
+              
               _buildSectionTitle('Journey Details'),
               // Show selected train info if available
               if (_selectedTrain != null) _buildSelectedTrainInfo(),
@@ -1308,9 +1455,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
               const SizedBox(height: 16),
 
-              // Booking Time Card
+              // Journey Time Card
               _buildDateCard(
-                title: 'Booking Time',
+                title: 'Journey Time',
                 controller: _timeController,
                 icon: Icons.access_time,
                 onTap: () async {
@@ -1341,7 +1488,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please select booking time';
+                    return 'Please select journey time';
                   }
                   return null;
                 },

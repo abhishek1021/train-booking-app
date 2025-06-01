@@ -34,15 +34,23 @@ def convert_dynamodb_item(item):
     return json.loads(json.dumps(item, cls=DecimalEncoder))
 
 # Helper function to generate job ID
-def generate_job_id():
-    """Generate a unique job ID with TKL prefix"""
-    return f"TKL-{uuid.uuid4().hex[:8].upper()}"
+def generate_job_id(job_type=None):
+    """Generate a unique job ID with prefix based on job type"""
+    prefix = "TKL"  # Default prefix for Tatkal
+    
+    if job_type:
+        if job_type == JobType.GENERAL:
+            prefix = "GEN"
+        elif job_type == JobType.PREMIUM_TATKAL:
+            prefix = "PTK"
+    
+    return f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
 
 @router.post("/", response_model=Dict[str, Any])
 async def create_job(job: JobCreate):
     """Create a new automated booking job"""
     try:
-        job_id = generate_job_id()
+        job_id = generate_job_id(job.job_type)
         now = datetime.utcnow().isoformat()
         
         # Create job item
@@ -79,6 +87,13 @@ async def create_job(job: JobCreate):
         # Add train details if provided
         if job.train_details:
             job_item['train_details'] = job.train_details.dict()
+            
+        # Add job date and execution time if provided
+        if job.job_date:
+            job_item['job_date'] = job.job_date
+            
+        if job.job_execution_time:
+            job_item['job_execution_time'] = job.job_execution_time
         
         # Calculate next execution time based on booking_time and journey_date
         try:

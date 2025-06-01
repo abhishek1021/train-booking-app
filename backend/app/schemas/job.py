@@ -54,6 +54,8 @@ class JobCreate(BaseModel):
     opt_for_insurance: Optional[bool] = False  # Whether to opt for travel insurance
     gst_details: Optional[GSTDetails] = None  # GST details for billing
     train_details: Optional[TrainDetails] = None  # Selected train details
+    job_date: Optional[str] = None  # Date when the job should be executed
+    job_execution_time: Optional[str] = None  # Time when the job should be executed (HH:MM format)
 
     @validator('journey_date')
     def validate_journey_date(cls, v):

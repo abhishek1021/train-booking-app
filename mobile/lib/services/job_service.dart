@@ -24,6 +24,8 @@ class JobService {
     bool optForInsurance = false,
     Map<String, dynamic>? gstDetails,
     Map<String, dynamic>? selectedTrain,
+    String? jobDate,
+    String? jobExecutionTime,
   }) async {
     try {
       // Create the request body
@@ -44,6 +46,15 @@ class JobService {
         'notes': notes,
         'opt_for_insurance': optForInsurance,
       };
+      
+      // Add job date and execution time if provided
+      if (jobDate != null) {
+        requestBody['job_date'] = jobDate;
+      }
+      
+      if (jobExecutionTime != null) {
+        requestBody['job_execution_time'] = jobExecutionTime;
+      }
 
       // Add GST details if provided
       if (gstDetails != null) {
