@@ -47,10 +47,13 @@ resource "aws_lambda_function" "cron_app" {
 
   environment {
     variables = {
-      JOBS_TABLE           = "jobs"
-      JOB_EXECUTIONS_TABLE = "job_executions"
-      JOB_LOGS_TABLE       = "job_logs"
-      REGION               = var.aws_region  # Using REGION instead of AWS_REGION as it's a reserved key
+      JOBS_TABLE                = "jobs"
+      JOB_EXECUTIONS_TABLE      = "job_executions"
+      JOB_LOGS_TABLE            = "job_logs"
+      BOOKINGS_TABLE            = "bookings"
+      WALLET_TABLE              = "wallet"
+      WALLET_TRANSACTIONS_TABLE = "wallet_transactions"
+      REGION                    = var.aws_region  # Using REGION instead of AWS_REGION as it's a reserved key
     }
   }
 }

@@ -22,6 +22,9 @@ else:
 JOBS_TABLE = os.getenv('JOBS_TABLE', 'jobs')
 JOB_EXECUTIONS_TABLE = os.getenv('JOB_EXECUTIONS_TABLE', 'job_executions')
 JOB_LOGS_TABLE = os.getenv('JOB_LOGS_TABLE', 'job_logs')
+BOOKINGS_TABLE = os.getenv('BOOKINGS_TABLE', 'bookings')
+WALLET_TABLE = os.getenv('WALLET_TABLE', 'wallet')
+WALLET_TRANSACTIONS_TABLE = os.getenv('WALLET_TRANSACTIONS_TABLE', 'wallet_transactions')
 
 # Get AWS region from environment variable
 # Use REGION env var first (our custom var), then fall back to AWS_REGION (set by Lambda automatically)
@@ -129,17 +132,51 @@ class CronjobService:
             today = now.strftime("%Y-%m-%d")
             current_time = now.strftime("%H:%M")
             
-            # Scan for scheduled jobs with today's date and execution time <= current time
+            logger.info(f"Scanning for jobs with date={today} and current time={current_time}")
+            
+            # First, let's see all jobs in the table for debugging
+            all_jobs_response = jobs_table.scan()
+            all_jobs = [convert_dynamodb_item(item) for item in all_jobs_response.get('Items', [])]
+            logger.info(f"Total jobs in table: {len(all_jobs)}")
+            
+            if all_jobs:
+                # Log the structure of the first job to understand the schema
+                logger.info(f"Example job structure: {json.dumps(all_jobs[0], cls=DecimalEncoder)}")
+            
+            # PRODUCTION MODE: Uncomment this block to use in production
+            # This will find jobs scheduled for today with job_execution_time <= current time
+            '''
             response = jobs_table.scan(
                 FilterExpression=Attr('job_status').eq('Scheduled') & 
                                  Attr('job_date').eq(today) &
                                  Attr('job_execution_time').lte(current_time)
             )
+            '''
+            
+            # TESTING MODE: For testing, find the closest future job
+            # This will find all scheduled jobs for today
+            response = jobs_table.scan(
+                FilterExpression=Attr('job_status').eq('Scheduled') & 
+                                 Attr('job_date').eq(today)
+            )
             
             jobs_to_execute = []
+            scheduled_jobs = []
+            
             for item in response.get('Items', []):
                 job = convert_dynamodb_item(item)
-                jobs_to_execute.append(job)
+                scheduled_jobs.append(job)
+            
+            logger.info(f"Found {len(scheduled_jobs)} scheduled jobs for today")
+            
+            if scheduled_jobs:
+                # Sort jobs by job_execution_time to find the closest one
+                scheduled_jobs.sort(key=lambda x: x.get('job_execution_time', '23:59'))
+                
+                # For testing, just take the first job (closest execution time)
+                closest_job = scheduled_jobs[0]
+                logger.info(f"Selected job with execution time {closest_job.get('job_execution_time')} for testing")
+                jobs_to_execute.append(closest_job)
                 
             logger.info(f"Found {len(jobs_to_execute)} jobs to execute")
             return jobs_to_execute
@@ -220,36 +257,162 @@ class CronjobService:
             # Attempt to book the train
             CronjobService.log_job_event(job_id, 'BOOKING_ATTEMPT', 'Attempting to book tickets')
             
-            # Simulate booking process (in a real implementation, this would call the booking API)
-            time.sleep(2)  # Simulate API call delay
-            
+            # Calculate fare based on train class and distance (simplified for demo)
+            fare = 0
+            if travel_class == '1A':
+                fare = 1250.00
+            elif travel_class == '2A':
+                fare = 750.00
+            elif travel_class == '3A':
+                fare = 500.00
+            else:
+                fare = 350.00
+                
             # Generate a booking ID and PNR
             booking_id = f"BK-{int(time.time())}"
             now = datetime.utcnow()
             pnr = f"PNR{now.strftime('%Y%m%d')}{''.join([str(i) for i in range(6)])}"
             
-            # Update job status to Completed
-            CronjobService.update_job_status(
-                job_id, 
-                'Completed', 
-                {
-                    'booking_id': booking_id,
-                    'pnr': pnr,
-                    'completed_at': datetime.utcnow().isoformat()
-                }
-            )
+            # Create booking in the bookings table
+            bookings_table = dynamodb.Table(BOOKINGS_TABLE)
+            booking_item = {
+                'PK': f"BOOKING#{booking_id}",
+                'SK': "METADATA",
+                'booking_id': booking_id,
+                'user_id': job.get('user_id'),
+                'train_id': train_id,
+                'pnr': pnr,
+                'booking_status': 'CONFIRMED',
+                'journey_date': journey_date,
+                'origin_station_code': origin,
+                'destination_station_code': destination,
+                'class': travel_class,
+                'fare': str(fare),  # Convert to string for DynamoDB
+                'passengers': passengers,
+                'booking_email': booking_email,
+                'booking_phone': booking_phone,
+                'created_at': now.isoformat(),
+                'updated_at': now.isoformat()
+            }
             
-            CronjobService.log_job_event(
-                job_id, 
-                'BOOKING_SUCCESSFUL', 
-                f"Booking successful! PNR: {pnr}",
-                {
-                    'booking_id': booking_id,
-                    'pnr': pnr,
-                    'fare': 1250.00,
-                    'seats': [f"B{i+1}-{10+i}" for i in range(len(passengers))]
-                }
-            )
+            try:
+                # Save booking to DynamoDB
+                bookings_table.put_item(Item=booking_item)
+                CronjobService.log_job_event(job_id, 'BOOKING_CREATED', f"Created booking with ID: {booking_id}")
+                
+                # Handle wallet transaction if payment method is wallet
+                payment_method = job.get('payment_method')
+                if payment_method == 'wallet':
+                    user_id = job.get('user_id')
+                    
+                    # Get user's wallet
+                    wallet_table = dynamodb.Table(WALLET_TABLE)
+                    wallet_response = wallet_table.query(
+                        IndexName='user_id-index',
+                        KeyConditionExpression=Key('user_id').eq(user_id),
+                        Limit=1
+                    )
+                    
+                    if wallet_response.get('Items'):
+                        wallet_item = wallet_response['Items'][0]
+                        wallet_id = wallet_item['wallet_id']
+                        current_balance = Decimal(wallet_item['balance'])
+                        
+                        # Check if wallet has sufficient balance
+                        if current_balance >= Decimal(fare):
+                            # Create wallet transaction
+                            txn_id = f"TXN-{int(time.time())}"
+                            wallet_transactions_table = dynamodb.Table(WALLET_TRANSACTIONS_TABLE)
+                            
+                            transaction_item = {
+                                'PK': f"WALLET#{wallet_id}",
+                                'SK': f"TXN#{txn_id}",
+                                'txn_id': txn_id,
+                                'wallet_id': wallet_id,
+                                'user_id': user_id,
+                                'type': 'DEBIT',
+                                'amount': str(fare),
+                                'source': 'BOOKING',
+                                'status': 'COMPLETED',
+                                'reference_id': booking_id,
+                                'notes': f"Payment for booking {pnr}",
+                                'created_at': now.isoformat()
+                            }
+                            
+                            # Save transaction
+                            wallet_transactions_table.put_item(Item=transaction_item)
+                            
+                            # Update wallet balance
+                            new_balance = current_balance - Decimal(fare)
+                            wallet_table.update_item(
+                                Key={
+                                    'PK': f"WALLET#{wallet_id}",
+                                    'SK': "METADATA"
+                                },
+                                UpdateExpression="SET balance = :balance, updated_at = :updated_at",
+                                ExpressionAttributeValues={
+                                    ':balance': str(new_balance),
+                                    ':updated_at': now.isoformat()
+                                }
+                            )
+                            
+                            CronjobService.log_job_event(
+                                job_id, 
+                                'PAYMENT_COMPLETED', 
+                                f"Wallet payment completed. Transaction ID: {txn_id}",
+                                {
+                                    'transaction_id': txn_id,
+                                    'amount': str(fare),
+                                    'wallet_id': wallet_id,
+                                    'new_balance': str(new_balance)
+                                }
+                            )
+                        else:
+                            CronjobService.log_job_event(
+                                job_id, 
+                                'PAYMENT_FAILED', 
+                                "Insufficient wallet balance",
+                                {
+                                    'wallet_id': wallet_id,
+                                    'current_balance': str(current_balance),
+                                    'required_amount': str(fare)
+                                }
+                            )
+                    else:
+                        CronjobService.log_job_event(job_id, 'PAYMENT_FAILED', f"No wallet found for user {user_id}")
+                
+                # Update job status to Completed
+                CronjobService.update_job_status(
+                    job_id, 
+                    'Completed', 
+                    {
+                        'booking_id': booking_id,
+                        'pnr': pnr,
+                        'completed_at': datetime.utcnow().isoformat()
+                    }
+                )
+                
+                CronjobService.log_job_event(
+                    job_id, 
+                    'BOOKING_SUCCESSFUL', 
+                    f"Booking successful! PNR: {pnr}",
+                    {
+                        'booking_id': booking_id,
+                        'pnr': pnr,
+                        'fare': str(fare),
+                        'seats': [f"B{i+1}-{10+i}" for i in range(len(passengers))]
+                    }
+                )
+                
+            except Exception as booking_error:
+                error_message = str(booking_error)
+                CronjobService.log_job_event(
+                    job_id, 
+                    'BOOKING_FAILED', 
+                    f"Error creating booking: {error_message}"
+                )
+                raise Exception(f"Booking creation failed: {error_message}")
+
             
             return {
                 'success': True,
