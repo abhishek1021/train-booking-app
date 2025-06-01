@@ -507,26 +507,75 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     );
   }
 
+  // Get job execution status label based on next execution time
+  String _getJobExecutionStatus(Map<String, dynamic> job) {
+    // If job is not scheduled, return empty string
+    final String status = job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
+    if (status.toLowerCase() != 'scheduled') {
+      return '';
+    }
+    
+    // Try to parse next execution time
+    DateTime? nextExecution;
+    if (job['next_execution_time'] != null) {
+      try {
+        nextExecution = DateTime.parse(job['next_execution_time']);
+      } catch (e) {
+        // Handle parsing error
+        return '';
+      }
+    } else {
+      return '';
+    }
+    
+    // Get current time
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final nextExecutionDate = DateTime(nextExecution.year, nextExecution.month, nextExecution.day);
+    
+    // Determine execution status
+    if (nextExecutionDate.isAtSameMomentAs(today)) {
+      return 'Today';
+    } else if (nextExecutionDate.isAtSameMomentAs(tomorrow)) {
+      return 'Tomorrow';
+    } else {
+      // Calculate days difference
+      final difference = nextExecutionDate.difference(today).inDays;
+      if (difference > 0) {
+        return 'In $difference days';
+      } else {
+        return 'Pending';
+      }
+    }
+  }
+
   Widget _buildJobCard(Map<String, dynamic> job) {
     // Extract job data with null safety
-    final String jobId = job['id']?.toString() ?? 'Unknown ID';
-    final String status = job['status']?.toString() ?? 'Unknown';
-    final String originCode = job['origin_station_code']?.toString() ??
-        job['origin']?.toString() ??
-        'N/A';
-    final String destCode = job['destination_station_code']?.toString() ??
-        job['destination']?.toString() ??
-        'N/A';
-    final String originName = job['origin_station_name']?.toString() ??
-        job['originName']?.toString() ??
-        originCode;
-    final String destName = job['destination_station_name']?.toString() ??
-        job['destinationName']?.toString() ??
-        destCode;
-    final String journeyDate =
-        job['journey_date']?.toString() ?? job['date']?.toString() ?? 'N/A';
-    final String travelClass =
-        job['travel_class']?.toString() ?? job['class']?.toString() ?? 'N/A';
+    final String jobId = job['job_id']?.toString() ?? job['id']?.toString() ?? 'Unknown ID';
+    final String status = job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
+    
+    // Station codes and names
+    final String originCode = job['origin_station_code']?.toString() ?? job['origin']?.toString() ?? 'N/A';
+    final String destCode = job['destination_station_code']?.toString() ?? job['destination']?.toString() ?? 'N/A';
+    
+    // For station names, use the station code as a fallback if name is null or empty
+    String originName = job['origin_station_name']?.toString() ?? '';
+    if (originName.isEmpty || originName == 'null') {
+      originName = originCode;
+    }
+    
+    String destName = job['destination_station_name']?.toString() ?? '';
+    if (destName.isEmpty || destName == 'null') {
+      destName = destCode;
+    }
+    
+    final String journeyDate = job['journey_date']?.toString() ?? job['date']?.toString() ?? 'N/A';
+    final String travelClass = job['travel_class']?.toString() ?? job['class']?.toString() ?? 'N/A';
+    final String bookingTime = job['booking_time']?.toString() ?? job['time']?.toString() ?? 'N/A';
+    
+    // Get job execution status
+    final String executionStatus = _getJobExecutionStatus(job);
 
     // Get passenger count
     int passengerCount = 0;
@@ -570,50 +619,78 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                 topRight: Radius.circular(16),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
-                  child: Text(
-                    jobId,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                      fontFamily: 'ProductSans',
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        jobId,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                          fontFamily: 'ProductSans',
                         ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            status,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              fontFamily: 'ProductSans',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                // Show execution status if available
+                if (executionStatus.isNotEmpty) ...[  
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        size: 14,
+                        color: Color(0xFF7C3AED),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
+                        'Executes: $executionStatus',
+                        style: const TextStyle(
                           fontSize: 12,
+                          color: Color(0xFF7C3AED),
+                          fontWeight: FontWeight.bold,
                           fontFamily: 'ProductSans',
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -640,14 +717,17 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                               fontFamily: 'ProductSans',
                             ),
                           ),
-                          Text(
-                            originName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontFamily: 'ProductSans',
+                          // Only show origin name if it's different from code
+                          if (originName != originCode)
+                            Text(
+                              originName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontFamily: 'ProductSans',
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -668,14 +748,17 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                               fontFamily: 'ProductSans',
                             ),
                           ),
-                          Text(
-                            destName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontFamily: 'ProductSans',
+                          // Only show destination name if it's different from code
+                          if (destName != destCode)
+                            Text(
+                              destName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontFamily: 'ProductSans',
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -687,16 +770,9 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                 // Journey date and other details
                 Row(
                   children: [
-                    _buildDetailItem(
-                        Icons.calendar_today, _formatDate(journeyDate)),
-                    // Time might be missing in the API response
-                    _buildDetailItem(
-                        Icons.access_time,
-                        job['time']?.toString() ??
-                            job['booking_time']?.toString() ??
-                            'N/A'),
-                    _buildDetailItem(
-                        Icons.airline_seat_recline_normal, travelClass),
+                    _buildDetailItem(Icons.calendar_today, _formatDate(journeyDate)),
+                    _buildDetailItem(Icons.access_time, bookingTime),
+                    _buildDetailItem(Icons.airline_seat_recline_normal, travelClass),
                     _buildDetailItem(Icons.people, '$passengerCount Pax'),
                   ],
                 ),
