@@ -63,7 +63,7 @@ class JobService {
       
       // Add selected train info if provided
       if (selectedTrain != null) {
-        requestBody['selected_train'] = selectedTrain;
+        requestBody['train_details'] = selectedTrain;
       }
 
       final response = await http.post(

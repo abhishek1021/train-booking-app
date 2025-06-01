@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tatkal_mode_screen.dart';
+import 'job_logs_screen.dart';
 import '../services/job_service.dart';
 
 class TatkalJobsScreen extends StatefulWidget {
@@ -915,6 +916,31 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // View Logs button for all job statuses
+                TextButton.icon(
+                  onPressed: () {
+                    // Navigate to job logs screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => JobLogsScreen(
+                          jobId: jobId,
+                          jobStatus: status,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.history, size: 18),
+                  label: const Text('View Logs'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF7C3AED),
+                    textStyle: const TextStyle(
+                      fontFamily: 'ProductSans',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                
                 if (status == 'Scheduled' || status == 'In Progress') ...[
                   TextButton.icon(
                     onPressed: () {
@@ -964,7 +990,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                     ),
                   ),
                 ],
-                if (job['status'] == 'Failed') ...[
+                if (status == 'Failed') ...[
                   TextButton.icon(
                     onPressed: () {
                       // Retry job

@@ -1,0 +1,82 @@
+name: Deploy Cron-App Lambda
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'cron-app/**'
+      - 'terraform/cron-app.tf'
+      - '.github/workflows/cron-app-deploy.yml'
+
+jobs:
+  deploy_cron_lambda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies and package cron-app Lambda
+        run: |
+          cd cron-app
+          pip install -r requirements.txt -t .
+          # Remove unnecessary files to reduce package size
+          find . -type d -name "__pycache__" -exec rm -rf {} +
+          find . -type d -name "*.dist-info" -exec rm -rf {} +
+          find . -type d -name "*.egg-info" -exec rm -rf {} +
+          # Create zip package
+          cd ..
+          zip -r cron-app.zip cron-app -x '*.pyc' '*.pyo' '*__pycache__*' 'cron-app/.git/*' 'cron-app/venv/*'
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan \
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_lambda_function.cron_app \
+            -target=aws_cloudwatch_event_rule.cron_schedule \
+            -target=aws_cloudwatch_event_target.cron_lambda_target \
+            -target=aws_lambda_permission.allow_eventbridge
+        env:
+          TF_VAR_aws_region: ap-south-1
+          TF_VAR_custom_domain: services.tatkalpro.in
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve \
+            -var="acm_certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
+            -target=aws_lambda_function.cron_app \
+            -target=aws_cloudwatch_event_rule.cron_schedule \
+            -target=aws_cloudwatch_event_target.cron_lambda_target \
+            -target=aws_lambda_permission.allow_eventbridge
+        env:
+          TF_VAR_aws_region: ap-south-1
+          TF_VAR_custom_domain: services.tatkalpro.in
+
+      - name: Verify Deployment
+        run: |
+          echo "Cron-App Lambda deployment completed"
+          aws lambda get-function --function-name train-booking-cronjob --query 'Configuration.[FunctionName,LastModified]'
+          aws events describe-rule --name train-booking-cronjob-schedule --query 'Name'
