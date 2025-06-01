@@ -101,7 +101,7 @@ resource "aws_lambda_function" "cron_app" {
       JOBS_TABLE           = "jobs"
       JOB_EXECUTIONS_TABLE = "job_executions"
       JOB_LOGS_TABLE       = "job_logs"
-      AWS_REGION           = var.aws_region
+      REGION               = var.aws_region  # Using REGION instead of AWS_REGION as it's a reserved key
     }
   }
 }

@@ -24,7 +24,8 @@ JOB_EXECUTIONS_TABLE = os.getenv('JOB_EXECUTIONS_TABLE', 'job_executions')
 JOB_LOGS_TABLE = os.getenv('JOB_LOGS_TABLE', 'job_logs')
 
 # Get AWS region from environment variable
-AWS_REGION = os.getenv('AWS_REGION', 'ap-south-1')
+# Use REGION env var first (our custom var), then fall back to AWS_REGION (set by Lambda automatically)
+AWS_REGION = os.getenv('REGION', os.getenv('AWS_REGION', 'ap-south-1'))
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
