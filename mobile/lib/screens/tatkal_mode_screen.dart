@@ -111,7 +111,6 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   void initState() {
     super.initState();
     _initializeServices();
-    _loadSavedPassengers();
     final now = DateTime.now();
     _selectedJobDate = now;
     _jobDateController.text = _formatDate(now);
@@ -125,6 +124,8 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     _userId = _prefs?.getString('user_id') ?? '';
     // _jobService is already initialized as a final field
     await _initPassengerService();
+    // Load user profile data to prepopulate contact details
+    _loadUserProfileData();
   }
   
   // Initialize shared preferences
@@ -144,8 +145,38 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
           _isLoadingSavedPassengers = true;
         });
       }
+      // Load saved passengers after initializing the service
+      await _loadSavedPassengers();
     } else {
       print('Error: SharedPreferences not initialized');
+    }
+  }
+
+  // Load user profile data from SharedPreferences
+  void _loadUserProfileData() {
+    try {
+      // Get user profile data from SharedPreferences
+      final userProfileJson = _prefs?.getString('user_profile');
+      if (userProfileJson != null && userProfileJson.isNotEmpty) {
+        // Parse the JSON data
+        final userProfile = json.decode(userProfileJson);
+        
+        // Prepopulate email field
+        if (userProfile['Email'] != null) {
+          _emailController.text = userProfile['Email'];
+        }
+        
+        // Prepopulate phone field
+        if (userProfile['Phone'] != null) {
+          _phoneController.text = userProfile['Phone'];
+        }
+        
+        print('User profile data loaded successfully');
+      } else {
+        print('User profile data not found in SharedPreferences');
+      }
+    } catch (e) {
+      print('Error loading user profile data: $e');
     }
   }
 
@@ -2221,6 +2252,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           color: Color(0xFF222222),
                           fontFamily: 'ProductSans',
                         ),
+
                         decoration: InputDecoration(
                           labelText: 'Email (for ticket & alerts)',
                           labelStyle: TextStyle(
@@ -2245,6 +2277,11 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
+                          ),
+                          errorStyle: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
                           ),
                         ),
                         keyboardType: TextInputType.emailAddress,
@@ -3501,9 +3538,15 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF7C3AED).withOpacity(0.05),
+        color: Colors.white, // White background for consistency
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3542,6 +3585,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: Colors.black, // Black font color for consistency
               fontFamily: 'ProductSans',
             ),
           ),
@@ -3565,6 +3609,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black, // Black font color for consistency
                       fontFamily: 'ProductSans',
                     ),
                   ),
@@ -3610,6 +3655,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black, // Black font color for consistency
                       fontFamily: 'ProductSans',
                     ),
                   ),
