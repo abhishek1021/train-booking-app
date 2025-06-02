@@ -67,8 +67,10 @@ class CronjobService:
                 'timestamp': now,
             }
             
-            if details:
+            if details and isinstance(details, dict):
                 log_item['details'] = details
+            elif details is not None:
+                logger.warning(f"Ignoring invalid details format in log_job_event: {type(details)}")
                 
             job_logs_table.put_item(Item=log_item)
             logger.info(f"Logged event for job {job_id}: {event_type} - {message}")
@@ -226,7 +228,10 @@ class CronjobService:
             # Update job status to In Progress
             CronjobService.update_job_status(job_id, 'In Progress')
             CronjobService.log_job_event(job_id, 'EXECUTION_STARTED', 'Job execution started')
-        
+            # Debug logging to identify NoneType errors
+            logger.info(f"DEBUG - Job object type: {type(job)}")
+            logger.info(f"DEBUG - Job keys: {list(job.keys()) if isinstance(job, dict) else 'Not a dict'}")
+
             # Extract job details with detailed logging
             logger.info(f"Extracting job details for job {job_id}")
             
@@ -289,14 +294,62 @@ class CronjobService:
             
             # Check if we need to search for trains or use the specified train
             train_id = None
-            if train_details and train_details.get('train_number'):
+            train_name = None
+            departure_time = None
+            arrival_time = None
+            duration = None
+            
+            if train_details and isinstance(train_details, dict):
+                # Extract train details with safe defaults
                 train_id = train_details.get('train_number')
-                CronjobService.log_job_event(
-                    job_id, 
-                    'TRAIN_SELECTED', 
-                    f"Using specified train: {train_id} - {train_details.get('train_name')}",
-                    train_details
-                )
+                train_name = train_details.get('train_name')
+                
+                # If we have a valid train_id from the job
+                if train_id:
+                    # Ensure train_details has all required fields with defaults if missing
+                    if train_details.get('departure_time') is None:
+                        train_details['departure_time'] = '08:00'
+                        logger.info(f"Using default departure_time: {train_details['departure_time']}")
+                    
+                    if train_details.get('arrival_time') is None:
+                        train_details['arrival_time'] = '14:30'
+                        logger.info(f"Using default arrival_time: {train_details['arrival_time']}")
+                    
+                    if train_details.get('duration') is None:
+                        train_details['duration'] = '6h 30m'
+                        logger.info(f"Using default duration: {train_details['duration']}")
+                    
+                    # Store these values for later use
+                    departure_time = train_details['departure_time']
+                    arrival_time = train_details['arrival_time']
+                    duration = train_details['duration']
+                    
+                    # If train_name is missing, create a default one
+                    if not train_name:
+                        train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                        train_details['train_name'] = train_name
+                        logger.info(f"Using default train_name: {train_name}")
+                    
+                    if train_details and isinstance(train_details, dict):
+                        CronjobService.log_job_event(
+                            job_id, 
+                            'TRAIN_SELECTED', 
+                            f"Using specified train: {train_id} - {train_name}",
+                            train_details
+                        )
+                    else:
+                        logger.warning("Invalid train_details provided; skipping detailed TRAIN_SELECTED log.")
+                        CronjobService.log_job_event(
+                            job_id, 
+                            'TRAIN_SELECTED', 
+                            f"Using specified train: {train_id} - {train_name}"
+                        )
+                else:
+                    logger.warning("Train details provided but missing train_number")
+            elif train_details is not None:
+                logger.warning(f"Invalid train_details format: {type(train_details)}")
+                
+            # If we don't have valid train details, train_id will be None and we'll search for trains
             else:
                 # Search for available trains using the same logic as in the backend
                 CronjobService.log_job_event(job_id, 'TRAIN_SEARCH', 'Searching for available trains')
@@ -391,13 +444,44 @@ class CronjobService:
                             }
                         )
                     else:
-                        # Use the first matching train
-                        selected_train = results[0]
-                        train_id = selected_train.get('train_number') or selected_train.get('train_id')
-                        train_name = selected_train.get('train_name')
-                        departure_time = selected_train.get('departure_time', '08:00')
-                        arrival_time = selected_train.get('arrival_time', '14:30')
-                        duration = selected_train.get('duration', '6h 30m')
+                        # Use the first matching train with proper error handling
+                        try:
+                            if not results or len(results) == 0:
+                                logger.warning("Results list is empty but was expected to have trains")
+                                # Fall back to simulated train
+                                now = datetime.utcnow()
+                                train_id = f"TRN{now.strftime('%H%M%S')}"
+                                train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                                departure_time = '08:00'
+                                arrival_time = '14:30'
+                                duration = '6h 30m'
+                            else:
+                                selected_train = results[0]
+                                # Check if selected_train is a dictionary
+                                if not isinstance(selected_train, dict):
+                                    logger.error(f"Selected train is not a dictionary: {type(selected_train)}")
+                                    raise ValueError(f"Selected train is not a dictionary: {type(selected_train)}")
+                                    
+                                # Safely extract train details with fallbacks
+                                train_id = (selected_train.get('train_number') or 
+                                           selected_train.get('train_id') or 
+                                           f"TRN{now.strftime('%H%M%S')}")
+                                           
+                                train_name = selected_train.get('train_name') or f"{origin[:3]}-{destination[:3]} EXPRESS"
+                                departure_time = selected_train.get('departure_time', '08:00')
+                                arrival_time = selected_train.get('arrival_time', '14:30')
+                                duration = selected_train.get('duration', '6h 30m')
+                                
+                                logger.info(f"Successfully extracted train details from selected train: {train_id}")
+                        except Exception as train_extract_error:
+                            logger.error(f"Error extracting train details: {str(train_extract_error)}")
+                            # Fall back to simulated train
+                            now = datetime.utcnow()
+                            train_id = f"TRN{now.strftime('%H%M%S')}"
+                            train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                            departure_time = '08:00'
+                            arrival_time = '14:30'
+                            duration = '6h 30m'
                         
                         CronjobService.log_job_event(
                             job_id, 
@@ -433,6 +517,8 @@ class CronjobService:
                         }
                     )
                 
+              
+                
                 # Attempt to book the train
                 CronjobService.log_job_event(job_id, 'BOOKING_ATTEMPT', 'Attempting to book tickets')
                 
@@ -447,12 +533,35 @@ class CronjobService:
                 else:
                     fare = 350.00
                 
+                # Apply passenger count to fare - with safer handling
+                try:
+                    # Ensure passengers is a list before trying to get its length
+                    if passengers is None:
+                        passenger_count = 1
+                        logger.info("No passengers found, using default count of 1")
+                    elif isinstance(passengers, list):
+                        passenger_count = len(passengers)
+                        logger.info(f"Found {passenger_count} passengers in list")
+                    else:
+                        # If passengers exists but is not a list, log its type and use default
+                        logger.warning(f"Passengers is not a list but {type(passengers)}, using default count of 1")
+                        passenger_count = 1
+                        
+                    total_fare = fare * passenger_count
+                    logger.info(f"Base fare: {fare}, Passenger count: {passenger_count}, Total fare: {total_fare}")
+                except Exception as fare_error:
+                    logger.error(f"Error calculating fare: {str(fare_error)}")
+                    # Default values if calculation fails
+                    passenger_count = 1
+                    total_fare = fare
+                    logger.info(f"Using default values: Base fare: {fare}, Passenger count: {passenger_count}, Total fare: {total_fare}")
+                
                 # Log fare calculation
                 CronjobService.log_job_event(
                     job_id,
                     'FARE_CALCULATED',
-                    f"Calculated fare: {fare} for class {travel_class}",
-                    {'fare': str(fare), 'travel_class': travel_class}
+                    f"Calculated fare: {total_fare} for {passenger_count} passengers in class {travel_class}",
+                    {'fare': str(total_fare), 'base_fare': str(fare), 'passenger_count': passenger_count, 'travel_class': travel_class}
                 )
                     
                 # Generate a booking ID and PNR
@@ -468,30 +577,90 @@ class CronjobService:
                     logger.error(f"Error accessing bookings table: {str(table_error)}")
                     raise Exception(f"Error accessing bookings table: {str(table_error)}")
                 
-                # Ensure all required fields are present
-                if not job.get('user_id'):
-                    logger.error("User ID is missing for booking creation")
-                    raise Exception("User ID is required for booking creation")
+                # Extensive validation and debug logging for required fields
+                logger.info(f"DEBUG - Checking required fields in job object")
+                required_fields = ['user_id', 'job_id']
+                missing_fields = []
                 
-                booking_item = {
-                    'PK': f"BOOKING#{booking_id}",
-                    'SK': "METADATA",
-                    'booking_id': booking_id,
-                    'user_id': job.get('user_id'),
-                    'train_id': train_id,
-                    'pnr': pnr,
-                    'booking_status': 'CONFIRMED',
-                    'journey_date': journey_date,
-                    'origin_station_code': origin,
-                    'destination_station_code': destination,
-                    'class': travel_class,
-                    'fare': str(fare),  # Convert to string for DynamoDB
-                    'passengers': passengers if passengers else [],
-                    'booking_email': booking_email if booking_email else "",
-                    'booking_phone': booking_phone if booking_phone else "",
-                    'created_at': now.isoformat(),
-                    'updated_at': now.isoformat()
-                }
+                for field in required_fields:
+                    if not job.get(field):
+                        missing_fields.append(field)
+                        logger.error(f"Required field '{field}' is missing or None")
+                    else:
+                        logger.info(f"Field '{field}' is present with value: {job.get(field)}")
+                
+                if missing_fields:
+                    error_msg = f"Missing required fields for booking creation: {', '.join(missing_fields)}"
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
+                
+                # Get train details with defaults for any missing values
+                # These variables should already be initialized at the top of the method
+                # But we'll double-check here to be safe
+                try:
+                    if train_id is None:
+                        train_id = f"TRN{now.strftime('%H%M%S')}"
+                        logger.info(f"Using generated train_id: {train_id}")
+                        
+                    if train_name is None:
+                        train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                        logger.info(f"Using generated train_name: {train_name}")
+                        
+                    if departure_time is None:
+                        departure_time = '08:00'
+                        logger.info(f"Using default departure_time: {departure_time}")
+                        
+                    if arrival_time is None:
+                        arrival_time = '14:30'
+                        logger.info(f"Using default arrival_time: {arrival_time}")
+                        
+                    if duration is None:
+                        duration = '6h 30m'
+                        logger.info(f"Using default duration: {duration}")
+                    
+                    logger.info(f"Final train details for booking: ID={train_id}, Name={train_name}, Departure={departure_time}, Arrival={arrival_time}, Duration={duration}")
+                    
+                    # Ensure passengers is a valid list
+                    if not isinstance(passengers, list):
+                        logger.warning(f"Passengers is not a list: {type(passengers)}, setting to empty list")
+                        passengers = []
+                    
+                    # Ensure all string fields are actually strings
+                    booking_email = str(booking_email) if booking_email else ""
+                    booking_phone = str(booking_phone) if booking_phone else ""
+                    
+                    # Create booking item with safe values
+                    booking_item = {
+                        'PK': f"BOOKING#{booking_id}",
+                        'SK': "METADATA",
+                        'booking_id': booking_id,
+                        'user_id': job.get('user_id'),
+                        'train_id': train_id,
+                        'train_name': train_name,
+                        'pnr': pnr,
+                        'booking_status': 'CONFIRMED',
+                        'journey_date': journey_date,
+                        'origin_station_code': origin,
+                        'destination_station_code': destination,
+                        'class': travel_class,
+                        'departure_time': departure_time,
+                        'arrival_time': arrival_time,
+                        'duration': duration,
+                        'fare': str(total_fare),  # Convert to string for DynamoDB
+                        'base_fare': str(fare),  # Store base fare for reference
+                        'passengers': passengers,
+                        'booking_email': booking_email,
+                        'booking_phone': booking_phone,
+                        'created_at': now.isoformat(),
+                        'updated_at': now.isoformat()
+                    }
+                    
+                    # Log the booking item for debugging
+                    logger.info(f"Created booking item with keys: {list(booking_item.keys())}")
+                    
+                except Exception as booking_prep_error:
+                    logger.error(f"Error preparing booking data: {str(booking_prep_error)}")
+                    raise Exception(f"Error preparing booking data: {str(booking_prep_error)}")
                 
                 logger.info(f"Booking item prepared: {json.dumps(booking_item, cls=DecimalEncoder)}")
                 

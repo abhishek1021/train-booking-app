@@ -29,7 +29,7 @@ def lambda_handler(event, context):
     
     try:
         # Run the cronjob service
-        execution_results = run_cronjob_service()
+        execution_results = run_cronjob_service(event, context)
         
         return {
             'statusCode': 200,
