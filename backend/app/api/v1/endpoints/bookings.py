@@ -260,6 +260,59 @@ async def get_booking(booking_id: str):
             detail=f"Error retrieving booking: {str(e)}"
         )
 
+@router.get("/pnr/{pnr}", response_model=Booking)
+async def get_booking_by_pnr(pnr: str):
+    """Get booking details by PNR number"""
+    try:
+        # Query the GSI for pnr
+        response = bookings_table.query(
+            IndexName='pnr-index',
+            KeyConditionExpression=Key('pnr').eq(pnr),
+            Limit=1  # We only need one result as PNR should be unique
+        )
+        
+        items = response.get('Items', [])
+        if not items:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Booking with PNR {pnr} not found"
+            )
+            
+        item = items[0]
+        
+        # Convert DynamoDB item to Booking model
+        booking_data = {
+            'booking_id': item['booking_id'],
+            'user_id': item['user_id'],
+            'train_id': item['train_id'],
+            'train_name': item.get('train_name', ''),
+            'train_number': item.get('train_number', ''),
+            'pnr': item['pnr'],
+            'booking_status': item['booking_status'],
+            'journey_date': item['journey_date'],
+            'origin_station_code': item['origin_station_code'],
+            'destination_station_code': item['destination_station_code'],
+            'travel_class': item['class'],
+            'fare': item['fare'],
+            'passengers': item['passengers'],
+            'payment_id': item.get('payment_id'),
+            'booking_email': item.get('booking_email'),
+            'booking_phone': item.get('booking_phone'),
+            'created_at': datetime.fromisoformat(item['created_at']),
+            'updated_at': datetime.fromisoformat(item['updated_at']),
+            'cancellation_details': item.get('cancellation_details'),
+            'refund_status': item.get('refund_status')
+        }
+        
+        return booking_data
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving booking by PNR: {str(e)}"
+        )
+
 @router.get("/user/{user_id}", response_model=List[Booking])
 async def get_user_bookings(user_id: str, limit: int = 10):
     """Get all bookings for a user"""

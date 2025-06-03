@@ -286,6 +286,37 @@ class BookingService {
     }
   }
 
+  // Get booking by PNR
+  Future<Map<String, dynamic>> getBookingByPNR(String pnr) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/pnr/$pnr'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (kDebugMode) {
+        print('PNR Search API Response Status: ${response.statusCode}');
+        print('PNR Search API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> booking = jsonDecode(response.body);
+        return booking;
+      } else if (response.statusCode == 404) {
+        throw Exception('No booking found with PNR: $pnr');
+      } else {
+        throw Exception('Failed to search PNR: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error searching PNR: $e');
+      }
+      throw Exception('Failed to search PNR: $e');
+    }
+  }
+
   // Get booking by ID
   Future<Map<String, dynamic>> getBookingById(String bookingId) async {
     try {

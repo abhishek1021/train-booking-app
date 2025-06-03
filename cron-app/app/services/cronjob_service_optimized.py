@@ -821,17 +821,62 @@ class CronjobService:
                 else:
                     base_fare = Decimal('500')  # Default fare
                 
-                # Multiply by number of passengers
-                passenger_count = len(passengers)
-                if passenger_count == 0:
-                    passenger_count = 1  # Default to 1 passenger if none specified
-                    
-                total_fare = base_fare * passenger_count
+                # Count passengers by type
+                adult_count = 0
+                senior_count = 0
+                adult_fare = Decimal('0')
+                senior_fare = Decimal('0')
                 
-                logger.info(f"Calculated fare: {total_fare} (base: {base_fare} × {passenger_count} passengers)")
+                # Process each passenger
+                for passenger in passengers:
+                    if isinstance(passenger, dict) and passenger.get('is_senior', False):
+                        senior_count += 1
+                        # Apply 25% discount for seniors
+                        senior_fare += base_fare * Decimal('0.75')
+                    else:
+                        adult_count += 1
+                        adult_fare += base_fare
+                
+                # Calculate subtotal before tax
+                subtotal = adult_fare + senior_fare
+                
+                # Calculate tax (5% of subtotal)
+                tax = subtotal * Decimal('0.05')
+                
+                # Calculate total amount
+                total_fare = subtotal + tax
+                
+                # Create price details object with string values for numeric fields to avoid float type errors
+                price_details = {
+                    'base_fare_per_adult': str(base_fare),
+                    'base_fare_per_senior': str(base_fare * Decimal('0.75')),
+                    'adult_count': adult_count,
+                    'senior_count': senior_count,
+                    'adult_fare_total': str(adult_fare),
+                    'senior_fare_total': str(senior_fare),
+                    'subtotal': str(subtotal),
+                    'tax': str(tax),
+                    'total': str(total_fare),
+                    'discount_applied': 'Senior citizen discount (25%)' if senior_count > 0 else None,
+                }
+                
+                logger.info(f"Calculated fare: {total_fare} (base: {base_fare}, adults: {adult_count}, seniors: {senior_count})")
             except Exception as fare_error:
                 logger.error(f"Error calculating fare: {str(fare_error)}")
                 total_fare = Decimal('500')  # Default fallback fare as Decimal
+                tax = Decimal('25')  # Default tax
+                price_details = {
+                    'base_fare_per_adult': '500',
+                    'base_fare_per_senior': '375',
+                    'adult_count': 1,
+                    'senior_count': 0,
+                    'adult_fare_total': '500',
+                    'senior_fare_total': '0',
+                    'subtotal': '500',
+                    'tax': '25',
+                    'total': '525',
+                    'discount_applied': None,
+                }
 
         except Exception as booking_error:
             logger.error(f"Error creating booking: {str(booking_error)}")
@@ -870,10 +915,13 @@ class CronjobService:
                 'journey_date': journey_date,
                 'origin_station_code': origin,
                 'destination_station_code': destination,
-                'class': travel_class,
+                'class': travel_class,  # Changed from 'class' to match frontend
                 'passengers': sanitized_passengers,  # Use sanitized passengers
                 'booking_status': 'confirmed',  # Match frontend lowercase value
-                'fare': total_fare,  # Already a Decimal type from earlier calculation
+                'fare': str(total_fare),  # Convert to string to avoid float type errors
+                'tax': str(tax),  # Add tax field as string
+                'total_amount': str(total_fare),  # Add total_amount field as string
+                'price_details': price_details,  # Add price_details object from calculation
                 'payment_status': 'paid',  # Match frontend lowercase value
                 'payment_method': safe_get(job, 'payment_method', 'wallet'),
                 'booking_date': get_current_ist_time().strftime('%Y-%m-%d'),

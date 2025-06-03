@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../screens/pnr_search_screen.dart';
+import '../../../screens/history_screen.dart';
+import '../../../screens/offers_screen.dart';
+import '../../../screens/support_screen.dart';
+import '../../../screens/info_screen.dart';
+import '../../../screens/language_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
@@ -12,7 +19,9 @@ import 'search_tab/search_card.dart';
 import 'search_tab/quick_actions.dart';
 
 class SearchTab extends StatefulWidget {
-  const SearchTab({Key? key}) : super(key: key);
+  final String userId;
+  
+  const SearchTab({Key? key, this.userId = 'USER123'}) : super(key: key);
 
   @override
   State<SearchTab> createState() => _SearchTabState();
@@ -469,7 +478,15 @@ class _SearchTabState extends State<SearchTab> {
                               icon: Icons.history,
                               label: 'History',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HistoryScreen(userId: widget.userId),
+                                  ),
+                                );
+                              }),
                           QuickAction(
                               icon: Icons.favorite,
                               label: 'Favorites',
@@ -479,47 +496,67 @@ class _SearchTabState extends State<SearchTab> {
                               icon: Icons.search,
                               label: 'Search PNR',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
-                          QuickAction(
-                              icon: Icons.directions_bus,
-                              label: 'Book Bus',
-                              iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
-                          QuickAction(
-                              icon: Icons.hotel,
-                              label: 'Book Hotel',
-                              iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
-                          QuickAction(
-                              icon: Icons.airplanemode_active,
-                              label: 'Book Flight',
-                              iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
-                          QuickAction(
-                              icon: Icons.directions_car,
-                              label: 'Cab',
-                              iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const PnrSearchScreen(),
+                                  ),
+                                );
+                              }),
                           QuickAction(
                               icon: Icons.local_offer,
                               label: 'Offers',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const OffersScreen(),
+                                  ),
+                                );
+                              }),
                           QuickAction(
                               icon: Icons.support_agent,
                               label: 'Support',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SupportScreen(),
+                                  ),
+                                );
+                              }),
                           QuickAction(
                               icon: Icons.language,
                               label: 'Language',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LanguageScreen(),
+                                  ),
+                                );
+                              }),
                           QuickAction(
                               icon: Icons.info_outline,
                               label: 'Info',
                               iconColor: Color(0xFF7C3AED),
-                              labelColor: Color(0xFF7C3AED)),
+                              labelColor: Color(0xFF7C3AED),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const InfoScreen(),
+                                  ),
+                                );
+                              }),
                         ],
                       ),
                     ),

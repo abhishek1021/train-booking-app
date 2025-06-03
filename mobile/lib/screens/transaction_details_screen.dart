@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'dart:convert';
+import '../models/passenger.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   // ... fields as before ...
@@ -88,8 +89,8 @@ class TransactionDetailsScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Navigate to home screen (clear all screens in stack)
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            // Simply pop back to previous screen
+            Navigator.of(context).pop();
           },
         ),
         title: const Text(
@@ -555,35 +556,4 @@ class TransactionDetailsScreen extends StatelessWidget {
   }
 }
 
-class Passenger {
-  final String fullName;
-  final String idType;
-  final String idNumber;
-  final String passengerType;
-  final String seat;
-  final int age;
-  final String gender;
-  final bool isSenior;
-
-  Passenger({
-    required this.fullName,
-    required this.idType,
-    required this.idNumber,
-    required this.passengerType,
-    required this.seat,
-    this.age = 30, // Default age
-    this.gender = 'male', // Default gender
-    this.isSenior = false, // Default senior status
-  });
-
-  Map<String, dynamic> toJson() => {
-        'fullName': fullName,
-        'idType': idType,
-        'idNumber': idNumber,
-        'passengerType': passengerType,
-        'seat': seat,
-        'age': age,
-        'gender': gender,
-        'isSenior': isSenior,
-      };
-}
+// Passenger class is now imported from models/passenger.dart
