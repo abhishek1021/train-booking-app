@@ -353,7 +353,7 @@ class BookingService {
     // Calculate subtotal before tax
     double subtotal = adultFare + seniorFare;
     
-    // Create price details object
+    // Create price details object with string values for numeric fields to avoid float type errors
     return {
       'base_fare_per_adult': baseFare,
       'base_fare_per_senior': baseFare * 0.75,
@@ -373,6 +373,7 @@ class BookingService {
     required String userId,
     required String trainId,
     required String trainName,
+    required String trainNumber,
     required String journeyDate,
     required String originStationCode,
     required String destinationStationCode,
@@ -386,26 +387,17 @@ class BookingService {
     required String phone,
   }) async {
     try {
-      // Extract proper train number from train name or ID
-      String trainNumber = '';
+      // Use the provided train information directly
+      // Ensure all train information is properly formatted
+      String formattedTrainId = trainId.trim().toUpperCase();
+      String formattedTrainName = trainName.trim();
+      String formattedTrainNumber = trainNumber.trim().toUpperCase();
       
-      // Try to extract a train number from trainName
-      final RegExp trainNumberRegex = RegExp(r'\(([0-9]+)\)$');
-      final match = trainNumberRegex.firstMatch(trainName);
-      if (match != null && match.groupCount >= 1) {
-        trainNumber = match.group(1) ?? '';
-      } else {
-        // If no number in parentheses, use a cleaned version of the train ID
-        if (trainId.contains('_')) {
-          final parts = trainId.split('_');
-          if (parts.length > 1) {
-            trainNumber = parts[1].toUpperCase();
-          } else {
-            trainNumber = trainId.toUpperCase();
-          }
-        } else {
-          trainNumber = trainId.toUpperCase();
-        }
+      if (kDebugMode) {
+        print('Processing booking with train information:');
+        print('Train ID: $formattedTrainId');
+        print('Train Name: $formattedTrainName');
+        print('Train Number: $formattedTrainNumber');
       }
       
       // Calculate price details including breakdown by passenger type
@@ -414,9 +406,9 @@ class BookingService {
       // Step 1: Create the booking
       final bookingResponse = await createBooking(
         userId: userId,
-        trainId: trainNumber, // Use train number as the train_id
-        trainName: trainName,
-        trainNumber: trainNumber,
+        trainId: formattedTrainId, // Use formatted train ID
+        trainName: formattedTrainName,
+        trainNumber: formattedTrainNumber,
         journeyDate: journeyDate,
         originStationCode: originStationCode,
         destinationStationCode: destinationStationCode,

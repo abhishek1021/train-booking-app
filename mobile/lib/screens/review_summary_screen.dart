@@ -763,6 +763,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     bookingId:
                                         'PNR${DateTime.now().millisecondsSinceEpoch}',
                                     trainName: widget.train['train_name'] ?? '',
+                                    trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
                                     trainClass: widget.selectedClass,
                                     departureStation: widget.originName,
                                     arrivalStation: widget.destinationName,
@@ -894,6 +895,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                           'PNR${DateTime.now().millisecondsSinceEpoch}',
                                       trainName:
                                           widget.train['train_name'] ?? '',
+                                      trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
                                       trainClass: widget.selectedClass,
                                       departureStation: widget.originName,
                                       arrivalStation: widget.destinationName,
@@ -1084,6 +1086,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           bookingId:
                               'PNR${DateTime.now().millisecondsSinceEpoch}',
                           trainName: widget.train['train_name'] ?? '',
+                          trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
                           trainClass: widget.selectedClass,
                           departureStation: widget.originName,
                           arrivalStation: widget.destinationName,

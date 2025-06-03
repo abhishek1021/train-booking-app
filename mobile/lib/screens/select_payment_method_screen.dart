@@ -9,6 +9,7 @@ class SelectPaymentMethodScreen extends StatefulWidget {
   final double walletBalance;
   final String bookingId;
   final String trainName;
+  final String trainNumber; // Add train number parameter
   final String trainClass;
   final String departureStation;
   final String arrivalStation;
@@ -32,6 +33,7 @@ class SelectPaymentMethodScreen extends StatefulWidget {
     required this.walletBalance,
     required this.bookingId,
     required this.trainName,
+    required this.trainNumber, // Add train number parameter
     required this.trainClass,
     required this.departureStation,
     required this.arrivalStation,
@@ -265,22 +267,41 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                           }
 
                           // Process the booking with payment
-                          // Extract train number from train name if available
+                          // Extract and format train information properly
+                          // Create a standardized train number from the train name
+                          String trainName = widget.trainName.trim();
                           String trainNumber = '';
-                          final RegExp trainNumberRegex = RegExp(r'\(([0-9]+)\)');
-                          final match = trainNumberRegex.firstMatch(widget.trainName);
-                          if (match != null && match.groupCount >= 1) {
-                            trainNumber = match.group(1) ?? '';
-                          } else {
-                            // If no number in parentheses, use a sanitized version of the train name
-                            trainNumber = widget.trainName.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+                          
+                          // Use the trainNumber passed from the review summary screen
+                          // If it's empty, extract it from the train name as a fallback
+                          trainNumber = widget.trainNumber;
+                          
+                          if (trainNumber.isEmpty) {
+                            // Extract train number from train name if it's in the format "Train Name (12345)"
+                            final match = RegExp(r'\(([0-9]+)\)').firstMatch(trainName);
+                            if (match != null) {
+                              trainNumber = match.group(1) ?? '';
+                            } else {
+                              // If no parentheses, check if the train name has a format like "MAO-SWV PASS"
+                              // and convert it to a standard format without spaces or special characters
+                              trainNumber = trainName.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+                            }
                           }
+                          
+                          // Ensure train number is uppercase for consistency
+                          trainNumber = trainNumber.toUpperCase();
+                          
+                          // For debugging
+                          print('Train ID: $trainNumber');
+                          print('Train Name: $trainName');
+                          print('Train Number: $trainNumber');
                           
                           final result =
                               await _bookingService.processBookingWithPayment(
                             userId: _userId,
-                            trainId: trainNumber, // Use proper train number
-                            trainName: widget.trainName,
+                            trainId: trainNumber,
+                            trainName: trainName,
+                            trainNumber: trainNumber,
                             journeyDate: widget.departureDate,
                             originStationCode: widget.departureStation,
                             destinationStationCode: widget.arrivalStation,

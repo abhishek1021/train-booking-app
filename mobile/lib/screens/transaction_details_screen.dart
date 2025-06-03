@@ -87,7 +87,10 @@ class TransactionDetailsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Navigate to home screen (clear all screens in stack)
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
         ),
         title: const Text(
           'Transaction Details',
