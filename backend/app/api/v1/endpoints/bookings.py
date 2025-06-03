@@ -119,23 +119,68 @@ async def create_booking(booking: BookingCreate):
         pnr = generate_pnr()
         now = datetime.utcnow().isoformat()
         
+        # Validate and clean train information
+        train_id = booking.train_id
+        train_name = booking.train_name or "Unknown Train"
+        train_number = booking.train_number
+        
+        # If train_number is not provided, try to extract it from train_name or use train_id
+        if not train_number:
+            # Try to extract train number from train name (format: "Train Name (12345)")
+            import re
+            train_number_match = re.search(r'\(([0-9]+)\)', train_name)
+            if train_number_match:
+                train_number = train_number_match.group(1)
+            else:
+                # Use train_id as fallback
+                train_number = train_id
+        
+        # Process price details
+        price_details = booking.price_details or {}
+        if not price_details and booking.fare:
+            # Create basic price details if not provided
+            price_details = {
+                "base_fare": float(booking.fare),
+                "total": float(booking.fare),
+                "tax": 0.0
+            }
+            
+            # Count passenger types for basic price breakdown
+            adult_count = 0
+            senior_count = 0
+            for passenger in booking.passengers:
+                if passenger.is_senior:
+                    senior_count += 1
+                else:
+                    adult_count += 1
+                    
+            price_details["adult_count"] = adult_count
+            price_details["senior_count"] = senior_count
+        
         # Create booking item
         booking_item = {
             'PK': f"BOOKING#{booking_id}",
             'SK': "METADATA",
             'booking_id': booking_id,
             'user_id': booking.user_id,
-            'train_id': booking.train_id,
+            'train_id': train_id,
+            'train_name': train_name,
+            'train_number': train_number,
             'pnr': pnr,
-            'booking_status': BookingStatus.CONFIRMED.value,
+            'booking_status': booking.booking_status or BookingStatus.CONFIRMED.value,
+            'payment_status': booking.payment_status or 'paid',
+            'payment_method': booking.payment_method or 'wallet',
             'journey_date': booking.journey_date,
             'origin_station_code': booking.origin_station_code,
             'destination_station_code': booking.destination_station_code,
             'class': booking.travel_class,
             'fare': booking.fare,
+            'price_details': price_details,
             'passengers': [passenger.dict() for passenger in booking.passengers],
             'booking_email': booking.booking_email,
             'booking_phone': booking.booking_phone,
+            'booking_date': booking.booking_date or datetime.now().strftime('%Y-%m-%d'),
+            'booking_time': booking.booking_time or datetime.now().strftime('%H:%M:%S'),
             'created_at': now,
             'updated_at': now
         }

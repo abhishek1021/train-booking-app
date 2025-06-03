@@ -26,6 +26,8 @@ class PassengerInfo(BaseModel):
 class BookingBase(BaseModel):
     user_id: str
     train_id: str
+    train_name: Optional[str] = None
+    train_number: Optional[str] = None
     journey_date: str
     origin_station_code: str
     destination_station_code: str
@@ -33,6 +35,12 @@ class BookingBase(BaseModel):
     fare: Decimal
     booking_email: Optional[str] = None
     booking_phone: Optional[str] = None
+    booking_date: Optional[str] = None
+    booking_time: Optional[str] = None
+    booking_status: Optional[str] = "confirmed"
+    payment_status: Optional[str] = "paid"
+    payment_method: Optional[str] = "wallet"
+    price_details: Optional[Dict[str, Any]] = None
     passengers: List[PassengerInfo]
 
 

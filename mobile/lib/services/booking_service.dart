@@ -11,16 +11,27 @@ class BookingService {
   Future<Map<String, dynamic>> createBooking({
     required String userId,
     required String trainId,
+    required String trainName,
+    required String trainNumber,
     required String journeyDate,
     required String originStationCode,
     required String destinationStationCode,
     required String travelClass,
     required double fare,
+    required double tax,
+    required double totalAmount,
+    required Map<String, dynamic> priceDetails,
     required List<Passenger> passengers,
     required String email,
     required String phone,
+    required String paymentMethod,
   }) async {
     try {
+      // Get current date and time in IST format
+      final now = DateTime.now();
+      final bookingDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}"; 
+      final bookingTime = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}"; 
+      
       final response = await http.post(
         Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/'),
         headers: {
@@ -29,14 +40,23 @@ class BookingService {
         body: jsonEncode({
           'user_id': userId,
           'train_id': trainId,
+          'train_name': trainName,
+          'train_number': trainNumber,
           'journey_date': journeyDate,
           'origin_station_code': originStationCode,
           'destination_station_code': destinationStationCode,
           'travel_class': travelClass,
-          'fare':
-              fare.toString(), // Convert to string to avoid float type errors
+          'fare': fare.toString(), // Convert to string to avoid float type errors
+          'tax': tax.toString(),
+          'total_amount': totalAmount.toString(),
           'booking_email': email,
           'booking_phone': phone,
+          'booking_date': bookingDate,
+          'booking_time': bookingTime,
+          'booking_status': 'confirmed',
+          'payment_status': 'paid',
+          'payment_method': paymentMethod,
+          'price_details': priceDetails,
           'passengers': passengers
               .map((passenger) => {
                     'name': passenger.fullName.isNotEmpty
@@ -59,8 +79,13 @@ class BookingService {
         }),
       );
 
-      if (response.statusCode == 201) {
-        return jsonDecode(response.body);
+      final responseBody = jsonDecode(response.body);
+      
+      // Check if the response contains a booking_id and status:success, which indicates success
+      if (response.statusCode == 201 || 
+          (responseBody is Map && responseBody.containsKey('booking_id') && 
+           responseBody.containsKey('status') && responseBody['status'] == 'success')) {
+        return responseBody;
       } else {
         throw Exception('Failed to create booking: ${response.body}');
       }
@@ -68,6 +93,30 @@ class BookingService {
       if (kDebugMode) {
         print('Error creating booking: $e');
       }
+      
+      // Check if the error message contains a successful booking response
+      final String errorMsg = e.toString();
+      if (errorMsg.contains('"booking_id"') && errorMsg.contains('"status":"success"')) {
+        try {
+          // Extract the JSON part from the error message
+          final jsonStart = errorMsg.indexOf('{');
+          final jsonEnd = errorMsg.lastIndexOf('}') + 1;
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            final jsonStr = errorMsg.substring(jsonStart, jsonEnd);
+            final Map<String, dynamic> bookingData = jsonDecode(jsonStr);
+            if (bookingData.containsKey('booking_id') && bookingData.containsKey('status') && 
+                bookingData['status'] == 'success') {
+              return bookingData;
+            }
+          }
+        } catch (jsonError) {
+          // If parsing fails, continue with the original error
+          if (kDebugMode) {
+            print('Error parsing booking response from error: $jsonError');
+          }
+        }
+      }
+      
       throw Exception('Failed to create booking: $e');
     }
   }
@@ -278,6 +327,46 @@ class BookingService {
       throw Exception('Failed to get booking: $e');
     }
   }
+  
+  // Calculate price details including breakdown by passenger type
+  Map<String, dynamic> _calculatePriceDetails(List<Passenger> passengers, double baseFare, double tax, double totalAmount) {
+    // Count passengers by type
+    int adultCount = 0;
+    int seniorCount = 0;
+    
+    // Calculate fare by passenger type
+    double adultFare = 0.0;
+    double seniorFare = 0.0;
+    
+    // Process each passenger
+    for (var passenger in passengers) {
+      if (passenger.isSenior) {
+        seniorCount++;
+        // Apply 25% discount for seniors
+        seniorFare += baseFare * 0.75;
+      } else {
+        adultCount++;
+        adultFare += baseFare;
+      }
+    }
+    
+    // Calculate subtotal before tax
+    double subtotal = adultFare + seniorFare;
+    
+    // Create price details object
+    return {
+      'base_fare_per_adult': baseFare,
+      'base_fare_per_senior': baseFare * 0.75,
+      'adult_count': adultCount,
+      'senior_count': seniorCount,
+      'adult_fare_total': adultFare,
+      'senior_fare_total': seniorFare,
+      'subtotal': subtotal,
+      'tax': tax,
+      'total': totalAmount,
+      'discount_applied': seniorCount > 0 ? 'Senior citizen discount (25%)' : null,
+    };
+  }
 
   // Process a complete booking with payment
   Future<Map<String, dynamic>> processBookingWithPayment({
@@ -297,18 +386,49 @@ class BookingService {
     required String phone,
   }) async {
     try {
+      // Extract proper train number from train name or ID
+      String trainNumber = '';
+      
+      // Try to extract a train number from trainName
+      final RegExp trainNumberRegex = RegExp(r'\(([0-9]+)\)$');
+      final match = trainNumberRegex.firstMatch(trainName);
+      if (match != null && match.groupCount >= 1) {
+        trainNumber = match.group(1) ?? '';
+      } else {
+        // If no number in parentheses, use a cleaned version of the train ID
+        if (trainId.contains('_')) {
+          final parts = trainId.split('_');
+          if (parts.length > 1) {
+            trainNumber = parts[1].toUpperCase();
+          } else {
+            trainNumber = trainId.toUpperCase();
+          }
+        } else {
+          trainNumber = trainId.toUpperCase();
+        }
+      }
+      
+      // Calculate price details including breakdown by passenger type
+      Map<String, dynamic> priceDetails = _calculatePriceDetails(passengers, fare, tax, totalAmount);
+      
       // Step 1: Create the booking
       final bookingResponse = await createBooking(
         userId: userId,
-        trainId: trainId,
+        trainId: trainNumber, // Use train number as the train_id
+        trainName: trainName,
+        trainNumber: trainNumber,
         journeyDate: journeyDate,
         originStationCode: originStationCode,
         destinationStationCode: destinationStationCode,
         travelClass: travelClass,
         fare: fare,
+        tax: tax,
+        totalAmount: totalAmount,
+        priceDetails: priceDetails,
         passengers: passengers,
         email: email,
         phone: phone,
+        paymentMethod: paymentMethod,
       );
 
       final String bookingId = bookingResponse['booking_id'];
@@ -348,6 +468,8 @@ class BookingService {
         body: jsonEncode({
           'payment_id': paymentId,
           'booking_status': 'confirmed',
+          'payment_status': 'paid',
+          'payment_method': paymentMethod,
         }),
       );
 

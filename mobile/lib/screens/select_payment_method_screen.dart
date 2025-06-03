@@ -265,11 +265,21 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                           }
 
                           // Process the booking with payment
+                          // Extract train number from train name if available
+                          String trainNumber = '';
+                          final RegExp trainNumberRegex = RegExp(r'\(([0-9]+)\)');
+                          final match = trainNumberRegex.firstMatch(widget.trainName);
+                          if (match != null && match.groupCount >= 1) {
+                            trainNumber = match.group(1) ?? '';
+                          } else {
+                            // If no number in parentheses, use a sanitized version of the train name
+                            trainNumber = widget.trainName.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+                          }
+                          
                           final result =
                               await _bookingService.processBookingWithPayment(
                             userId: _userId,
-                            trainId:
-                                'train_${widget.trainName.replaceAll(" ", "_").toLowerCase()}', // Generate train ID from name
+                            trainId: trainNumber, // Use proper train number
                             trainName: widget.trainName,
                             journeyDate: widget.departureDate,
                             originStationCode: widget.departureStation,

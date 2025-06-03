@@ -146,8 +146,32 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
 
   // Calculate total price with coin discount if applicable
   double _calculateTotalPrice() {
-    double basePrice = widget.price.toDouble();
-    double totalPrice = basePrice + widget.tax;
+    // Get base fare for the selected class
+    double baseFare = _getBaseFareForClass();
+    
+    // Calculate fare based on number of passengers
+    double totalBaseFare = 0.0;
+    
+    // Calculate fare for each passenger based on their type (adult, senior, etc.)
+    for (var passenger in _passengers) {
+      // Check if passenger is a senior citizen
+      bool isSenior = false;
+      if (passenger.containsKey('age')) {
+        int age = passenger['age'] is int 
+            ? passenger['age'] 
+            : int.tryParse(passenger['age'].toString()) ?? 0;
+        isSenior = age >= 60;
+      } else if (passenger.containsKey('is_senior')) {
+        isSenior = passenger['is_senior'] == true;
+      }
+      
+      // Apply senior discount (25% off) if applicable
+      double passengerFare = isSenior ? baseFare * 0.75 : baseFare;
+      totalBaseFare += passengerFare;
+    }
+    
+    // Add tax
+    double totalPrice = totalBaseFare + widget.tax;
 
     // Apply coin discount if toggle is on
     if (_useCoins) {
@@ -160,6 +184,26 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
     }
 
     return totalPrice;
+  }
+  
+  // Get base fare for the selected class
+  double _getBaseFareForClass() {
+    // Try to get class prices from train data
+    if (widget.train.containsKey('class_prices') && 
+        widget.train['class_prices'] is Map &&
+        widget.train['class_prices'].containsKey(widget.selectedClass)) {
+      var price = widget.train['class_prices'][widget.selectedClass];
+      if (price is int) {
+        return price.toDouble();
+      } else if (price is double) {
+        return price;
+      } else if (price is String) {
+        return double.tryParse(price) ?? widget.price.toDouble();
+      }
+    }
+    
+    // Fallback to widget price if class price not found
+    return widget.price.toDouble();
   }
 
   @override
@@ -988,8 +1032,20 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                               fontSize: 16,
                               color: Color(0xFF7C3AED))),
                       SizedBox(height: 18),
-                      _priceRow('Price (Adult x ${_passengers.length})',
-                          widget.price),
+                      // Base fare for each passenger type
+                      ..._getPassengerTypeCounts().entries.map((entry) {
+                        String passengerType = entry.key;
+                        int count = entry.value;
+                        double fare = _getBaseFareForClass();
+                        
+                        // Apply discount for seniors
+                        if (passengerType == 'Senior') {
+                          return _priceRow('$passengerType (x$count)', fare * 0.75 * count,
+                              note: '25% off');
+                        } else {
+                          return _priceRow('$passengerType (x$count)', fare * count);
+                        }
+                      }),
                       _priceRow('Tax', widget.tax),
                       _useCoins
                           ? _priceRow('Coin Discount', -widget.coins,
@@ -1119,19 +1175,74 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   TextStyle _cellStyle() =>
       TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
 
+  // Get counts of each passenger type (Adult, Senior, etc.)  
+  Map<String, int> _getPassengerTypeCounts() {
+    Map<String, int> counts = {};
+    
+    for (var passenger in _passengers) {
+      // Determine passenger type
+      String passengerType = 'Adult'; // Default type
+      
+      // Check if passenger is a senior based on age
+      if (passenger.containsKey('age')) {
+        int age = passenger['age'] is int 
+            ? passenger['age'] 
+            : int.tryParse(passenger['age'].toString()) ?? 0;
+        passengerType = age >= 60 ? 'Senior' : 'Adult';
+      } else if (passenger.containsKey('is_senior') && passenger['is_senior'] == true) {
+        passengerType = 'Senior';
+      } else if (passenger.containsKey('passenger_type')) {
+        passengerType = passenger['passenger_type'];
+        // Capitalize first letter
+        passengerType = passengerType.substring(0, 1).toUpperCase() + 
+                        passengerType.substring(1).toLowerCase();
+      }
+      
+      // Increment count for this passenger type
+      counts[passengerType] = (counts[passengerType] ?? 0) + 1;
+    }
+    
+    return counts;
+  }
+
   Widget _priceRow(String label, dynamic value,
-      {bool bold = false, Color? color}) {
+      {bool bold = false, Color? color, String? note}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'ProductSans',
-              fontSize: 14,
-              color: Colors.black87,
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'ProductSans',
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                if (note != null) ...[  
+                  SizedBox(width: 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      note,
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 10,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           Text(
