@@ -33,6 +33,8 @@ class BookingBase(BaseModel):
     destination_station_code: str
     travel_class: str
     fare: Decimal
+    tax: Optional[Decimal] = None
+    total_amount: Optional[Decimal] = None
     booking_email: Optional[str] = None
     booking_phone: Optional[str] = None
     booking_date: Optional[str] = None
