@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/job_logs_service.dart';
+import 'dart:convert';
 
 class JobLogsScreen extends StatefulWidget {
   final String jobId;
@@ -680,4 +681,3 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
 }
 
 // Helper for JSON encoding
-import 'dart:convert';
