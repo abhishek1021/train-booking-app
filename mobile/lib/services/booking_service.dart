@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import '../screens/transaction_details_screen.dart';
+import '../models/passenger.dart';
 import '../config/api_config.dart';
 
 class BookingService {
@@ -199,6 +199,12 @@ class BookingService {
   // Get wallet by user ID
   Future<Map<String, dynamic>> getWalletByUserId(String userId) async {
     try {
+      // Ensure userId is not empty
+      if (userId.isEmpty) {
+        throw Exception('User ID cannot be empty');
+      }
+      
+      // Use path parameter as expected by the backend
       final response = await http.get(
         Uri.parse('$baseUrl${ApiConfig.walletEndpoint}/user/$userId'),
         headers: {
@@ -238,9 +244,14 @@ class BookingService {
   // Get wallet transactions
   Future<List<dynamic>> getWalletTransactions(String walletId) async {
     try {
+      // Ensure walletId is not empty
+      if (walletId.isEmpty) {
+        throw Exception('Wallet ID cannot be empty');
+      }
+      
+      // Use path parameter as expected by the backend
       final response = await http.get(
-        Uri.parse(
-            '$baseUrl${ApiConfig.walletTransactionEndpoint}/wallet/$walletId'),
+        Uri.parse('$baseUrl${ApiConfig.walletTransactionEndpoint}/wallet/$walletId'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -264,6 +275,12 @@ class BookingService {
   // Get bookings by user ID
   Future<List<dynamic>> getBookingsByUserId(String userId) async {
     try {
+      // Ensure userId is not empty
+      if (userId.isEmpty) {
+        throw Exception('User ID cannot be empty');
+      }
+      
+      // Use path parameter as expected by the backend
       final response = await http.get(
         Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/user/$userId'),
         headers: {

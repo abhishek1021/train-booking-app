@@ -3,6 +3,7 @@ import 'package:marquee/marquee.dart';
 import 'dart:math' show max;
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
+import '../models/passenger.dart';
 
 class ReviewSummaryScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -790,28 +791,17 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                               idNumber: p['id_number'] ?? '',
                                               passengerType: (p['age'] is int
                                                           ? p['age']
-                                                          : int.tryParse(p[
-                                                                      'age']
-                                                                  .toString()) ??
-                                                              0) >=
-                                                      60
+                                                          : int.tryParse(p['age']?.toString() ?? '0') ?? 0) >= 60
                                                   ? 'Senior'
                                                   : 'Adult',
                                               seat: p['seat'] ?? 'B2-34',
                                               age: p['age'] is int
                                                   ? p['age']
-                                                  : int.tryParse(p['age']
-                                                          .toString()) ??
-                                                      30,
+                                                  : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
                                               gender: p['gender'] ?? 'male',
-                                              isSenior: p['is_senior'] ??
-                                                  ((p['age'] is int
-                                                          ? p['age']
-                                                          : int.tryParse(p[
-                                                                      'age']
-                                                                  .toString()) ??
-                                                              0) >=
-                                                      60),
+                                              isSenior: p['is_senior'] ?? ((p['age'] is int
+                                                  ? p['age']
+                                                  : int.tryParse(p['age']?.toString() ?? '0') ?? 0) >= 60),
                                             ))
                                         .toList(),
                                   ),
@@ -917,12 +907,14 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                       phone: widget.phone,
                                       passengers: widget.passengers
                                           .map((p) => Passenger(
-                                                fullName: p['fullName'],
-                                                idType: p['idType'],
-                                                idNumber: p['idNumber'],
-                                                passengerType:
-                                                    p['passengerType'],
+                                                fullName: p['fullName'] ?? '',
+                                                idType: p['idType'] ?? '',
+                                                idNumber: p['idNumber'] ?? '',
+                                                passengerType: p['passengerType'] ?? 'Adult',
                                                 seat: p['seat'] ?? 'B2-34',
+                                                age: p['age'] is int ? p['age'] : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
+                                                gender: p['gender'] ?? 'male',
+                                                isSenior: p['isSenior'] ?? false,
                                               ))
                                           .toList(),
                                     ),
@@ -1109,10 +1101,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     fullName: p['name'] ?? '',
                                     idType: p['id_type'] ?? '',
                                     idNumber: p['id_number'] ?? '',
-                                    passengerType:
-                                        p['passenger_type'] ?? 'adult',
+                                    passengerType: p['passenger_type'] ?? 'Adult',
                                     seat: p['seat'] ?? 'B2-34',
-                                    age: p['age'] ?? 30,
+                                    age: p['age'] is int ? p['age'] : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
                                     gender: p['gender'] ?? 'male',
                                     isSenior: p['is_senior'] ?? false,
                                   ))
@@ -1143,11 +1134,11 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   ),
                 ),
               ),
-            ], // <-- End of children for Column
-          ), // <-- End of Column
-        ), // <-- End of Padding
-      ), // <-- End of SingleChildScrollView
-    ); // <-- End of Scaffold
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _infoRow(String label, String value) {

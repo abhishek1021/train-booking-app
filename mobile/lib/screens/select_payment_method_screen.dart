@@ -4,6 +4,7 @@ import '../services/booking_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../models/passenger.dart';
 
 class SelectPaymentMethodScreen extends StatefulWidget {
   final double walletBalance;

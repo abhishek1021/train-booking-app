@@ -7,6 +7,7 @@ class SearchCard extends StatelessWidget {
   final TextEditingController destinationController;
   final VoidCallback onOriginTap;
   final VoidCallback onDestinationTap;
+  final Function()? onSwapLocations;
   final Widget? Function(BuildContext, String)? extraFields;
   final int passengers;
   final void Function(bool)? onPassengersChanged;
@@ -26,6 +27,7 @@ class SearchCard extends StatelessWidget {
     required this.destinationController,
     required this.onOriginTap,
     required this.onDestinationTap,
+    this.onSwapLocations,
     this.extraFields,
     required this.passengers,
     this.onPassengersChanged,
@@ -106,6 +108,11 @@ class SearchCard extends StatelessWidget {
                       final temp = originController.text;
                       originController.text = destinationController.text;
                       destinationController.text = temp;
+                      
+                      // Call the callback to update parent state
+                      if (onSwapLocations != null) {
+                        onSwapLocations!();
+                      }
                     },
                   ),
                 ),

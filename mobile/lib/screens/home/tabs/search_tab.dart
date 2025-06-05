@@ -19,10 +19,8 @@ import 'search_tab/search_card.dart';
 import 'search_tab/quick_actions.dart';
 
 class SearchTab extends StatefulWidget {
-  final String userId;
+  const SearchTab({Key? key}) : super(key: key);
   
-  const SearchTab({Key? key, this.userId = 'USER123'}) : super(key: key);
-
   @override
   State<SearchTab> createState() => _SearchTabState();
 }
@@ -38,10 +36,12 @@ class _SearchTabState extends State<SearchTab> {
   DateTime? returnDate;
   List<Map<String, dynamic>> cities = [];
   String? username;
+  String userId = ''; // Will be loaded from SharedPreferences
   int _selectedTabIndex = 0; // 0: One-Way, 1: Round Trip
   final GlobalKey _searchCardKey = GlobalKey();
   double _searchCardHeight = 0;
   int passengers = 1;
+  
   String? selectedClass;
   bool _isSearching = false; // Track when a search is in progress
 
@@ -145,9 +145,48 @@ class _SearchTabState extends State<SearchTab> {
   void initState() {
     super.initState();
     _loadUsername();
+    _loadUserId();
     _fetchCities();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _updateSearchCardHeight());
+  }
+  
+  // Load user ID from SharedPreferences
+  Future<void> _loadUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String loadedUserId = '';
+      
+      // Try to get user ID from user profile
+      final userProfileStr = prefs.getString('user_profile');
+      if (userProfileStr != null) {
+        try {
+          final userProfile = jsonDecode(userProfileStr);
+          loadedUserId = userProfile['UserID'] ?? 
+                  userProfile['userId'] ?? 
+                  userProfile['user_id'] ?? 
+                  userProfile['id'] ?? 
+                  '';
+        } catch (e) {
+          print('Error parsing user profile: $e');
+        }
+      }
+      
+      // If not found in profile, try other keys
+      loadedUserId = loadedUserId.isNotEmpty ? loadedUserId : 
+              prefs.getString('UserID') ?? 
+              prefs.getString('userId') ?? 
+              prefs.getString('user_id') ?? 
+              '';
+      
+      if (mounted) {
+        setState(() {
+          userId = loadedUserId;
+        });
+      }
+    } catch (e) {
+      print('Error loading user ID: $e');
+    }
   }
 
   @override
@@ -185,6 +224,19 @@ class _SearchTabState extends State<SearchTab> {
                   },
                   originController: originController,
                   destinationController: destinationController,
+                  onSwapLocations: () {
+                    // Swap the underlying state variables
+                    final tempOrigin = selectedOrigin;
+                    final tempOriginName = selectedOriginName;
+                    
+                    setState(() {
+                      selectedOrigin = selectedDestination;
+                      selectedOriginName = selectedDestinationName;
+                      
+                      selectedDestination = tempOrigin;
+                      selectedDestinationName = tempOriginName;
+                    });
+                  },
                   onOriginTap: () async {
                     final selectedCity = await Navigator.push(
                       context,
@@ -479,13 +531,73 @@ class _SearchTabState extends State<SearchTab> {
                               label: 'History',
                               iconColor: Color(0xFF7C3AED),
                               labelColor: Color(0xFF7C3AED),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => HistoryScreen(userId: widget.userId),
-                                  ),
+                              onTap: () async {
+                                // Show loading indicator
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext context) {
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                                      ),
+                                    );
+                                  },
                                 );
+                                
+                                try {
+                                  // Use the already loaded userId from state
+                                  String historyUserId = userId;
+                                  
+                                  // If userId is empty, try to load it directly
+                                  if (historyUserId.isEmpty) {
+                                    final prefs = await SharedPreferences.getInstance();
+                                    
+                                    // Try to get user ID from user profile
+                                    final userProfileStr = prefs.getString('user_profile');
+                                    if (userProfileStr != null) {
+                                      try {
+                                        final userProfile = jsonDecode(userProfileStr);
+                                        historyUserId = userProfile['UserID'] ?? 
+                                                userProfile['userId'] ?? 
+                                                userProfile['user_id'] ?? 
+                                                userProfile['id'] ?? 
+                                                '';
+                                      } catch (e) {
+                                        print('Error parsing user profile: $e');
+                                      }
+                                    }
+                                    
+                                    // If not found in profile, try other keys
+                                    historyUserId = historyUserId.isNotEmpty ? historyUserId : 
+                                            prefs.getString('UserID') ?? 
+                                            prefs.getString('userId') ?? 
+                                            prefs.getString('user_id') ?? 
+                                            ''; // No default fallback
+                                  }
+                                  
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  // Navigate to history screen with the fetched user ID
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HistoryScreen(userId: historyUserId),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  // Show error message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('User ID not found. Please log in again.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }),
                           QuickAction(
                               icon: Icons.favorite,

@@ -91,6 +91,7 @@ class _PnrSearchScreenState extends State<PnrSearchScreen> {
             const SizedBox(height: 50), // Top padding as per design guidelines
             Card(
               elevation: 2,
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -105,6 +106,7 @@ class _PnrSearchScreenState extends State<PnrSearchScreen> {
                         fontFamily: 'ProductSans',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: Color(0xFF7C3AED),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -229,6 +231,7 @@ class _PnrSearchScreenState extends State<PnrSearchScreen> {
           padding: const EdgeInsets.only(top: 16),
           child: Card(
             elevation: 2,
+            color: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -334,6 +337,7 @@ class _PnrSearchScreenState extends State<PnrSearchScreen> {
                 fontFamily: 'ProductSans',
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
+                color: Color(0xFF7C3AED),
               ),
             ),
           ),

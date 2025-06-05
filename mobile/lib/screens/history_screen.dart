@@ -272,6 +272,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           return Card(
             margin: const EdgeInsets.only(bottom: 16),
             elevation: 2,
+            color: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -299,6 +300,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                               fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
+                              color: Color(0xFF7C3AED),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -343,6 +345,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: Color(0xFF7C3AED),
                                 ),
                               ),
                             ],
@@ -367,6 +370,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: Color(0xFF7C3AED),
                                 ),
                               ),
                             ],
@@ -396,6 +400,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  color: Color(0xFF7C3AED),
                                 ),
                               ),
                             ],
@@ -497,6 +502,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           return Card(
             margin: const EdgeInsets.only(bottom: 16),
             elevation: 2,
+            color: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -533,6 +539,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                             fontFamily: 'ProductSans',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: Color(0xFF7C3AED),
                           ),
                         ),
                         const SizedBox(height: 4),
