@@ -38,8 +38,12 @@ async def get_job_logs(job_id: str):
     try:
         # Query the job_logs table directly
         job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
+        
+        # Format the job_id as the PK value (assuming format is JOB#{job_id})
+        pk_value = f"JOB#{job_id}"
+        
         response = job_logs_table.query(
-            KeyConditionExpression=Key('job_id').eq(job_id),
+            KeyConditionExpression=Key('PK').eq(pk_value),
             ScanIndexForward=True  # Sort by timestamp ascending
         )
         

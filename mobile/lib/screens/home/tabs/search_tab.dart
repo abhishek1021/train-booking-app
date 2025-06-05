@@ -677,6 +677,34 @@ class _SearchTabState extends State<SearchTab> {
                   // Tatkal Mode Banner
                   const SizedBox(height: 24),
                   _buildTatkalModeBanner(context),
+                  
+                  // Popular Routes Section
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Popular Routes'),
+                  const SizedBox(height: 12),
+                  _buildPopularRoutesSection(),
+                  
+                  // Featured Trains Section
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Featured Trains'),
+                  const SizedBox(height: 12),
+                  _buildFeaturedTrainsSection(),
+                  
+                  // Travel Tips Section
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Travel Tips'),
+                  const SizedBox(height: 12),
+                  _buildTravelTipsSection(),
+                  
+                  // Upcoming Festivals Section
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Upcoming Festivals'),
+                  const SizedBox(height: 12),
+                  _buildFestivalsSection(),
+                  
+                  // Footer Section
+                  const SizedBox(height: 40),
+                  _buildFooterSection(),
                 ],
               ),
             ),
@@ -822,6 +850,864 @@ class _SearchTabState extends State<SearchTab> {
             ],
           ),
         ),
+      ),
+    );
+  }
+  
+  // Section Header Widget
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'ProductSans',
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Color(0xFF7C3AED),
+            ),
+          ),
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'See All',
+              style: TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Popular Routes Section
+  Widget _buildPopularRoutesSection() {
+    final List<Map<String, dynamic>> popularRoutes = [
+      {
+        'from': 'Delhi',
+        'to': 'Mumbai',
+        'fromCode': 'NDLS',
+        'toCode': 'CSTM',
+        'trains': 42,
+        'duration': '16h 35m',
+        'image': 'assets/images/delhi_mumbai.jpg',
+      },
+      {
+        'from': 'Bangalore',
+        'to': 'Chennai',
+        'fromCode': 'SBC',
+        'toCode': 'MAS',
+        'trains': 23,
+        'duration': '5h 15m',
+        'image': 'assets/images/bangalore_chennai.jpg',
+      },
+      {
+        'from': 'Kolkata',
+        'to': 'Delhi',
+        'fromCode': 'KOAA',
+        'toCode': 'NDLS',
+        'trains': 35,
+        'duration': '17h 20m',
+        'image': 'assets/images/kolkata_delhi.jpg',
+      },
+      {
+        'from': 'Mumbai',
+        'to': 'Goa',
+        'fromCode': 'CSTM',
+        'toCode': 'MAO',
+        'trains': 18,
+        'duration': '8h 40m',
+        'image': 'assets/images/mumbai_goa.jpg',
+      },
+      {
+        'from': 'Hyderabad',
+        'to': 'Bangalore',
+        'fromCode': 'HYD',
+        'toCode': 'SBC',
+        'trains': 15,
+        'duration': '10h 30m',
+        'image': 'assets/images/hyderabad_bangalore.jpg',
+      },
+    ];
+    
+    return SizedBox(
+      height: 175,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: popularRoutes.length,
+        itemBuilder: (context, index) {
+          final route = popularRoutes[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: GestureDetector(
+              onTap: () {
+                // Pre-fill search with this route
+                setState(() {
+                  selectedOrigin = route['fromCode'];
+                  selectedDestination = route['toCode'];
+                  selectedOriginName = route['from'];
+                  selectedDestinationName = route['to'];
+                  originController.text = route['from'];
+                  destinationController.text = route['to'];
+                });
+                
+                // Scroll back to top to show the search form
+                // This would require a ScrollController
+              },
+              child: Container(
+                width: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Route image or gradient
+                    Container(
+                      height: 75,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.train,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                    ),
+                    // Route details
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${route['from']} - ${route['to']}',
+                            style: const TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF7C3AED),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${route['trains']} Trains • ${route['duration']}',
+                            style: const TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Book Now',
+                              style: TextStyle(
+                                fontFamily: 'ProductSans',
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7C3AED),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  // Featured Trains Section
+  Widget _buildFeaturedTrainsSection() {
+    final List<Map<String, dynamic>> featuredTrains = [
+      {
+        'name': 'Rajdhani Express',
+        'number': '12301',
+        'from': 'NDLS',
+        'to': 'HWH',
+        'departure': '16:55',
+        'arrival': '10:10',
+        'duration': '17h 15m',
+        'rating': 4.7,
+      },
+      {
+        'name': 'Shatabdi Express',
+        'number': '12002',
+        'from': 'NDLS',
+        'to': 'LKO',
+        'departure': '06:15',
+        'arrival': '12:40',
+        'duration': '6h 25m',
+        'rating': 4.5,
+      },
+      {
+        'name': 'Duronto Express',
+        'number': '12213',
+        'from': 'CSTM',
+        'to': 'NDLS',
+        'departure': '11:05',
+        'arrival': '04:00',
+        'duration': '16h 55m',
+        'rating': 4.3,
+      },
+      {
+        'name': 'Vande Bharat',
+        'number': '22435',
+        'from': 'NDLS',
+        'to': 'BKN',
+        'departure': '06:00',
+        'arrival': '13:45',
+        'duration': '7h 45m',
+        'rating': 4.8,
+      },
+      {
+        'name': 'Tejas Express',
+        'number': '22119',
+        'from': 'CSTM',
+        'to': 'MAO',
+        'departure': '05:50',
+        'arrival': '16:00',
+        'duration': '10h 10m',
+        'rating': 4.6,
+      },
+    ];
+    
+    return SizedBox(
+      height: 175,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: featuredTrains.length,
+        itemBuilder: (context, index) {
+          final train = featuredTrains[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: ClipRect(
+              child: Container(
+                width: 260,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Train header with gradient
+                    Container(
+                      height: 65,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  train['name'],
+                                  style: const TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  train['number'],
+                                  style: const TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${train['rating']}',
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Train details
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 50,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // From station
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        train['from'],
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Color(0xFF7C3AED),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        train['departure'],
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Duration
+                                Expanded(
+                                  flex: 1,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.arrow_forward,
+                                        color: Color(0xFF7C3AED),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        train['duration'],
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 11,
+                                          color: Colors.black54,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // To station
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        train['to'],
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Color(0xFF7C3AED),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        train['arrival'],
+                                        style: const TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 32,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF7C3AED),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  // Travel Tips Section
+  Widget _buildTravelTipsSection() {
+    final List<Map<String, dynamic>> travelTips = [
+      {
+        'title': 'Book in Advance',
+        'description': 'Book tickets at least 60 days in advance for best availability and prices.',
+        'icon': Icons.calendar_today,
+      },
+      {
+        'title': 'Tatkal Booking',
+        'description': 'Tatkal booking opens at 10:00 AM for AC classes and 11:00 AM for non-AC classes.',
+        'icon': Icons.flash_on,
+      },
+      {
+        'title': 'Senior Citizen',
+        'description': 'Senior citizens get 40-50% concession on ticket fares.',
+        'icon': Icons.person,
+      },
+      {
+        'title': 'ID Proof',
+        'description': 'Always carry original ID proof matching the name on your ticket.',
+        'icon': Icons.badge,
+      },
+      {
+        'title': 'Food Options',
+        'description': 'Pre-order meals through IRCTC e-catering for better quality food.',
+        'icon': Icons.restaurant,
+      },
+    ];
+    
+    return SizedBox(
+      height: 160,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: travelTips.length,
+        itemBuilder: (context, index) {
+          final tip = travelTips[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              width: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF7C3AED).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            tip['icon'],
+                            color: const Color(0xFF7C3AED),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            tip['title'],
+                            style: const TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFF7C3AED),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Text(
+                        tip['description'],
+                        style: const TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  // Festivals Section
+  Widget _buildFestivalsSection() {
+    final List<Map<String, dynamic>> festivals = [
+      {
+        'name': 'Diwali',
+        'date': 'Nov 12, 2025',
+        'description': 'Book your tickets early for the festival of lights.',
+        'color': const Color(0xFFFFA000),
+      },
+      {
+        'name': 'Durga Puja',
+        'date': 'Oct 2, 2025',
+        'description': 'Special trains available for Kolkata during this period.',
+        'color': const Color(0xFFE91E63),
+      },
+      {
+        'name': 'Christmas',
+        'date': 'Dec 25, 2025',
+        'description': 'Holiday special trains to Goa and Kerala.',
+        'color': const Color(0xFF4CAF50),
+      },
+      {
+        'name': 'Holi',
+        'date': 'Mar 14, 2026',
+        'description': 'Plan your colorful celebration with special packages.',
+        'color': const Color(0xFF2196F3),
+      },
+      {
+        'name': 'Onam',
+        'date': 'Sep 6, 2025',
+        'description': 'Kerala bound trains get fully booked weeks in advance.',
+        'color': const Color(0xFFFF5722),
+      },
+    ];
+    
+    return SizedBox(
+      height: 130,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: festivals.length,
+        itemBuilder: (context, index) {
+          final festival = festivals[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              width: 160,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Festival header
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: festival['color'],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          festival['name'],
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.celebration,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Festival details
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          festival['date'],
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF7C3AED),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          festival['description'],
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  // Footer Section
+  Widget _buildFooterSection() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.grey[300]!,
+            Colors.grey[200]!,
+            Colors.grey[100]!,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.favorite,
+                color: Color(0xFF7C3AED),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Made with love in India',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color(0xFF7C3AED),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFooterLink('Terms & Conditions'),
+              _buildFooterDot(),
+              _buildFooterLink('Privacy Policy'),
+              _buildFooterDot(),
+              _buildFooterLink('Help'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            '© 2025 Train Booking App. All rights reserved.',
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildSocialIcon(Icons.facebook),
+              const SizedBox(width: 16),
+              _buildSocialIcon(Icons.telegram),
+              const SizedBox(width: 16),
+              _buildSocialIcon(Icons.chat),
+              const SizedBox(width: 16),
+              _buildSocialIcon(Icons.email),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildFooterLink(String text) {
+    return TextButton(
+      onPressed: () {},
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'ProductSans',
+          fontSize: 12,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFooterDot() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        '•',
+        style: TextStyle(
+          color: Colors.black54,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSocialIcon(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7C3AED).withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: const Color(0xFF7C3AED),
+        size: 18,
       ),
     );
   }
