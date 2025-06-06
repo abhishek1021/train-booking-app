@@ -9,42 +9,50 @@ class InfoScreen extends StatelessWidget {
     final List<Map<String, dynamic>> features = [
       {
         'title': 'Lightning Fast Bookings',
-        'description': 'Book train tickets in under 10 seconds with our optimized booking process and Tatkal mode.',
+        'description':
+            'Book train tickets in under 10 seconds with our optimized booking process and Tatkal mode.',
         'icon': Icons.flash_on,
       },
       {
         'title': 'Smart Tatkal Assistant',
-        'description': 'Our AI-powered assistant automatically fills forms and submits at the exact opening time for maximum success rate.',
+        'description':
+            'Our AI-powered assistant automatically fills forms and submits at the exact opening time for maximum success rate.',
         'icon': Icons.smart_toy,
       },
       {
         'title': 'Instant Confirmations',
-        'description': 'Get instant booking confirmations and e-tickets directly to your email and SMS.',
+        'description':
+            'Get instant booking confirmations and e-tickets directly to your email and SMS.',
         'icon': Icons.check_circle,
       },
       {
         'title': 'Secure Payments',
-        'description': 'Multiple payment options with bank-grade security and instant refunds to wallet.',
+        'description':
+            'Multiple payment options with bank-grade security and instant refunds to wallet.',
         'icon': Icons.security,
       },
       {
         'title': 'Smart Predictions',
-        'description': 'AI-powered seat availability predictions to help you book with confidence.',
+        'description':
+            'AI-powered seat availability predictions to help you book with confidence.',
         'icon': Icons.analytics,
       },
       {
         'title': 'Offline Access',
-        'description': 'Access your tickets and boarding passes even without internet connection.',
+        'description':
+            'Access your tickets and boarding passes even without internet connection.',
         'icon': Icons.offline_bolt,
       },
       {
         'title': 'Zero Booking Fees',
-        'description': 'No hidden charges or convenience fees. Pay only for your tickets.',
+        'description':
+            'No hidden charges or convenience fees. Pay only for your tickets.',
         'icon': Icons.money_off,
       },
       {
         'title': 'PNR Tracking',
-        'description': 'Real-time PNR status updates and journey tracking with live train status.',
+        'description':
+            'Real-time PNR status updates and journey tracking with live train status.',
         'icon': Icons.track_changes,
       },
     ];

@@ -59,12 +59,14 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
       {
         'event_type': 'EXECUTION_STARTED',
         'message': 'Job execution started',
-        'timestamp': now.subtract(const Duration(minutes: 15)).toIso8601String(),
+        'timestamp':
+            now.subtract(const Duration(minutes: 15)).toIso8601String(),
       },
       {
         'event_type': 'JOB_DETAILS',
         'message': 'Job details retrieved',
-        'timestamp': now.subtract(const Duration(minutes: 14)).toIso8601String(),
+        'timestamp':
+            now.subtract(const Duration(minutes: 14)).toIso8601String(),
         'details': {
           'origin': 'SAWANTWADI ROAD',
           'destination': 'MADGOAN JN.',
@@ -78,7 +80,8 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
       {
         'event_type': 'TRAIN_SELECTED',
         'message': 'Using specified train: 50107 - SWV-MAO PASS',
-        'timestamp': now.subtract(const Duration(minutes: 13)).toIso8601String(),
+        'timestamp':
+            now.subtract(const Duration(minutes: 13)).toIso8601String(),
         'details': {
           'train_number': '50107',
           'train_name': 'SWV-MAO PASS',
@@ -90,12 +93,14 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
       {
         'event_type': 'BOOKING_ATTEMPT',
         'message': 'Attempting to book tickets',
-        'timestamp': now.subtract(const Duration(minutes: 12)).toIso8601String(),
+        'timestamp':
+            now.subtract(const Duration(minutes: 12)).toIso8601String(),
       },
       {
         'event_type': 'BOOKING_SUCCESSFUL',
         'message': 'Booking successful! PNR: PNR2025060112345',
-        'timestamp': now.subtract(const Duration(minutes: 10)).toIso8601String(),
+        'timestamp':
+            now.subtract(const Duration(minutes: 10)).toIso8601String(),
         'details': {
           'booking_id': 'BK-1622554766',
           'pnr': 'PNR2025060112345',
@@ -109,8 +114,10 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
   // Get color based on event type
   Color _getEventColor(String eventType) {
     final type = eventType.toUpperCase();
-    
-    if (type.contains('STARTED') || type.contains('DETAILS') || type.contains('SEARCH')) {
+
+    if (type.contains('STARTED') ||
+        type.contains('DETAILS') ||
+        type.contains('SEARCH')) {
       return Colors.blue;
     } else if (type.contains('SELECTED') || type.contains('FOUND')) {
       return Colors.green[700]!;
@@ -130,7 +137,7 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
   // Get icon based on event type
   IconData _getEventIcon(String eventType) {
     final type = eventType.toUpperCase();
-    
+
     if (type.contains('STARTED')) {
       return Icons.play_arrow;
     } else if (type.contains('DETAILS')) {
@@ -379,7 +386,8 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -495,7 +503,11 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
   // Format key for display
   String _formatKey(String key) {
     // Convert snake_case to Title Case
-    return key.split('_').map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
+    return key
+        .split('_')
+        .map((word) =>
+            word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
   }
 
   // Get color based on job status

@@ -357,10 +357,12 @@ class _PnrSearchScreenState extends State<PnrSearchScreen> {
     final journeyDate = booking['journey_date'] ?? '';
     final fare = double.tryParse(booking['fare'].toString()) ?? 0.0;
     final tax = double.tryParse(booking['tax']?.toString() ?? '0') ?? 0.0;
-    final totalAmount = double.tryParse(booking['total_amount']?.toString() ?? booking['fare'].toString()) ?? fare;
+    final totalAmount = double.tryParse(booking['total_amount']?.toString() ??
+            booking['fare'].toString()) ??
+        fare;
     final status = booking['booking_status'] ?? 'confirmed';
     final paymentMethod = booking['payment_method'] ?? 'wallet';
-    
+
     // Convert passengers to Passenger objects
     final List<dynamic> passengersData = booking['passengers'] ?? [];
     final List<Passenger> passengers = passengersData.map((p) {

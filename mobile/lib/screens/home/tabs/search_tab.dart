@@ -20,7 +20,7 @@ import 'search_tab/quick_actions.dart';
 
 class SearchTab extends StatefulWidget {
   const SearchTab({Key? key}) : super(key: key);
-  
+
   @override
   State<SearchTab> createState() => _SearchTabState();
 }
@@ -41,7 +41,7 @@ class _SearchTabState extends State<SearchTab> {
   final GlobalKey _searchCardKey = GlobalKey();
   double _searchCardHeight = 0;
   int passengers = 1;
-  
+
   String? selectedClass;
   bool _isSearching = false; // Track when a search is in progress
 
@@ -150,35 +150,36 @@ class _SearchTabState extends State<SearchTab> {
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _updateSearchCardHeight());
   }
-  
+
   // Load user ID from SharedPreferences
   Future<void> _loadUserId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String loadedUserId = '';
-      
+
       // Try to get user ID from user profile
       final userProfileStr = prefs.getString('user_profile');
       if (userProfileStr != null) {
         try {
           final userProfile = jsonDecode(userProfileStr);
-          loadedUserId = userProfile['UserID'] ?? 
-                  userProfile['userId'] ?? 
-                  userProfile['user_id'] ?? 
-                  userProfile['id'] ?? 
-                  '';
+          loadedUserId = userProfile['UserID'] ??
+              userProfile['userId'] ??
+              userProfile['user_id'] ??
+              userProfile['id'] ??
+              '';
         } catch (e) {
           print('Error parsing user profile: $e');
         }
       }
-      
+
       // If not found in profile, try other keys
-      loadedUserId = loadedUserId.isNotEmpty ? loadedUserId : 
-              prefs.getString('UserID') ?? 
-              prefs.getString('userId') ?? 
-              prefs.getString('user_id') ?? 
+      loadedUserId = loadedUserId.isNotEmpty
+          ? loadedUserId
+          : prefs.getString('UserID') ??
+              prefs.getString('userId') ??
+              prefs.getString('user_id') ??
               '';
-      
+
       if (mounted) {
         setState(() {
           userId = loadedUserId;
@@ -228,11 +229,11 @@ class _SearchTabState extends State<SearchTab> {
                     // Swap the underlying state variables
                     final tempOrigin = selectedOrigin;
                     final tempOriginName = selectedOriginName;
-                    
+
                     setState(() {
                       selectedOrigin = selectedDestination;
                       selectedOriginName = selectedDestinationName;
-                      
+
                       selectedDestination = tempOrigin;
                       selectedDestinationName = tempOriginName;
                     });
@@ -539,61 +540,69 @@ class _SearchTabState extends State<SearchTab> {
                                   builder: (BuildContext context) {
                                     return Center(
                                       child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Color(0xFF7C3AED)),
                                       ),
                                     );
                                   },
                                 );
-                                
+
                                 try {
                                   // Use the already loaded userId from state
                                   String historyUserId = userId;
-                                  
+
                                   // If userId is empty, try to load it directly
                                   if (historyUserId.isEmpty) {
-                                    final prefs = await SharedPreferences.getInstance();
-                                    
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+
                                     // Try to get user ID from user profile
-                                    final userProfileStr = prefs.getString('user_profile');
+                                    final userProfileStr =
+                                        prefs.getString('user_profile');
                                     if (userProfileStr != null) {
                                       try {
-                                        final userProfile = jsonDecode(userProfileStr);
-                                        historyUserId = userProfile['UserID'] ?? 
-                                                userProfile['userId'] ?? 
-                                                userProfile['user_id'] ?? 
-                                                userProfile['id'] ?? 
-                                                '';
+                                        final userProfile =
+                                            jsonDecode(userProfileStr);
+                                        historyUserId = userProfile['UserID'] ??
+                                            userProfile['userId'] ??
+                                            userProfile['user_id'] ??
+                                            userProfile['id'] ??
+                                            '';
                                       } catch (e) {
                                         print('Error parsing user profile: $e');
                                       }
                                     }
-                                    
+
                                     // If not found in profile, try other keys
-                                    historyUserId = historyUserId.isNotEmpty ? historyUserId : 
-                                            prefs.getString('UserID') ?? 
-                                            prefs.getString('userId') ?? 
-                                            prefs.getString('user_id') ?? 
+                                    historyUserId = historyUserId.isNotEmpty
+                                        ? historyUserId
+                                        : prefs.getString('UserID') ??
+                                            prefs.getString('userId') ??
+                                            prefs.getString('user_id') ??
                                             ''; // No default fallback
                                   }
-                                  
+
                                   // Close loading dialog
                                   Navigator.pop(context);
-                                  
+
                                   // Navigate to history screen with the fetched user ID
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => HistoryScreen(userId: historyUserId),
+                                      builder: (context) =>
+                                          HistoryScreen(userId: historyUserId),
                                     ),
                                   );
                                 } catch (e) {
                                   // Close loading dialog
                                   Navigator.pop(context);
-                                  
+
                                   // Show error message
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('User ID not found. Please log in again.'),
+                                      content: Text(
+                                          'User ID not found. Please log in again.'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -613,7 +622,8 @@ class _SearchTabState extends State<SearchTab> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const PnrSearchScreen(),
+                                    builder: (context) =>
+                                        const PnrSearchScreen(),
                                   ),
                                 );
                               }),
@@ -652,7 +662,8 @@ class _SearchTabState extends State<SearchTab> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const LanguageScreen(),
+                                    builder: (context) =>
+                                        const LanguageScreen(),
                                   ),
                                 );
                               }),
@@ -677,31 +688,31 @@ class _SearchTabState extends State<SearchTab> {
                   // Tatkal Mode Banner
                   const SizedBox(height: 24),
                   _buildTatkalModeBanner(context),
-                  
+
                   // Popular Routes Section
                   const SizedBox(height: 24),
                   _buildSectionHeader('Popular Routes'),
                   const SizedBox(height: 12),
                   _buildPopularRoutesSection(),
-                  
+
                   // Featured Trains Section
                   const SizedBox(height: 24),
                   _buildSectionHeader('Featured Trains'),
                   const SizedBox(height: 12),
                   _buildFeaturedTrainsSection(),
-                  
+
                   // Travel Tips Section
                   const SizedBox(height: 24),
                   _buildSectionHeader('Travel Tips'),
                   const SizedBox(height: 12),
                   _buildTravelTipsSection(),
-                  
+
                   // Upcoming Festivals Section
                   const SizedBox(height: 24),
                   _buildSectionHeader('Upcoming Festivals'),
                   const SizedBox(height: 12),
                   _buildFestivalsSection(),
-                  
+
                   // Footer Section
                   const SizedBox(height: 40),
                   _buildFooterSection(),
@@ -853,7 +864,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Section Header Widget
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -886,7 +897,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Popular Routes Section
   Widget _buildPopularRoutesSection() {
     final List<Map<String, dynamic>> popularRoutes = [
@@ -936,7 +947,7 @@ class _SearchTabState extends State<SearchTab> {
         'image': 'assets/images/hyderabad_bangalore.jpg',
       },
     ];
-    
+
     return SizedBox(
       height: 175,
       child: ListView.builder(
@@ -958,7 +969,7 @@ class _SearchTabState extends State<SearchTab> {
                   originController.text = route['from'];
                   destinationController.text = route['to'];
                 });
-                
+
                 // Scroll back to top to show the search form
                 // This would require a ScrollController
               },
@@ -1028,7 +1039,8 @@ class _SearchTabState extends State<SearchTab> {
                           ),
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFF7C3AED).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -1055,7 +1067,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Featured Trains Section
   Widget _buildFeaturedTrainsSection() {
     final List<Map<String, dynamic>> featuredTrains = [
@@ -1110,7 +1122,7 @@ class _SearchTabState extends State<SearchTab> {
         'rating': 4.6,
       },
     ];
-    
+
     return SizedBox(
       height: 175,
       child: ListView.builder(
@@ -1152,7 +1164,8 @@ class _SearchTabState extends State<SearchTab> {
                           topRight: Radius.circular(16),
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
                           Expanded(
@@ -1207,7 +1220,8 @@ class _SearchTabState extends State<SearchTab> {
                     ),
                     // Train details
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -1222,7 +1236,8 @@ class _SearchTabState extends State<SearchTab> {
                                   flex: 2,
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         train['from'],
@@ -1342,18 +1357,20 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Travel Tips Section
   Widget _buildTravelTipsSection() {
     final List<Map<String, dynamic>> travelTips = [
       {
         'title': 'Book in Advance',
-        'description': 'Book tickets at least 60 days in advance for best availability and prices.',
+        'description':
+            'Book tickets at least 60 days in advance for best availability and prices.',
         'icon': Icons.calendar_today,
       },
       {
         'title': 'Tatkal Booking',
-        'description': 'Tatkal booking opens at 10:00 AM for AC classes and 11:00 AM for non-AC classes.',
+        'description':
+            'Tatkal booking opens at 10:00 AM for AC classes and 11:00 AM for non-AC classes.',
         'icon': Icons.flash_on,
       },
       {
@@ -1363,16 +1380,18 @@ class _SearchTabState extends State<SearchTab> {
       },
       {
         'title': 'ID Proof',
-        'description': 'Always carry original ID proof matching the name on your ticket.',
+        'description':
+            'Always carry original ID proof matching the name on your ticket.',
         'icon': Icons.badge,
       },
       {
         'title': 'Food Options',
-        'description': 'Pre-order meals through IRCTC e-catering for better quality food.',
+        'description':
+            'Pre-order meals through IRCTC e-catering for better quality food.',
         'icon': Icons.restaurant,
       },
     ];
-    
+
     return SizedBox(
       height: 160,
       child: ListView.builder(
@@ -1453,7 +1472,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Festivals Section
   Widget _buildFestivalsSection() {
     final List<Map<String, dynamic>> festivals = [
@@ -1466,7 +1485,8 @@ class _SearchTabState extends State<SearchTab> {
       {
         'name': 'Durga Puja',
         'date': 'Oct 2, 2025',
-        'description': 'Special trains available for Kolkata during this period.',
+        'description':
+            'Special trains available for Kolkata during this period.',
         'color': const Color(0xFFE91E63),
       },
       {
@@ -1488,7 +1508,7 @@ class _SearchTabState extends State<SearchTab> {
         'color': const Color(0xFFFF5722),
       },
     ];
-    
+
     return SizedBox(
       height: 130,
       child: ListView.builder(
@@ -1583,7 +1603,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   // Footer Section
   Widget _buildFooterSection() {
     return Container(
@@ -1664,7 +1684,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   Widget _buildFooterLink(String text) {
     return TextButton(
       onPressed: () {},
@@ -1683,7 +1703,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   Widget _buildFooterDot() {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 4),
@@ -1696,7 +1716,7 @@ class _SearchTabState extends State<SearchTab> {
       ),
     );
   }
-  
+
   Widget _buildSocialIcon(IconData icon) {
     return Container(
       padding: const EdgeInsets.all(8),

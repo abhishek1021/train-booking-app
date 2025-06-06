@@ -19,46 +19,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Pages list
   List<Widget> get _pages => [
-    SearchTab(),
-    MyBookingsScreen(),
-    WalletScreen(),
-    ProfileTab(),
-  ];
-  
+        SearchTab(),
+        MyBookingsScreen(),
+        WalletScreen(),
+        ProfileTab(),
+      ];
+
   @override
   void initState() {
     super.initState();
     _loadUserId();
   }
-  
+
   // Load user ID from SharedPreferences
   Future<void> _loadUserId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String loadedUserId = '';
-      
+
       // Try to get user ID from user profile
       final userProfileStr = prefs.getString('user_profile');
       if (userProfileStr != null) {
         try {
           final userProfile = jsonDecode(userProfileStr);
-          loadedUserId = userProfile['UserID'] ?? 
-                  userProfile['userId'] ?? 
-                  userProfile['user_id'] ?? 
-                  userProfile['id'] ?? 
-                  '';
+          loadedUserId = userProfile['UserID'] ??
+              userProfile['userId'] ??
+              userProfile['user_id'] ??
+              userProfile['id'] ??
+              '';
         } catch (e) {
           print('Error parsing user profile: $e');
         }
       }
-      
+
       // If not found in profile, try other keys
-      loadedUserId = loadedUserId.isNotEmpty ? loadedUserId : 
-              prefs.getString('UserID') ?? 
-              prefs.getString('userId') ?? 
-              prefs.getString('user_id') ?? 
+      loadedUserId = loadedUserId.isNotEmpty
+          ? loadedUserId
+          : prefs.getString('UserID') ??
+              prefs.getString('userId') ??
+              prefs.getString('user_id') ??
               ''; // No default fallback
-      
+
       // Update state if user ID was found
       if (loadedUserId != userId) {
         setState(() {

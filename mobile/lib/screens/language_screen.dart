@@ -81,7 +81,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('selected_language', language);
-      
+
       setState(() {
         _selectedLanguage = language;
         _isLoading = false;
@@ -101,7 +101,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,7 +151,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 50), // Top padding as per design guidelines
+                const SizedBox(
+                    height: 50), // Top padding as per design guidelines
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
@@ -209,11 +210,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.all(8),
                         itemCount: _languages.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final language = _languages[index];
-                          final isSelected = _selectedLanguage == language['name'];
-                          
+                          final isSelected =
+                              _selectedLanguage == language['name'];
+
                           return ListTile(
                             leading: Text(
                               language['flag'],

@@ -188,4 +188,58 @@ class JobService {
       throw Exception('Error retrying job: $e');
     }
   }
+  
+  // Update an existing job
+  Future<Map<String, dynamic>> updateJob({
+    required String jobId,
+    String? originStationCode,
+    String? destinationStationCode,
+    String? journeyDate,
+    String? bookingTime,
+    String? travelClass,
+    List<Map<String, dynamic>>? passengers,
+    String? jobType,
+    String? bookingEmail,
+    String? bookingPhone,
+    bool? autoUpgrade,
+    bool? autoBookAlternateDate,
+    String? paymentMethod,
+    String? notes,
+  }) async {
+    try {
+      // Create the request body with only the fields that are provided
+      Map<String, dynamic> requestBody = {};
+      
+      if (originStationCode != null) requestBody['origin_station_code'] = originStationCode;
+      if (destinationStationCode != null) requestBody['destination_station_code'] = destinationStationCode;
+      if (journeyDate != null) requestBody['journey_date'] = journeyDate;
+      if (bookingTime != null) requestBody['booking_time'] = bookingTime;
+      if (travelClass != null) requestBody['travel_class'] = travelClass;
+      if (passengers != null) requestBody['passengers'] = passengers;
+      if (jobType != null) requestBody['job_type'] = jobType;
+      if (bookingEmail != null) requestBody['booking_email'] = bookingEmail;
+      if (bookingPhone != null) requestBody['booking_phone'] = bookingPhone;
+      if (autoUpgrade != null) requestBody['auto_upgrade'] = autoUpgrade;
+      if (autoBookAlternateDate != null) requestBody['auto_book_alternate_date'] = autoBookAlternateDate;
+      if (paymentMethod != null) requestBody['payment_method'] = paymentMethod;
+      if (notes != null) requestBody['notes'] = notes;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/jobs/$jobId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+            'Failed to update job: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error updating job: $e');
+    }
+  }
 }

@@ -108,7 +108,7 @@ class SearchCard extends StatelessWidget {
                       final temp = originController.text;
                       originController.text = destinationController.text;
                       destinationController.text = temp;
-                      
+
                       // Call the callback to update parent state
                       if (onSwapLocations != null) {
                         onSwapLocations!();

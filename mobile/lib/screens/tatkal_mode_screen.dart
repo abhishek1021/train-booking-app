@@ -127,7 +127,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     // Load user profile data to prepopulate contact details
     _loadUserProfileData();
   }
-  
+
   // Initialize shared preferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
@@ -160,17 +160,17 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       if (userProfileJson != null && userProfileJson.isNotEmpty) {
         // Parse the JSON data
         final userProfile = json.decode(userProfileJson);
-        
+
         // Prepopulate email field
         if (userProfile['Email'] != null) {
           _emailController.text = userProfile['Email'];
         }
-        
+
         // Prepopulate phone field
         if (userProfile['Phone'] != null) {
           _phoneController.text = userProfile['Phone'];
         }
-        
+
         print('User profile data loaded successfully');
       } else {
         print('User profile data not found in SharedPreferences');
@@ -401,7 +401,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
               backgroundColor: Colors.red,
             );
           }
-          
+
           // If all validations pass, show the train selection popup
           if (isValid) {
             _showTrainSelectionPopup();
@@ -588,7 +588,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
-  
+
   // Show train selection popup
   void _showTrainSelectionPopup() {
     showDialog(
@@ -603,14 +603,15 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             setState(() {
               _selectedTrain = train;
             });
-            
+
             // Show confirmation message
             _showCustomSnackBar(
-              message: 'Train ${train!['train_number']} - ${train['train_name']} selected',
+              message:
+                  'Train ${train!['train_number']} - ${train['train_name']} selected',
               icon: Icons.train,
               backgroundColor: const Color(0xFF7C3AED),
             );
-            
+
             // Proceed to next step
             setState(() {
               _currentStep++;
@@ -620,14 +621,15 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
             setState(() {
               _selectedTrain = null; // Clear any previously selected train
             });
-            
+
             // Show confirmation message
             _showCustomSnackBar(
-              message: 'Train selection skipped. Will book any available train.',
+              message:
+                  'Train selection skipped. Will book any available train.',
               icon: Icons.info_outline,
               backgroundColor: Colors.blue,
             );
-            
+
             // Proceed to next step
             setState(() {
               _currentStep++;
@@ -892,10 +894,11 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         'job_execution_time': _jobTimeController.text,
         'job_type': _selectedJobType,
       };
-      
+
       // Add selected train information if available
       if (_selectedTrain != null) {
-        journeyData['train_number'] = _selectedTrain!['train_number'] ?? trainNumber;
+        journeyData['train_number'] =
+            _selectedTrain!['train_number'] ?? trainNumber;
         journeyData['train_name'] = _selectedTrain!['train_name'] ?? trainName;
         journeyData['departure_time'] = _selectedTrain!['departure_time'];
         journeyData['arrival_time'] = _selectedTrain!['arrival_time'];
@@ -929,14 +932,14 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       final prefs = await SharedPreferences.getInstance();
       List<String> existingJobs = prefs.getStringList('tatkal_jobs') ?? [];
 
-        // Generate a job ID with prefix based on job type
-        String prefix = 'TKL';
-        if (_selectedJobType == 'General') {
-          prefix = 'GEN';
-        } else if (_selectedJobType == 'Premium Tatkal') {
-          prefix = 'PTK';
-        }
-        String jobId = '$prefix-${DateTime.now().millisecondsSinceEpoch % 10000}';
+      // Generate a job ID with prefix based on job type
+      String prefix = 'TKL';
+      if (_selectedJobType == 'General') {
+        prefix = 'GEN';
+      } else if (_selectedJobType == 'Premium Tatkal') {
+        prefix = 'PTK';
+      }
+      String jobId = '$prefix-${DateTime.now().millisecondsSinceEpoch % 10000}';
       jobData['job_id'] = jobId;
 
       existingJobs.add(jsonEncode(jobData));
@@ -968,26 +971,25 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
 
         // Make the API call with correct job_type capitalization
         final response = await _jobService.createJob(
-          userId: _userId,
-          originStationCode: journeyData['from_station'],
-          destinationStationCode: journeyData['to_station'],
-          journeyDate: journeyData['journey_date'],
-          bookingTime: journeyData['preferred_time'],
-          travelClass: journeyData['class'],
-          passengers: passengersData,
-          jobType: _selectedJobType, // Use selected job type
-          bookingEmail: contactData['email'],
-          bookingPhone: contactData['phone'],
-          autoUpgrade: preferencesData['auto_upgrade'],
-          autoBookAlternateDate: preferencesData['auto_book_alternate_date'],
-          paymentMethod: preferencesData['payment_method'],
-          notes: preferencesData['notes'],
-          optForInsurance: _optForInsurance,
-          gstDetails: gstDetails,
-          selectedTrain: selectedTrainInfo, // Add selected train info
-          jobDate: _jobDateController.text,
-          jobExecutionTime: _jobTimeController.text
-        );
+            userId: _userId,
+            originStationCode: journeyData['from_station'],
+            destinationStationCode: journeyData['to_station'],
+            journeyDate: journeyData['journey_date'],
+            bookingTime: journeyData['preferred_time'],
+            travelClass: journeyData['class'],
+            passengers: passengersData,
+            jobType: _selectedJobType, // Use selected job type
+            bookingEmail: contactData['email'],
+            bookingPhone: contactData['phone'],
+            autoUpgrade: preferencesData['auto_upgrade'],
+            autoBookAlternateDate: preferencesData['auto_book_alternate_date'],
+            paymentMethod: preferencesData['payment_method'],
+            notes: preferencesData['notes'],
+            optForInsurance: _optForInsurance,
+            gstDetails: gstDetails,
+            selectedTrain: selectedTrainInfo, // Add selected train info
+            jobDate: _jobDateController.text,
+            jobExecutionTime: _jobTimeController.text);
 
         // Update jobId with the one returned from the server if available
         if (response.containsKey('job_id')) {
@@ -1229,7 +1231,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         return const SizedBox.shrink();
     }
   }
-  
+
   Widget _buildJourneyDetailsStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1266,9 +1268,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                   }
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               _buildSectionTitle('Job Execution Details'),
               // Job Date Card
               _buildCustomStationCard(
@@ -1351,9 +1353,9 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               _buildSectionTitle('Journey Details'),
               // Show selected train info if available
               if (_selectedTrain != null) _buildSelectedTrainInfo(),
@@ -2252,7 +2254,6 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
                           color: Color(0xFF222222),
                           fontFamily: 'ProductSans',
                         ),
-
                         decoration: InputDecoration(
                           labelText: 'Email (for ticket & alerts)',
                           labelStyle: TextStyle(
@@ -3525,7 +3526,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
       ),
     );
   }
-  
+
   // Build selected train info card
   Widget _buildSelectedTrainInfo() {
     final trainNumber = _selectedTrain!['train_number'] ?? 'Unknown';
@@ -3533,7 +3534,7 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
     final departureTime = _selectedTrain!['departure_time'] ?? 'Unknown';
     final arrivalTime = _selectedTrain!['arrival_time'] ?? 'Unknown';
     final duration = _selectedTrain!['duration'] ?? 'Unknown';
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),

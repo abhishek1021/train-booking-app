@@ -149,28 +149,28 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   double _calculateTotalPrice() {
     // Get base fare for the selected class
     double baseFare = _getBaseFareForClass();
-    
+
     // Calculate fare based on number of passengers
     double totalBaseFare = 0.0;
-    
+
     // Calculate fare for each passenger based on their type (adult, senior, etc.)
     for (var passenger in _passengers) {
       // Check if passenger is a senior citizen
       bool isSenior = false;
       if (passenger.containsKey('age')) {
-        int age = passenger['age'] is int 
-            ? passenger['age'] 
+        int age = passenger['age'] is int
+            ? passenger['age']
             : int.tryParse(passenger['age'].toString()) ?? 0;
         isSenior = age >= 60;
       } else if (passenger.containsKey('is_senior')) {
         isSenior = passenger['is_senior'] == true;
       }
-      
+
       // Apply senior discount (25% off) if applicable
       double passengerFare = isSenior ? baseFare * 0.75 : baseFare;
       totalBaseFare += passengerFare;
     }
-    
+
     // Add tax
     double totalPrice = totalBaseFare + widget.tax;
 
@@ -186,11 +186,11 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
 
     return totalPrice;
   }
-  
+
   // Get base fare for the selected class
   double _getBaseFareForClass() {
     // Try to get class prices from train data
-    if (widget.train.containsKey('class_prices') && 
+    if (widget.train.containsKey('class_prices') &&
         widget.train['class_prices'] is Map &&
         widget.train['class_prices'].containsKey(widget.selectedClass)) {
       var price = widget.train['class_prices'][widget.selectedClass];
@@ -202,7 +202,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
         return double.tryParse(price) ?? widget.price.toDouble();
       }
     }
-    
+
     // Fallback to widget price if class price not found
     return widget.price.toDouble();
   }
@@ -764,7 +764,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     bookingId:
                                         'PNR${DateTime.now().millisecondsSinceEpoch}',
                                     trainName: widget.train['train_name'] ?? '',
-                                    trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
+                                    trainNumber: widget.train['train_number'] ??
+                                        widget.train['train_id'] ??
+                                        '',
                                     trainClass: widget.selectedClass,
                                     departureStation: widget.originName,
                                     arrivalStation: widget.destinationName,
@@ -791,17 +793,31 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                               idNumber: p['id_number'] ?? '',
                                               passengerType: (p['age'] is int
                                                           ? p['age']
-                                                          : int.tryParse(p['age']?.toString() ?? '0') ?? 0) >= 60
+                                                          : int.tryParse(p[
+                                                                          'age']
+                                                                      ?.toString() ??
+                                                                  '0') ??
+                                                              0) >=
+                                                      60
                                                   ? 'Senior'
                                                   : 'Adult',
                                               seat: p['seat'] ?? 'B2-34',
                                               age: p['age'] is int
                                                   ? p['age']
-                                                  : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
+                                                  : int.tryParse(p['age']
+                                                              ?.toString() ??
+                                                          '30') ??
+                                                      30,
                                               gender: p['gender'] ?? 'male',
-                                              isSenior: p['is_senior'] ?? ((p['age'] is int
-                                                  ? p['age']
-                                                  : int.tryParse(p['age']?.toString() ?? '0') ?? 0) >= 60),
+                                              isSenior: p['is_senior'] ??
+                                                  ((p['age'] is int
+                                                          ? p['age']
+                                                          : int.tryParse(p[
+                                                                          'age']
+                                                                      ?.toString() ??
+                                                                  '0') ??
+                                                              0) >=
+                                                      60),
                                             ))
                                         .toList(),
                                   ),
@@ -885,7 +901,10 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                           'PNR${DateTime.now().millisecondsSinceEpoch}',
                                       trainName:
                                           widget.train['train_name'] ?? '',
-                                      trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
+                                      trainNumber:
+                                          widget.train['train_number'] ??
+                                              widget.train['train_id'] ??
+                                              '',
                                       trainClass: widget.selectedClass,
                                       departureStation: widget.originName,
                                       arrivalStation: widget.destinationName,
@@ -910,11 +929,19 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                                 fullName: p['fullName'] ?? '',
                                                 idType: p['idType'] ?? '',
                                                 idNumber: p['idNumber'] ?? '',
-                                                passengerType: p['passengerType'] ?? 'Adult',
+                                                passengerType:
+                                                    p['passengerType'] ??
+                                                        'Adult',
                                                 seat: p['seat'] ?? 'B2-34',
-                                                age: p['age'] is int ? p['age'] : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
+                                                age: p['age'] is int
+                                                    ? p['age']
+                                                    : int.tryParse(p['age']
+                                                                ?.toString() ??
+                                                            '30') ??
+                                                        30,
                                                 gender: p['gender'] ?? 'male',
-                                                isSenior: p['isSenior'] ?? false,
+                                                isSenior:
+                                                    p['isSenior'] ?? false,
                                               ))
                                           .toList(),
                                     ),
@@ -1031,13 +1058,15 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                         String passengerType = entry.key;
                         int count = entry.value;
                         double fare = _getBaseFareForClass();
-                        
+
                         // Apply discount for seniors
                         if (passengerType == 'Senior') {
-                          return _priceRow('$passengerType (x$count)', fare * 0.75 * count,
+                          return _priceRow(
+                              '$passengerType (x$count)', fare * 0.75 * count,
                               note: '25% off');
                         } else {
-                          return _priceRow('$passengerType (x$count)', fare * count);
+                          return _priceRow(
+                              '$passengerType (x$count)', fare * count);
                         }
                       }),
                       _priceRow('Tax', widget.tax),
@@ -1078,7 +1107,9 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           bookingId:
                               'PNR${DateTime.now().millisecondsSinceEpoch}',
                           trainName: widget.train['train_name'] ?? '',
-                          trainNumber: widget.train['train_number'] ?? widget.train['train_id'] ?? '',
+                          trainNumber: widget.train['train_number'] ??
+                              widget.train['train_id'] ??
+                              '',
                           trainClass: widget.selectedClass,
                           departureStation: widget.originName,
                           arrivalStation: widget.destinationName,
@@ -1101,9 +1132,14 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                                     fullName: p['name'] ?? '',
                                     idType: p['id_type'] ?? '',
                                     idNumber: p['id_number'] ?? '',
-                                    passengerType: p['passenger_type'] ?? 'Adult',
+                                    passengerType:
+                                        p['passenger_type'] ?? 'Adult',
                                     seat: p['seat'] ?? 'B2-34',
-                                    age: p['age'] is int ? p['age'] : int.tryParse(p['age']?.toString() ?? '30') ?? 30,
+                                    age: p['age'] is int
+                                        ? p['age']
+                                        : int.tryParse(
+                                                p['age']?.toString() ?? '30') ??
+                                            30,
                                     gender: p['gender'] ?? 'male',
                                     isSenior: p['is_senior'] ?? false,
                                   ))
@@ -1169,33 +1205,34 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   TextStyle _cellStyle() =>
       TextStyle(fontFamily: 'ProductSans', color: Colors.black87, fontSize: 13);
 
-  // Get counts of each passenger type (Adult, Senior, etc.)  
+  // Get counts of each passenger type (Adult, Senior, etc.)
   Map<String, int> _getPassengerTypeCounts() {
     Map<String, int> counts = {};
-    
+
     for (var passenger in _passengers) {
       // Determine passenger type
       String passengerType = 'Adult'; // Default type
-      
+
       // Check if passenger is a senior based on age
       if (passenger.containsKey('age')) {
-        int age = passenger['age'] is int 
-            ? passenger['age'] 
+        int age = passenger['age'] is int
+            ? passenger['age']
             : int.tryParse(passenger['age'].toString()) ?? 0;
         passengerType = age >= 60 ? 'Senior' : 'Adult';
-      } else if (passenger.containsKey('is_senior') && passenger['is_senior'] == true) {
+      } else if (passenger.containsKey('is_senior') &&
+          passenger['is_senior'] == true) {
         passengerType = 'Senior';
       } else if (passenger.containsKey('passenger_type')) {
         passengerType = passenger['passenger_type'];
         // Capitalize first letter
-        passengerType = passengerType.substring(0, 1).toUpperCase() + 
-                        passengerType.substring(1).toLowerCase();
+        passengerType = passengerType.substring(0, 1).toUpperCase() +
+            passengerType.substring(1).toLowerCase();
       }
-      
+
       // Increment count for this passenger type
       counts[passengerType] = (counts[passengerType] ?? 0) + 1;
     }
-    
+
     return counts;
   }
 
@@ -1217,7 +1254,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                if (note != null) ...[  
+                if (note != null) ...[
                   SizedBox(width: 6),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),

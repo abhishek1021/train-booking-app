@@ -11,7 +11,8 @@ class OffersScreen extends StatelessWidget {
         'title': 'First Booking Discount',
         'code': 'FIRST50',
         'discount': '50% OFF',
-        'description': 'Get 50% off on your first booking. Maximum discount ₹200.',
+        'description':
+            'Get 50% off on your first booking. Maximum discount ₹200.',
         'validTill': 'June 30, 2025',
         'image': 'assets/images/offer1.png',
         'color': const Color(0xFF7C3AED),
@@ -20,7 +21,8 @@ class OffersScreen extends StatelessWidget {
         'title': 'Weekend Special',
         'code': 'WEEKEND25',
         'discount': '25% OFF',
-        'description': 'Get 25% off on all weekend bookings. Valid for Saturday and Sunday travel.',
+        'description':
+            'Get 25% off on all weekend bookings. Valid for Saturday and Sunday travel.',
         'validTill': 'July 15, 2025',
         'image': 'assets/images/offer2.png',
         'color': const Color(0xFF4C1D95),
@@ -29,7 +31,8 @@ class OffersScreen extends StatelessWidget {
         'title': 'Senior Citizen Offer',
         'code': 'SENIOR15',
         'discount': '15% OFF',
-        'description': 'Additional 15% off for senior citizens. Can be combined with other offers.',
+        'description':
+            'Additional 15% off for senior citizens. Can be combined with other offers.',
         'validTill': 'December 31, 2025',
         'image': 'assets/images/offer3.png',
         'color': const Color(0xFF5B21B6),
@@ -38,7 +41,8 @@ class OffersScreen extends StatelessWidget {
         'title': 'Family Package',
         'code': 'FAMILY20',
         'discount': '20% OFF',
-        'description': 'Get 20% off when booking for 4 or more passengers in the same booking.',
+        'description':
+            'Get 20% off when booking for 4 or more passengers in the same booking.',
         'validTill': 'August 31, 2025',
         'image': 'assets/images/offer4.png',
         'color': const Color(0xFF8B5CF6),
@@ -47,7 +51,8 @@ class OffersScreen extends StatelessWidget {
         'title': 'Monsoon Special',
         'code': 'MONSOON30',
         'discount': '30% OFF',
-        'description': 'Get 30% off on all bookings during monsoon season. Valid for travel between July and September.',
+        'description':
+            'Get 30% off on all bookings during monsoon season. Valid for travel between July and September.',
         'validTill': 'September 30, 2025',
         'image': 'assets/images/offer5.png',
         'color': const Color(0xFF7C3AED),
@@ -103,7 +108,8 @@ class OffersScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF7C3AED).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -168,7 +174,8 @@ class OffersScreen extends StatelessWidget {
                   right: 16,
                   top: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(16),
@@ -243,7 +250,8 @@ class OffersScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
@@ -276,7 +284,8 @@ class OffersScreen extends StatelessWidget {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Coupon code ${offer['code']} copied to clipboard!'),
+                            content: Text(
+                                'Coupon code ${offer['code']} copied to clipboard!'),
                             backgroundColor: const Color(0xFF7C3AED),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -284,7 +293,8 @@ class OffersScreen extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7C3AED),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

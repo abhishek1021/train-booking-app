@@ -12,10 +12,10 @@ class _SupportScreenState extends State<SupportScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
-  
+
   String? _selectedIssueType;
   bool _isSubmitting = false;
-  
+
   final List<String> _issueTypes = [
     'Booking Issue',
     'Payment Problem',
@@ -42,13 +42,13 @@ class _SupportScreenState extends State<SupportScreen> {
       setState(() {
         _isSubmitting = true;
       });
-      
+
       // Simulate API call
       Future.delayed(const Duration(seconds: 2), () {
         setState(() {
           _isSubmitting = false;
         });
-        
+
         // Show success dialog
         showDialog(
           context: context,
@@ -155,7 +155,8 @@ class _SupportScreenState extends State<SupportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 50), // Top padding as per design guidelines
+              const SizedBox(
+                  height: 50), // Top padding as per design guidelines
               _buildSupportOptions(),
               const SizedBox(height: 24),
               _buildContactForm(),
@@ -221,7 +222,8 @@ class _SupportScreenState extends State<SupportScreen> {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Live chat is available from 9 AM to 6 PM'),
+                        content:
+                            Text('Live chat is available from 9 AM to 6 PM'),
                         backgroundColor: Color(0xFF7C3AED),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -551,15 +553,18 @@ class _SupportScreenState extends State<SupportScreen> {
     final List<Map<String, String>> faqs = [
       {
         'question': 'How do I cancel my booking?',
-        'answer': 'You can cancel your booking by going to My Bookings section, selecting the booking you want to cancel, and clicking on the Cancel button. Refund will be processed as per the cancellation policy.'
+        'answer':
+            'You can cancel your booking by going to My Bookings section, selecting the booking you want to cancel, and clicking on the Cancel button. Refund will be processed as per the cancellation policy.'
       },
       {
         'question': 'When will I receive my refund?',
-        'answer': 'Refunds are typically processed within 5-7 business days after cancellation. The amount will be credited back to your original payment method or wallet.'
+        'answer':
+            'Refunds are typically processed within 5-7 business days after cancellation. The amount will be credited back to your original payment method or wallet.'
       },
       {
         'question': 'How can I change passenger details?',
-        'answer': 'Passenger details can be modified up to 6 hours before departure. Go to My Bookings, select the booking, and click on the Edit button to make changes.'
+        'answer':
+            'Passenger details can be modified up to 6 hours before departure. Go to My Bookings, select the booking, and click on the Edit button to make changes.'
       },
     ];
 
@@ -593,7 +598,9 @@ class _SupportScreenState extends State<SupportScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ...faqs.map((faq) => _buildFAQItem(faq['question']!, faq['answer']!)).toList(),
+            ...faqs
+                .map((faq) => _buildFAQItem(faq['question']!, faq['answer']!))
+                .toList(),
           ],
         ),
       ),

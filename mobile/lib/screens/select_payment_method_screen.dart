@@ -272,31 +272,33 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                           // Create a standardized train number from the train name
                           String trainName = widget.trainName.trim();
                           String trainNumber = '';
-                          
+
                           // Use the trainNumber passed from the review summary screen
                           // If it's empty, extract it from the train name as a fallback
                           trainNumber = widget.trainNumber;
-                          
+
                           if (trainNumber.isEmpty) {
                             // Extract train number from train name if it's in the format "Train Name (12345)"
-                            final match = RegExp(r'\(([0-9]+)\)').firstMatch(trainName);
+                            final match =
+                                RegExp(r'\(([0-9]+)\)').firstMatch(trainName);
                             if (match != null) {
                               trainNumber = match.group(1) ?? '';
                             } else {
                               // If no parentheses, check if the train name has a format like "MAO-SWV PASS"
                               // and convert it to a standard format without spaces or special characters
-                              trainNumber = trainName.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+                              trainNumber = trainName.replaceAll(
+                                  RegExp(r'[^A-Za-z0-9]'), '');
                             }
                           }
-                          
+
                           // Ensure train number is uppercase for consistency
                           trainNumber = trainNumber.toUpperCase();
-                          
+
                           // For debugging
                           print('Train ID: $trainNumber');
                           print('Train Name: $trainName');
                           print('Train Number: $trainNumber');
-                          
+
                           final result =
                               await _bookingService.processBookingWithPayment(
                             userId: _userId,

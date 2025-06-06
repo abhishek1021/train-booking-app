@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tatkal_mode_screen.dart';
 import 'job_logs_screen.dart';
+import 'job_details_screen.dart';
+import 'job_edit_screen.dart';
 import '../services/job_service.dart';
 
 class TatkalJobsScreen extends StatefulWidget {
@@ -511,11 +513,12 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
   // Get job execution status label based on next execution time
   String _getJobExecutionStatus(Map<String, dynamic> job) {
     // If job is not scheduled, return empty string
-    final String status = job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
+    final String status =
+        job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
     if (status.toLowerCase() != 'scheduled') {
       return '';
     }
-    
+
     // Try to parse next execution time
     DateTime? nextExecution;
     if (job['next_execution_time'] != null) {
@@ -528,13 +531,14 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     } else {
       return '';
     }
-    
+
     // Get current time
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
-    final nextExecutionDate = DateTime(nextExecution.year, nextExecution.month, nextExecution.day);
-    
+    final nextExecutionDate =
+        DateTime(nextExecution.year, nextExecution.month, nextExecution.day);
+
     // Determine execution status
     if (nextExecutionDate.isAtSameMomentAs(today)) {
       return 'Today';
@@ -553,28 +557,37 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
 
   Widget _buildJobCard(Map<String, dynamic> job) {
     // Extract job data with null safety
-    final String jobId = job['job_id']?.toString() ?? job['id']?.toString() ?? 'Unknown ID';
-    final String status = job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
-    
+    final String jobId =
+        job['job_id']?.toString() ?? job['id']?.toString() ?? 'Unknown ID';
+    final String status =
+        job['job_status']?.toString() ?? job['status']?.toString() ?? 'Unknown';
+
     // Station codes and names
-    final String originCode = job['origin_station_code']?.toString() ?? job['origin']?.toString() ?? 'N/A';
-    final String destCode = job['destination_station_code']?.toString() ?? job['destination']?.toString() ?? 'N/A';
-    
+    final String originCode = job['origin_station_code']?.toString() ??
+        job['origin']?.toString() ??
+        'N/A';
+    final String destCode = job['destination_station_code']?.toString() ??
+        job['destination']?.toString() ??
+        'N/A';
+
     // For station names, use the station code as a fallback if name is null or empty
     String originName = job['origin_station_name']?.toString() ?? '';
     if (originName.isEmpty || originName == 'null') {
       originName = originCode;
     }
-    
+
     String destName = job['destination_station_name']?.toString() ?? '';
     if (destName.isEmpty || destName == 'null') {
       destName = destCode;
     }
-    
-    final String journeyDate = job['journey_date']?.toString() ?? job['date']?.toString() ?? 'N/A';
-    final String travelClass = job['travel_class']?.toString() ?? job['class']?.toString() ?? 'N/A';
-    final String bookingTime = job['booking_time']?.toString() ?? job['time']?.toString() ?? 'N/A';
-    
+
+    final String journeyDate =
+        job['journey_date']?.toString() ?? job['date']?.toString() ?? 'N/A';
+    final String travelClass =
+        job['travel_class']?.toString() ?? job['class']?.toString() ?? 'N/A';
+    final String bookingTime =
+        job['booking_time']?.toString() ?? job['time']?.toString() ?? 'N/A';
+
     // Get job execution status
     final String executionStatus = _getJobExecutionStatus(job);
 
@@ -608,407 +621,458 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          // Header with job ID and status
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
+      child: InkWell(
+        onTap: () {
+          // Navigate to job details screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => JobDetailsScreen(jobId: jobId),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        jobId,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                          fontFamily: 'ProductSans',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              shape: BoxShape.circle,
-                            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            // Header with job ID and status
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          jobId,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                            fontFamily: 'ProductSans',
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            status,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              fontFamily: 'ProductSans',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // Edit button - only show for scheduled jobs
+                          if (status == 'Scheduled')
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Color(0xFF7C3AED),
+                                size: 20,
+                              ),
+                              onPressed: () async {
+                                // Navigate to edit screen
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => JobEditScreen(
+                                      jobId: jobId,
+                                      jobData: job,
+                                    ),
+                                  ),
+                                );
+
+                                // If changes were made, refresh the jobs list
+                                if (result == true) {
+                                  _refreshJobs();
+                                }
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              splashRadius: 24,
+                              tooltip: 'Edit Job',
+                            ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: statusColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  status,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    fontFamily: 'ProductSans',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+
+                  // Show execution status if available
+                  if (executionStatus.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 14,
+                          color: Color(0xFF7C3AED),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Executes: $executionStatus',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF7C3AED),
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'ProductSans',
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-                
-                // Show execution status if available
-                if (executionStatus.isNotEmpty) ...[  
-                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+
+            // Journey details
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Origin to destination
                   Row(
                     children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 14,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              originCode,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7C3AED),
+                                fontFamily: 'ProductSans',
+                              ),
+                            ),
+                            // Only show origin name if it's different from code
+                            if (originName != originCode)
+                              Text(
+                                originName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontFamily: 'ProductSans',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward,
                         color: Color(0xFF7C3AED),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Executes: $executionStatus',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF7C3AED),
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'ProductSans',
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              destCode,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7C3AED),
+                                fontFamily: 'ProductSans',
+                              ),
+                            ),
+                            // Only show destination name if it's different from code
+                            if (destName != destCode)
+                              Text(
+                                destName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontFamily: 'ProductSans',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ],
-            ),
-          ),
-
-          // Journey details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Origin to destination
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            originCode,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF7C3AED),
-                              fontFamily: 'ProductSans',
-                            ),
-                          ),
-                          // Only show origin name if it's different from code
-                          if (originName != originCode)
-                            Text(
-                              originName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontFamily: 'ProductSans',
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.arrow_forward,
-                      color: Color(0xFF7C3AED),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            destCode,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF7C3AED),
-                              fontFamily: 'ProductSans',
-                            ),
-                          ),
-                          // Only show destination name if it's different from code
-                          if (destName != destCode)
-                            Text(
-                              destName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontFamily: 'ProductSans',
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Journey date and other details
-                Row(
-                  children: [
-                    _buildDetailItem(Icons.calendar_today, _formatDate(journeyDate)),
-                    _buildDetailItem(Icons.access_time, bookingTime),
-                    _buildDetailItem(Icons.airline_seat_recline_normal, travelClass),
-                    _buildDetailItem(Icons.people, '$passengerCount Pax'),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Created at
-                Text(
-                  'Created: ${createdAt != null ? _formatDateTime(createdAt) : 'N/A'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontFamily: 'ProductSans',
-                  ),
-                ),
-
-                // Status-specific information
-                if (status == 'Completed') ...[
-                  const SizedBox(height: 8),
-
-                  // Handle completed time
-
-                  if (job['completed_at'] != null ||
-                      job['completedAt'] != null) ...[
-                    Text(
-                      'Completed: ${job['completed_at'] != null ? _formatDateTime(DateTime.parse(job['completed_at'])) : job['completedAt'] is DateTime ? _formatDateTime(job['completedAt']) : 'N/A'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontFamily: 'ProductSans',
-                      ),
-                    ),
-                  ],
 
                   const SizedBox(height: 16),
 
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Booking ID: ${job['booking_id']?.toString() ?? job['bookingId']?.toString() ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[800],
-                                  fontFamily: 'ProductSans',
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'PNR: ${job['pnr']?.toString() ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[800],
-                                  fontFamily: 'ProductSans',
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  // Journey date and other details
+                  Row(
+                    children: [
+                      _buildDetailItem(
+                          Icons.calendar_today, _formatDate(journeyDate)),
+                      _buildDetailItem(Icons.access_time, bookingTime),
+                      _buildDetailItem(
+                          Icons.airline_seat_recline_normal, travelClass),
+                      _buildDetailItem(Icons.people, '$passengerCount Pax'),
+                    ],
                   ),
-                ],
-
-                if (status == 'Failed') ...[
-                  const SizedBox(height: 8),
-
-                  // Handle failed time
-
-                  if (job['failed_at'] != null || job['failedAt'] != null) ...[
-                    Text(
-                      'Failed: ${job['failed_at'] != null ? _formatDateTime(DateTime.parse(job['failed_at'])) : job['failedAt'] is DateTime ? _formatDateTime(job['failedAt']) : 'N/A'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontFamily: 'ProductSans',
-                      ),
-                    ),
-                  ],
 
                   const SizedBox(height: 16),
 
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Colors.red[800],
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            job['failure_reason']?.toString() ??
-                                job['failureReason']?.toString() ??
-                                'Unknown error',
-                            style: TextStyle(
-                              color: Colors.red[800],
-                              fontFamily: 'ProductSans',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // Action buttons
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // View Logs button for all job statuses
-                TextButton.icon(
-                  onPressed: () {
-                    // Navigate to job logs screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => JobLogsScreen(
-                          jobId: jobId,
-                          jobStatus: status,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.history, size: 18),
-                  label: const Text('View Logs'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF7C3AED),
-                    textStyle: const TextStyle(
+                  // Created at
+                  Text(
+                    'Created: ${createdAt != null ? _formatDateTime(createdAt) : 'N/A'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                       fontFamily: 'ProductSans',
                     ),
                   ),
+
+                  // Status-specific information
+                  if (status == 'Completed') ...[
+                    const SizedBox(height: 8),
+
+                    // Handle completed time
+
+                    if (job['completed_at'] != null ||
+                        job['completedAt'] != null) ...[
+                      Text(
+                        'Completed: ${job['completed_at'] != null ? _formatDateTime(DateTime.parse(job['completed_at'])) : job['completedAt'] is DateTime ? _formatDateTime(job['completedAt']) : 'N/A'}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontFamily: 'ProductSans',
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Booking ID: ${job['booking_id']?.toString() ?? job['bookingId']?.toString() ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green[800],
+                                    fontFamily: 'ProductSans',
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'PNR: ${job['pnr']?.toString() ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green[800],
+                                    fontFamily: 'ProductSans',
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (status == 'Failed') ...[
+                    const SizedBox(height: 8),
+
+                    // Handle failed time
+
+                    if (job['failed_at'] != null ||
+                        job['failedAt'] != null) ...[
+                      Text(
+                        'Failed: ${job['failed_at'] != null ? _formatDateTime(DateTime.parse(job['failed_at'])) : job['failedAt'] is DateTime ? _formatDateTime(job['failedAt']) : 'N/A'}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontFamily: 'ProductSans',
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red[800],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              job['failure_reason']?.toString() ??
+                                  job['failureReason']?.toString() ??
+                                  'Unknown error',
+                              style: TextStyle(
+                                color: Colors.red[800],
+                                fontFamily: 'ProductSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Action buttons
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
                 ),
-                const SizedBox(width: 8),
-                
-                if (status == 'Scheduled' || status == 'In Progress') ...[
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // View Logs button for all job statuses
                   TextButton.icon(
                     onPressed: () {
-                      // Cancel job
-                      // TODO: Implement job cancellation
+                      // Navigate to job logs screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => JobLogsScreen(
+                            jobId: jobId,
+                            jobStatus: status,
+                          ),
+                        ),
+                      );
                     },
-                    icon: const Icon(Icons.cancel, size: 18),
-                    label: const Text('Cancel'),
+                    icon: const Icon(Icons.history, size: 18),
+                    label: const Text('View Logs'),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
+                      foregroundColor: const Color(0xFF7C3AED),
                       textStyle: const TextStyle(
                         fontFamily: 'ProductSans',
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                ],
-                if (status == 'Scheduled') ...[
-                  TextButton.icon(
-                    onPressed: () {
-                      // Edit job
-                      // TODO: Implement job editing
-                    },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF7C3AED),
-                      textStyle: const TextStyle(
-                        fontFamily: 'ProductSans',
+
+                  if (status == 'Scheduled' || status == 'In Progress') ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        // Cancel job
+                        // TODO: Implement job cancellation
+                      },
+                      icon: const Icon(Icons.cancel, size: 18),
+                      label: const Text('Cancel'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        textStyle: const TextStyle(
+                          fontFamily: 'ProductSans',
+                        ),
                       ),
                     ),
-                  ),
-                ],
-                if (status == 'Completed') ...[
-                  TextButton.icon(
-                    onPressed: () {
-                      // View booking
-                      // TODO: Implement booking details view
-                    },
-                    icon: const Icon(Icons.visibility, size: 18),
-                    label: const Text('View Booking'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF7C3AED),
-                      textStyle: const TextStyle(
-                        fontFamily: 'ProductSans',
+                    const SizedBox(width: 8),
+                  ],
+                  if (status == 'Scheduled') ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        // Edit job
+                        // TODO: Implement job editing
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF7C3AED),
+                        textStyle: const TextStyle(
+                          fontFamily: 'ProductSans',
+                        ),
                       ),
                     ),
-                  ),
-                ],
-                if (status == 'Failed') ...[
-                  TextButton.icon(
-                    onPressed: () {
-                      // Retry job
-                    },
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Retry'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF7C3AED),
-                      textStyle: const TextStyle(
-                        fontFamily: 'ProductSans',
+                  ],
+                  if (status == 'Completed') ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        // View booking
+                        // TODO: Implement booking details view
+                      },
+                      icon: const Icon(Icons.visibility, size: 18),
+                      label: const Text('View Booking'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF7C3AED),
+                        textStyle: const TextStyle(
+                          fontFamily: 'ProductSans',
+                        ),
                       ),
                     ),
-                  ),
+                  ],
+                  if (status == 'Failed') ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        // Retry job
+                      },
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Retry'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF7C3AED),
+                        textStyle: const TextStyle(
+                          fontFamily: 'ProductSans',
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -16,7 +16,8 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProviderStateMixin {
+class _HistoryScreenState extends State<HistoryScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final BookingService _bookingService = BookingService();
   List<dynamic> _bookings = [];
@@ -49,14 +50,15 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
     try {
       // Fetch bookings
       final bookings = await _bookingService.getBookingsByUserId(widget.userId);
-      
+
       // Fetch wallet and transactions
       final wallet = await _bookingService.getWalletByUserId(widget.userId);
       _walletId = wallet['wallet_id'];
-      
+
       if (_walletId != null) {
-        final transactions = await _bookingService.getWalletTransactions(_walletId!);
-        
+        final transactions =
+            await _bookingService.getWalletTransactions(_walletId!);
+
         setState(() {
           _bookings = bookings;
           _transactions = transactions;
@@ -68,7 +70,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           _isLoadingTransactions = false;
         });
       }
-      
+
       setState(() {
         _isLoadingBookings = false;
       });
@@ -151,7 +153,8 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                     onPressed: _fetchData,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7C3AED),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -175,7 +178,8 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                 _isLoadingBookings
                     ? const Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
                         ),
                       )
                     : _bookings.isEmpty
@@ -186,11 +190,13 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                 _isLoadingTransactions
                     ? const Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
                         ),
                       )
                     : _transactions.isEmpty
-                        ? _buildEmptyState('No transactions found', Icons.account_balance_wallet)
+                        ? _buildEmptyState('No transactions found',
+                            Icons.account_balance_wallet)
                         : _buildTransactionsList(),
               ],
             ),
@@ -252,14 +258,15 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           final status = booking['booking_status'] ?? 'confirmed';
           final journeyDate = booking['journey_date'] ?? '';
           final trainName = booking['train_name'] ?? 'Train';
-          final trainNumber = booking['train_number'] ?? booking['train_id'] ?? '';
+          final trainNumber =
+              booking['train_number'] ?? booking['train_id'] ?? '';
           final origin = booking['origin_station_code'] ?? '';
           final destination = booking['destination_station_code'] ?? '';
           final travelClass = booking['travel_class'] ?? booking['class'] ?? '';
           final pnr = booking['pnr'] ?? '';
           final fare = booking['fare'] ?? '0';
           final passengers = booking['passengers'] ?? [];
-          
+
           // Format date
           String formattedDate = journeyDate;
           try {
@@ -306,7 +313,8 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: _getStatusColor(status).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -489,7 +497,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           final source = transaction['source'] ?? '';
           final createdAt = transaction['created_at'] ?? '';
           final notes = transaction['notes'] ?? '';
-          
+
           // Format date
           String formattedDate = '';
           try {
@@ -596,10 +604,12 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
     final journeyDate = booking['journey_date'] ?? '';
     final fare = double.tryParse(booking['fare'].toString()) ?? 0.0;
     final tax = double.tryParse(booking['tax']?.toString() ?? '0') ?? 0.0;
-    final totalAmount = double.tryParse(booking['total_amount']?.toString() ?? booking['fare'].toString()) ?? fare;
+    final totalAmount = double.tryParse(booking['total_amount']?.toString() ??
+            booking['fare'].toString()) ??
+        fare;
     final status = booking['booking_status'] ?? 'confirmed';
     final paymentMethod = booking['payment_method'] ?? 'wallet';
-    
+
     // Convert passengers to Passenger objects
     final List<dynamic> passengersData = booking['passengers'] ?? [];
     final List<Passenger> passengers = passengersData.map((p) {
