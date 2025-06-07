@@ -93,6 +93,8 @@ class JobUpdate(BaseModel):
     failure_reason: Optional[str] = None
     last_execution_time: Optional[datetime] = None
     next_execution_time: Optional[datetime] = None
+    job_date: Optional[str] = None
+    job_execution_time: Optional[str] = None
 
     @validator('journey_date')
     def validate_journey_date(cls, v):
@@ -110,6 +112,24 @@ class JobUpdate(BaseModel):
                 datetime.strptime(v, "%H:%M")
             except ValueError:
                 raise ValueError("booking_time must be in HH:MM format")
+        return v
+        
+    @validator('job_date')
+    def validate_job_date(cls, v):
+        if v is not None:
+            try:
+                datetime.strptime(v, "%Y-%m-%d")
+            except ValueError:
+                raise ValueError("job_date must be in YYYY-MM-DD format")
+        return v
+        
+    @validator('job_execution_time')
+    def validate_job_execution_time(cls, v):
+        if v is not None:
+            try:
+                datetime.strptime(v, "%H:%M")
+            except ValueError:
+                raise ValueError("job_execution_time must be in HH:MM format")
         return v
 
 class Job(BaseModel):
@@ -129,7 +149,7 @@ class Job(BaseModel):
     job_status: JobStatus
     auto_upgrade: bool = False
     auto_book_alternate_date: bool = False
-    payment_method: str
+    payment_method: str = 'wallet'
     notes: Optional[str] = None
     booking_id: Optional[str] = None
     pnr: Optional[str] = None
@@ -140,3 +160,5 @@ class Job(BaseModel):
     next_execution_time: Optional[datetime] = None
     execution_attempts: int = 0
     max_attempts: int = 3
+    job_date: Optional[str] = None
+    job_execution_time: Optional[str] = None

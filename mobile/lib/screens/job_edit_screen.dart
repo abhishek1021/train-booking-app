@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/job_service.dart';
+import '../widgets/success_animation_dialog.dart';
+import '../widgets/failure_animation_dialog.dart';
 import '../services/passenger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +26,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
   final JobService _jobService = JobService();
   
   // Form controllers
+  late TextEditingController _jobIdController;
   late TextEditingController _originController;
   late TextEditingController _destinationController;
   late TextEditingController _journeyDateController;
@@ -31,6 +35,10 @@ class _JobEditScreenState extends State<JobEditScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _notesController;
+  
+  // Job scheduling controllers
+  late TextEditingController _jobDateController;
+  late TextEditingController _jobExecutionTimeController;
   
   // Optional values controllers
   final TextEditingController _gstNumberController = TextEditingController();
@@ -64,13 +72,25 @@ class _JobEditScreenState extends State<JobEditScreen> {
   void _initControllers() {
     final jobData = widget.jobData;
     
-    _originController = TextEditingController(text: jobData['origin'] ?? '');
-    _destinationController = TextEditingController(text: jobData['destination'] ?? '');
+    // Initialize job ID controller
+    _jobIdController = TextEditingController(text: jobData['job_id'] ?? widget.jobId);
+    
+    // Initialize station codes with proper field names
+    _originController = TextEditingController(text: jobData['origin_station_code'] ?? jobData['origin'] ?? '');
+    _destinationController = TextEditingController(text: jobData['destination_station_code'] ?? jobData['destination'] ?? '');
+    
+    // Initialize other journey details
     _journeyDateController = TextEditingController(text: jobData['journey_date'] ?? '');
     _bookingTimeController = TextEditingController(text: jobData['booking_time'] ?? '');
     _travelClassController = TextEditingController(text: jobData['travel_class'] ?? '');
-    _emailController = TextEditingController(text: jobData['email'] ?? '');
-    _phoneController = TextEditingController(text: jobData['phone'] ?? '');
+    
+    // Initialize job scheduling details
+    _jobDateController = TextEditingController(text: jobData['job_date'] ?? jobData['journey_date'] ?? '');
+    _jobExecutionTimeController = TextEditingController(text: jobData['job_execution_time'] ?? jobData['booking_time'] ?? '');
+    
+    // Initialize contact information with proper field names
+    _emailController = TextEditingController(text: jobData['booking_email'] ?? jobData['email'] ?? '');
+    _phoneController = TextEditingController(text: jobData['booking_phone'] ?? jobData['phone'] ?? '');
     _notesController = TextEditingController(text: jobData['notes'] ?? '');
     
     // Initialize optional values
@@ -167,11 +187,14 @@ class _JobEditScreenState extends State<JobEditScreen> {
   @override
   void dispose() {
     // Dispose controllers
+    _jobIdController.dispose();
     _originController.dispose();
     _destinationController.dispose();
     _journeyDateController.dispose();
     _bookingTimeController.dispose();
     _travelClassController.dispose();
+    _jobDateController.dispose();
+    _jobExecutionTimeController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _notesController.dispose();
@@ -211,6 +234,10 @@ class _JobEditScreenState extends State<JobEditScreen> {
                         _buildSectionTitle('Journey Details'),
                         SizedBox(height: 8),
                         _buildJourneySection(),
+                        SizedBox(height: 24),
+                        _buildSectionTitle('Job Scheduling'),
+                        SizedBox(height: 8),
+                        _buildJobSchedulingSection(),
                         SizedBox(height: 24),
                         _buildSectionTitle('Contact Information'),
                         SizedBox(height: 8),
@@ -255,36 +282,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
                           ),
                         ],
                       ),
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveChanges,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF7C3AED),
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          minimumSize: Size(double.infinity, 52),
-                          elevation: 0,
-                        ),
-                        child: _isSaving
-                            ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                'Save Changes',
-                                style: TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
+                      child: _buildSaveButton(),
                     ),
                   ),
                 ],
@@ -293,6 +291,53 @@ class _JobEditScreenState extends State<JobEditScreen> {
     );
   }
   
+  // Build save button with gradient style according to app design guidelines
+  Widget _buildSaveButton() {
+    return Container(
+      width: double.infinity,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: _isSaving 
+              ? [Colors.grey.shade400, Colors.grey.shade300]
+              : [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
+      child: ElevatedButton(
+        onPressed: _isSaving ? null : _saveChanges,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: _isSaving
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                'Save Changes',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -326,6 +371,14 @@ class _JobEditScreenState extends State<JobEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Job ID field (disabled/read-only)
+          _buildTextField(
+            controller: _jobIdController,
+            label: 'Job ID',
+            prefixIcon: Icons.numbers,
+            readOnly: true,
+          ),
+          const SizedBox(height: 16),
           _buildTextField(
             controller: _originController,
             label: 'Origin Station Code',
@@ -369,6 +422,80 @@ class _JobEditScreenState extends State<JobEditScreen> {
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter travel class';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildJobSchedulingSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'When should the system execute this job?',
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Job Date Field with enhanced validation
+          _buildDateField(
+            controller: _jobDateController,
+            label: 'Job Date',
+            prefixIcon: Icons.calendar_today,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter job execution date';
+              }
+              // Validate date format (YYYY-MM-DD)
+              try {
+                final parts = value.split('-');
+                if (parts.length != 3 || parts[0].length != 4 || parts[1].length != 2 || parts[2].length != 2) {
+                  return 'Please use YYYY-MM-DD format';
+                }
+                // Validate that it's a valid date
+                DateTime.parse(value);
+              } catch (e) {
+                return 'Please enter a valid date in YYYY-MM-DD format';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          // Job Execution Time Field with enhanced validation
+          _buildTimeField(
+            controller: _jobExecutionTimeController,
+            label: 'Job Execution Time',
+            prefixIcon: Icons.access_time,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter job execution time';
+              }
+              // Validate time format (HH:MM)
+              final pattern = RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$');
+              if (!pattern.hasMatch(value)) {
+                return 'Please enter a valid time in HH:MM format';
               }
               return null;
             },
@@ -428,6 +555,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
       ),
     );
   }
+      
   
   Widget _buildJobConfigSection() {
     return Container(
@@ -982,6 +1110,36 @@ class _JobEditScreenState extends State<JobEditScreen> {
       });
 
       try {
+        // Debug log the values being sent
+        print('Saving job with job_date: ${_jobDateController.text}');
+        print('Saving job with job_execution_time: ${_jobExecutionTimeController.text}');
+        
+        // Validate job_date format (YYYY-MM-DD)
+        if (_jobDateController.text.isNotEmpty) {
+          try {
+            final parts = _jobDateController.text.split('-');
+            if (parts.length != 3 || parts[0].length != 4 || parts[1].length != 2 || parts[2].length != 2) {
+              throw FormatException('Invalid date format');
+            }
+            // Validate that it's a valid date
+            DateTime.parse(_jobDateController.text);
+          } catch (e) {
+            throw Exception('Invalid job date format. Please use YYYY-MM-DD format.');
+          }
+        }
+        
+        // Validate job_execution_time format (HH:MM)
+        if (_jobExecutionTimeController.text.isNotEmpty) {
+          try {
+            final parts = _jobExecutionTimeController.text.split(':');
+            if (parts.length != 2 || int.parse(parts[0]) > 23 || int.parse(parts[1]) > 59) {
+              throw FormatException('Invalid time format');
+            }
+          } catch (e) {
+            throw Exception('Invalid job execution time format. Please use HH:MM format.');
+          }
+        }
+        
         // Prepare job data
         final Map<String, dynamic> jobData = {
           'id': widget.jobId,
@@ -996,6 +1154,8 @@ class _JobEditScreenState extends State<JobEditScreen> {
           'passengers': _passengers,
           'auto_upgrade': _autoUpgrade,
           'auto_book_alternate_date': _autoBookAlternateDate,
+          'job_date': _jobDateController.text,
+          'job_execution_time': _jobExecutionTimeController.text,
         };
 
         // Add optional fields if enabled
@@ -1022,35 +1182,50 @@ class _JobEditScreenState extends State<JobEditScreen> {
           passengers: _passengers,
           autoUpgrade: _autoUpgrade,
           autoBookAlternateDate: _autoBookAlternateDate,
+          paymentMethod: widget.jobData['payment_method'], // Preserve existing payment method
+          jobDate: _jobDateController.text,
+          jobExecutionTime: _jobExecutionTimeController.text
         );
 
         if (response['success'] == true) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Job updated successfully'),
-              backgroundColor: Colors.green,
-            ),
+          // Show success animation dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return SuccessAnimationDialog(
+                message: 'Job updated successfully',
+                onAnimationComplete: () {
+                  // Navigate back after animation completes
+                  Navigator.pop(context, true);
+                },
+              );
+            },
           );
-
-          // Navigate back
-          Navigator.pop(context, true);
         } else {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? 'Failed to update job'),
-              backgroundColor: Colors.red,
-            ),
+          // Show failure animation dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return FailureAnimationDialog(
+                message: response['message'] ?? 'Failed to update job',
+                onAnimationComplete: () {},
+              );
+            },
           );
         }
       } catch (e) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        // Show failure animation dialog with error message
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return FailureAnimationDialog(
+              message: 'Error: ${e.toString()}',
+              onAnimationComplete: () {},
+            );
+          },
         );
       } finally {
         setState(() {
@@ -1330,13 +1505,31 @@ class _JobEditScreenState extends State<JobEditScreen> {
       },
       readOnly: true,
       onTap: () async {
+        // Get current date for comparison and defaults
+        final now = DateTime.now();
+        DateTime initialDate;
+        
+        try {
+          // Try to parse the existing date, if any
+          if (controller.text.isNotEmpty) {
+            initialDate = DateFormat('yyyy-MM-dd').parse(controller.text);
+            // Ensure initialDate is not before firstDate
+            if (initialDate.isBefore(now)) {
+              initialDate = now;
+            }
+          } else {
+            initialDate = now;
+          }
+        } catch (e) {
+          // If parsing fails, use current date
+          initialDate = now;
+        }
+        
         final DateTime? picked = await showDatePicker(
           context: context,
-          initialDate: controller.text.isNotEmpty
-              ? DateFormat('yyyy-MM-dd').parse(controller.text)
-              : DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(Duration(days: 365)),
+          initialDate: initialDate,
+          firstDate: now,
+          lastDate: now.add(Duration(days: 365)),
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
@@ -1382,13 +1575,30 @@ class _JobEditScreenState extends State<JobEditScreen> {
       },
       readOnly: true,
       onTap: () async {
+        TimeOfDay initialTime;
+        
+        try {
+          // Try to parse the existing time, if any
+          if (controller.text.isNotEmpty) {
+            // Handle different time formats
+            if (controller.text.contains('AM') || controller.text.contains('PM')) {
+              initialTime = TimeOfDay.fromDateTime(DateFormat('hh:mm a').parse(controller.text));
+            } else {
+              // Assume 24-hour format
+              final timeParts = controller.text.split(':');
+              initialTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
+            }
+          } else {
+            initialTime = TimeOfDay.now();
+          }
+        } catch (e) {
+          // If parsing fails, use current time
+          initialTime = TimeOfDay.now();
+        }
+        
         final TimeOfDay? picked = await showTimePicker(
           context: context,
-          initialTime: controller.text.isNotEmpty
-              ? TimeOfDay.fromDateTime(
-                  DateFormat.jm().parse(controller.text),
-                )
-              : TimeOfDay.now(),
+          initialTime: initialTime,
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
@@ -1417,7 +1627,8 @@ class _JobEditScreenState extends State<JobEditScreen> {
             picked.hour,
             picked.minute,
           );
-          controller.text = DateFormat('hh:mm a').format(dateTime);
+          // Format as 24-hour time (HH:MM)
+          controller.text = DateFormat('HH:mm').format(dateTime);
         }
       },
     );

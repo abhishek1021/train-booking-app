@@ -116,7 +116,19 @@ class JobService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jobsJson = jsonDecode(response.body);
-        return jobsJson.map((job) => job as Map<String, dynamic>).toList();
+        // Process each job to ensure all fields are properly mapped
+        return jobsJson.map((job) {
+          final Map<String, dynamic> processedJob = job as Map<String, dynamic>;
+          // Ensure job_date and job_execution_time are included
+          if (processedJob.containsKey('job_date') && !processedJob.containsKey('job_execution_time')) {
+            // Log missing fields for debugging
+            print('Warning: job_execution_time missing for job ${processedJob['job_id']}');
+          }
+          if (!processedJob.containsKey('job_date') && processedJob.containsKey('job_execution_time')) {
+            print('Warning: job_date missing for job ${processedJob['job_id']}');
+          }
+          return processedJob;
+        }).toList();
       } else {
         throw Exception(
             'Failed to load jobs: ${response.statusCode} - ${response.body}');
@@ -205,6 +217,8 @@ class JobService {
     bool? autoBookAlternateDate,
     String? paymentMethod,
     String? notes,
+    String? jobDate,
+    String? jobExecutionTime,
   }) async {
     try {
       // Create the request body with only the fields that are provided
@@ -223,6 +237,8 @@ class JobService {
       if (autoBookAlternateDate != null) requestBody['auto_book_alternate_date'] = autoBookAlternateDate;
       if (paymentMethod != null) requestBody['payment_method'] = paymentMethod;
       if (notes != null) requestBody['notes'] = notes;
+      if (jobDate != null) requestBody['job_date'] = jobDate;
+      if (jobExecutionTime != null) requestBody['job_execution_time'] = jobExecutionTime;
 
       final response = await http.put(
         Uri.parse('$baseUrl/jobs/$jobId'),
@@ -233,10 +249,19 @@ class JobService {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        // Add success flag for consistent response handling
+        return {
+          'success': true,
+          'data': responseData,
+          'message': 'Job updated successfully'
+        };
       } else {
-        throw Exception(
-            'Failed to update job: ${response.statusCode} - ${response.body}');
+        print('Failed to update job: ${response.statusCode} - ${response.body}');
+        return {
+          'success': false,
+          'message': 'Failed to update job: ${response.statusCode}'
+        };
       }
     } catch (e) {
       throw Exception('Error updating job: $e');

@@ -401,6 +401,15 @@ async def update_job(job_id: str, job_update: JobUpdate):
         if job_update.next_execution_time is not None:
             update_expression += ", next_execution_time = :next_execution_time"
             expression_attribute_values[':next_execution_time'] = job_update.next_execution_time.isoformat()
+            
+        # Add job_date and job_execution_time fields
+        if job_update.job_date is not None:
+            update_expression += ", job_date = :job_date"
+            expression_attribute_values[':job_date'] = job_update.job_date
+            
+        if job_update.job_execution_time is not None:
+            update_expression += ", job_execution_time = :job_execution_time"
+            expression_attribute_values[':job_execution_time'] = job_update.job_execution_time
         
         # Update job in DynamoDB
         response = jobs_table.update_item(
@@ -443,7 +452,9 @@ async def update_job(job_id: str, job_update: JobUpdate):
             'last_execution_time': datetime.fromisoformat(updated_item['last_execution_time']) if updated_item.get('last_execution_time') else None,
             'next_execution_time': datetime.fromisoformat(updated_item['next_execution_time']) if updated_item.get('next_execution_time') else None,
             'execution_attempts': updated_item.get('execution_attempts', 0),
-            'max_attempts': updated_item.get('max_attempts', 3)
+            'max_attempts': updated_item.get('max_attempts', 3),
+            'job_date': updated_item.get('job_date'),
+            'job_execution_time': updated_item.get('job_execution_time')
         }
         
         return job_data
