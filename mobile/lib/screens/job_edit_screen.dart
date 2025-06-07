@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/job_service.dart';
+import '../utils/validators.dart';
+import 'city_search_screen.dart';
 import '../widgets/success_animation_dialog.dart';
 import '../widgets/failure_animation_dialog.dart';
 import '../services/passenger_service.dart';
@@ -379,10 +381,11 @@ class _JobEditScreenState extends State<JobEditScreen> {
             readOnly: true,
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          _buildStationSearchField(
             controller: _originController,
             label: 'Origin Station Code',
             prefixIcon: Icons.train,
+            isOrigin: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter origin station code';
@@ -391,10 +394,11 @@ class _JobEditScreenState extends State<JobEditScreen> {
             },
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          _buildStationSearchField(
             controller: _destinationController,
             label: 'Destination Station Code',
             prefixIcon: Icons.location_on,
+            isOrigin: false,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter destination station code';
@@ -1248,197 +1252,404 @@ class _JobEditScreenState extends State<JobEditScreen> {
     final ageController = TextEditingController();
     String selectedGender = 'Male';
     String selectedIdType = 'Aadhar';
+    String selectedBerthPreference = 'No Preference';
+    bool isSeniorCitizen = false;
     final idNumberController = TextEditingController();
     
     final formKey = GlobalKey<FormState>();
     
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Add Passenger',
-          style: TextStyle(
-            fontFamily: 'ProductSans',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF111827),
+    // Use Navigator to push a full-screen modal instead of dialog
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF7C3AED),
+            elevation: 0,
+            title: const Padding(
+              padding: EdgeInsets.only(top: 50.0), // 50px top padding as per design guidelines
+              child: Text(
+                'Add Passenger',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.only(top: 50.0), // Match the title padding
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            toolbarHeight: 100, // Increased height for better visual appeal
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(20),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                height: 20,
+              ),
+            ),
           ),
-        ),
-        content: Form(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          body: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    // Section title
+                    const Text(
+                      'Passenger Details',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Name field
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Name',
+                        prefixIcon: const Icon(Icons.person, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter passenger name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Age field
+                    TextFormField(
+                      controller: ageController,
+                      decoration: InputDecoration(
+                        labelText: 'Age',
+                        prefixIcon: const Icon(Icons.cake, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter passenger age';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Gender dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Gender',
+                        prefixIcon: const Icon(Icons.people, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      items: ['Male', 'Female', 'Other']
+                          .map((gender) => DropdownMenuItem(
+                                value: gender,
+                                child: Text(gender),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        selectedGender = value!;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Berth preference dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedBerthPreference,
+                      decoration: InputDecoration(
+                        labelText: 'Berth Preference',
+                        prefixIcon: const Icon(Icons.airline_seat_recline_normal, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      items: ['No Preference', 'Lower', 'Middle', 'Upper', 'Side Lower', 'Side Upper']
+                          .map((berth) => DropdownMenuItem(
+                                value: berth,
+                                child: Text(berth),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        selectedBerthPreference = value!;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Senior citizen checkbox
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.elderly, color: Color(0xFF7C3AED)),
+                          const SizedBox(width: 12),
+                          const Text('Senior Citizen'),
+                          const Spacer(),
+                          Switch(
+                            value: isSeniorCitizen,
+                            onChanged: (value) {
+                              setState(() {
+                                isSeniorCitizen = value;
+                              });
+                            },
+                            activeColor: const Color(0xFF7C3AED),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Section title for ID
+                    const Text(
+                      'ID Information',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // ID Type dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedIdType,
+                      decoration: InputDecoration(
+                        labelText: 'ID Type',
+                        prefixIcon: const Icon(Icons.badge, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      items: ['Aadhar', 'PAN', 'Passport', 'Driving License']
+                          .map((idType) => DropdownMenuItem(
+                                value: idType,
+                                child: Text(idType),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        selectedIdType = value!;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // ID Number field
+                    TextFormField(
+                      controller: idNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'ID Number',
+                        prefixIcon: const Icon(Icons.credit_card, color: Color(0xFF7C3AED)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter ID number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
+            child: Row(
               children: [
-                // Name field
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    prefixIcon: Icon(Icons.person, color: Color(0xFF7C3AED)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF7C3AED)),
+                      ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF7C3AED)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
+                      ),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter passenger name';
-                    }
-                    return null;
-                  },
                 ),
-                SizedBox(height: 16),
-                
-                // Age field
-                TextFormField(
-                  controller: ageController,
-                  decoration: InputDecoration(
-                    labelText: 'Age',
-                    prefixIcon: Icon(Icons.cake, color: Color(0xFF7C3AED)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        final passenger = {
+                          'name': nameController.text,
+                          'age': ageController.text,
+                          'gender': selectedGender,
+                          'id_type': selectedIdType,
+                          'id_number': idNumberController.text,
+                          'berth_preference': selectedBerthPreference,
+                          'is_senior_citizen': isSeniorCitizen,
+                        };
+                        setState(() {
+                          _passengers.add(passenger);
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF7C3AED)),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter passenger age';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-                
-                // Gender dropdown
-                DropdownButtonFormField<String>(
-                  value: selectedGender,
-                  decoration: InputDecoration(
-                    labelText: 'Gender',
-                    prefixIcon: Icon(Icons.people, color: Color(0xFF7C3AED)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF7C3AED)),
+                    child: const Text(
+                      'Add Passenger',
+                      style: TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  items: ['Male', 'Female', 'Other']
-                      .map((gender) => DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    selectedGender = value!;
-                  },
-                ),
-                SizedBox(height: 16),
-                
-                // ID Type dropdown
-                DropdownButtonFormField<String>(
-                  value: selectedIdType,
-                  decoration: InputDecoration(
-                    labelText: 'ID Type',
-                    prefixIcon: Icon(Icons.badge, color: Color(0xFF7C3AED)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF7C3AED)),
-                    ),
-                  ),
-                  items: ['Aadhar', 'PAN', 'Passport', 'Driving License']
-                      .map((idType) => DropdownMenuItem(
-                            value: idType,
-                            child: Text(idType),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    selectedIdType = value!;
-                  },
-                ),
-                SizedBox(height: 16),
-                
-                // ID Number field
-                TextFormField(
-                  controller: idNumberController,
-                  decoration: InputDecoration(
-                    labelText: 'ID Number',
-                    prefixIcon: Icon(Icons.credit_card, color: Color(0xFF7C3AED)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF7C3AED)),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter ID number';
-                    }
-                    return null;
-                  },
                 ),
               ],
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'ProductSans',
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                final passenger = {
-                  'name': nameController.text,
-                  'age': ageController.text,
-                  'gender': selectedGender,
-                  'id_type': selectedIdType,
-                  'id_number': idNumberController.text,
-                };
-                
-                setState(() {
-                  _passengers.add(passenger);
-                });
-                
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF7C3AED),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Add',
-              style: TextStyle(
-                fontFamily: 'ProductSans',
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
       ),
+    );
+  }
+  
+  // Helper method to build station search fields that open city search screen
+  Widget _buildStationSearchField({
+    required TextEditingController controller,
+    required String label,
+    required IconData prefixIcon,
+    required bool isOrigin,
+    String? Function(String?)? validator,
+    bool readOnly = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: true, // Always read-only as we'll open search screen
+      onTap: () async {
+        // Navigate to city search screen
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CitySearchScreen(
+              searchType: 'station',
+              isOrigin: isOrigin,
+              sourceScreen: 'job_edit',
+            ),
+          ),
+        );
+        
+        // Handle the selected city/station
+        if (result != null && result is Map<String, dynamic>) {
+          setState(() {
+            controller.text = result['station_code'] ?? '';
+            // You could also store the full station data in a separate variable if needed
+          });
+        }
+      },
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF7C3AED)),
+        suffixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      ),
+      validator: validator,
     );
   }
   

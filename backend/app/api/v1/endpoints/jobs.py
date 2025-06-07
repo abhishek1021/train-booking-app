@@ -173,7 +173,9 @@ async def get_job(job_id: str):
             'last_execution_time': datetime.fromisoformat(item['last_execution_time']) if item.get('last_execution_time') else None,
             'next_execution_time': datetime.fromisoformat(item['next_execution_time']) if item.get('next_execution_time') else None,
             'execution_attempts': item.get('execution_attempts', 0),
-            'max_attempts': item.get('max_attempts', 3)
+            'max_attempts': item.get('max_attempts', 3),
+            'job_date': item.get('job_date'),
+            'job_execution_time': item.get('job_execution_time')
         }
         
         return job_data
@@ -271,7 +273,9 @@ async def get_user_jobs(
                 'last_execution_time': datetime.fromisoformat(item['last_execution_time']) if item.get('last_execution_time') else None,
                 'next_execution_time': datetime.fromisoformat(item['next_execution_time']) if item.get('next_execution_time') else None,
                 'execution_attempts': item.get('execution_attempts', 0),
-                'max_attempts': item.get('max_attempts', 3)
+                'max_attempts': item.get('max_attempts', 3),
+                'job_date': item.get('job_date'),
+                'job_execution_time': item.get('job_execution_time')
             }
             jobs_data.append(job_data)
         
