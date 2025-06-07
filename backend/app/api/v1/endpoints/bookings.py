@@ -11,6 +11,8 @@ import sendgrid
 from sendgrid.helpers.mail import Mail
 import jinja2
 import pathlib
+from typing import List, Dict, Any
+
 
 # Import schemas
 from app.schemas.booking import Booking, BookingCreate, BookingUpdate, BookingStatus
@@ -21,6 +23,41 @@ router = APIRouter()
 BOOKINGS_TABLE = 'bookings'
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "ap-south-1"))
 bookings_table = dynamodb.Table(BOOKINGS_TABLE)
+
+def generate_seat_numbers(train_number: str, travel_class: str, passenger_count: int) -> List[str]:
+    """
+    Generate seat numbers for passengers based on train number and travel class.
+    
+    Args:
+        train_number: The train number (e.g., '12345')
+        travel_class: The travel class (e.g., '3A', '2A', 'SL')
+        passenger_count: Number of seat numbers to generate
+        
+    Returns:
+        List of seat numbers as strings
+    """
+    # Define seat patterns based on class
+    class_patterns = {
+        '1A': {'prefix': 'A', 'rows': range(1, 10), 'seats': range(1, 5)},  # 1st AC
+        '2A': {'prefix': 'B', 'rows': range(1, 15), 'seats': range(1, 5)},  # 2nd AC
+        '3A': {'prefix': 'C', 'rows': range(1, 21), 'seats': range(1, 9)},  # 3rd AC
+        'SL': {'prefix': 'S', 'rows': range(1, 26), 'seats': range(1, 9)},  # Sleeper
+        'CC': {'prefix': 'D', 'rows': range(1, 16), 'seats': range(1, 6)},  # Chair Car
+        '2S': {'prefix': 'E', 'rows': range(1, 31), 'seats': range(1, 9)},  # 2nd Seater
+    }
+    
+    # Get the pattern for the requested class, default to SL if not found
+    pattern = class_patterns.get(travel_class.upper(), class_patterns['SL'])
+    
+    # Generate seat numbers
+    seat_numbers = []
+    for _ in range(passenger_count):
+        row = random.choice(pattern['rows'])
+        seat = random.choice(pattern['seats'])
+        seat_number = f"{pattern['prefix']}{row:02d}{seat:02d}"
+        seat_numbers.append(seat_number)
+    
+    return seat_numbers
 
 # Generate PNR function
 def generate_pnr():
@@ -135,6 +172,22 @@ async def create_booking(booking: BookingCreate):
                 # Use train_id as fallback
                 train_number = train_id
         
+        # Process passengers and assign seat numbers
+        passengers = []
+        if booking.passengers:
+            # Generate seat numbers for all passengers
+            seat_numbers = generate_seat_numbers(
+                train_number=str(train_number),
+                travel_class=booking.travel_class,
+                passenger_count=len(booking.passengers)
+            )
+            
+            # Assign seat numbers to passengers
+            for i, passenger in enumerate(booking.passengers):
+                passenger_dict = passenger.dict()
+                passenger_dict['seat'] = seat_numbers[i] if i < len(seat_numbers) else "A01"  # Fallback
+                passengers.append(passenger_dict)
+        
         # Process price details
         price_details = booking.price_details or {}
         if not price_details and booking.fare:
@@ -142,7 +195,11 @@ async def create_booking(booking: BookingCreate):
             price_details = {
                 "base_fare": float(booking.fare),
                 "total": float(booking.fare),
-                "tax": 0.0
+                "tax": 0.0,
+                "adult_count": 0,
+                "senior_count": 0,
+                "base_fare_per_adult": 0.0,
+                "base_fare_per_senior": 0.0
             }
             
             # Count passenger types for basic price breakdown
@@ -153,9 +210,20 @@ async def create_booking(booking: BookingCreate):
                     senior_count += 1
                 else:
                     adult_count += 1
-                    
-            price_details["adult_count"] = adult_count
-            price_details["senior_count"] = senior_count
+            
+            # Calculate fares
+            if adult_count + senior_count > 0:
+                base_fare = float(booking.fare)
+                adult_fare = base_fare * 0.9  # 10% discount for adults
+                senior_fare = base_fare * 0.6  # 40% discount for seniors
+                
+                price_details.update({
+                    "adult_count": adult_count,
+                    "senior_count": senior_count,
+                    "base_fare_per_adult": adult_fare,
+                    "base_fare_per_senior": senior_fare,
+                    "total": (adult_count * adult_fare) + (senior_count * senior_fare)
+                })
         
         # Create booking item
         booking_item = {
@@ -199,11 +267,36 @@ async def create_booking(booking: BookingCreate):
                 print(f"[TatkalPro][Email] Error sending booking confirmation email: {email_error}")
                 # Don't fail the booking if email fails
         
-        return {
+        response = {
             'booking_id': booking_id,
             'pnr': pnr,
-            'status': 'success'
+            'status': 'success',
+            'passengers': [
+                {
+                    'name': p.get('name'),
+                    'seat': p.get('seat', 'Not assigned'),
+                    'age': p.get('age'),
+                    'gender': p.get('gender'),
+                    'is_senior': p.get('is_senior', False)
+                } for p in passengers
+            ],
+            'journey_details': {
+                'train_number': train_number,
+                'train_name': train_name,
+                'travel_class': booking.travel_class,
+                'journey_date': booking.journey_date,
+                'origin': booking.origin_station_code,
+                'destination': booking.destination_station_code
+            },
+            'price_details': {
+                'total': price_details.get('total'),
+                'tax': price_details.get('tax', 0.0),
+                'adult_count': price_details.get('adult_count', 0),
+                'senior_count': price_details.get('senior_count', 0)
+            }
         }
+        
+        return response
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

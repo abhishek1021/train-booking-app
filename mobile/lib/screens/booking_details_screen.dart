@@ -322,19 +322,30 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     final originStation = _bookingDetails['origin_station_code'] ?? 'N/A';
     final destinationStation =
         _bookingDetails['destination_station_code'] ?? 'N/A';
-    final travelClass = _bookingDetails['class'] ?? 'N/A';
+    final travelClass = _bookingDetails['travel_class'] ?? 
+                       _bookingDetails['class'] ?? 'N/A';
 
     return _buildSectionCard(
       title: 'Journey Details',
       icon: Icons.train,
       children: [
-        _buildInfoRow('Train Number', trainId),
+        _buildInfoRow('Train Number', trainId.toString()),
         _buildInfoRow('Journey Date', journeyDate),
-        _buildInfoRow('From', originStation),
-        _buildInfoRow('To', destinationStation),
-        _buildInfoRow('Class', travelClass),
+        _buildInfoRow('From', originStation.toString().toUpperCase()),
+        _buildInfoRow('To', destinationStation.toString().toUpperCase()),
+        _buildInfoRow('Class', _formatTravelClass(travelClass)),
       ],
     );
+  }
+
+  String _formatTravelClass(String travelClass) {
+    if (travelClass == '1A') return 'First AC';
+    if (travelClass == '2A') return 'Second AC';
+    if (travelClass == '3A') return 'Third AC';
+    if (travelClass == 'SL') return 'Sleeper Class';
+    if (travelClass == 'CC') return 'Chair Car';
+    if (travelClass == '2S') return 'Second Seater';
+    return travelClass;
   }
 
   Widget _buildPassengerDetails() {
@@ -409,16 +420,92 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   }
 
   Widget _buildPaymentDetails() {
-    final fare = _bookingDetails['fare'] ?? 0.0;
+    final priceDetails = _bookingDetails['price_details'] is Map 
+        ? Map<String, dynamic>.from(_bookingDetails['price_details'])
+        : <String, dynamic>{};
+    
     final paymentId = _bookingDetails['payment_id'] ?? 'N/A';
+    final paymentMethod = _bookingDetails['payment_method']?.toString().toUpperCase() ?? 'N/A';
+    final paymentStatus = _bookingDetails['payment_status']?.toString().toUpperCase() ?? 'N/A';
 
     return _buildSectionCard(
       title: 'Payment Details',
       icon: Icons.payment_outlined,
       children: [
-        _buildInfoRow('Total Fare', '₹${fare.toString()}'),
-        _buildInfoRow('Payment ID', paymentId),
+        // Price Breakdown
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8.0),
+          child: Text(
+            'Price Breakdown',
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF7C3AED),
+              fontSize: 15,
+            ),
+          ),
+        ),
+        if (priceDetails['adult_count'] != null && (priceDetails['adult_count'] as int) > 0)
+          _buildPriceRow(
+            '${priceDetails['adult_count']} Adult${(priceDetails['adult_count'] as int) > 1 ? 's' : ''}',
+            '₹${(double.tryParse(priceDetails['base_fare_per_adult']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+          ),
+        if (priceDetails['senior_count'] != null && (priceDetails['senior_count'] as int) > 0)
+          _buildPriceRow(
+            '${priceDetails['senior_count']} Senior${(priceDetails['senior_count'] as int) > 1 ? 's' : ''} (40% off)',
+            '₹${(double.tryParse(priceDetails['base_fare_per_senior']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+          ),
+        if (priceDetails['discount_applied'] != null)
+          _buildPriceRow(
+            'Discount',
+            '-₹${(double.tryParse(priceDetails['discount_amount']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+            isDiscount: true,
+          ),
+        if (priceDetails['tax'] != null && (double.tryParse(priceDetails['tax'].toString()) ?? 0) > 0)
+          _buildPriceRow(
+            'Taxes & Fees',
+            '₹${(double.tryParse(priceDetails['tax'].toString()) ?? 0).toStringAsFixed(2)}',
+          ),
+        const Divider(height: 24, thickness: 1),
+        _buildPriceRow(
+          'Total Amount',
+          '₹${(double.tryParse(priceDetails['total']?.toString() ?? _bookingDetails['total_amount']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+          isTotal: true,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRow('Payment Method', paymentMethod),
+        _buildInfoRow('Payment Status', paymentStatus),
+        _buildInfoRow('Transaction ID', paymentId),
       ],
+    );
+  }
+
+  Widget _buildPriceRow(String label, String amount, {bool isTotal = false, bool isDiscount = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              color: isDiscount ? Colors.green : Colors.black87,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isTotal ? 15 : 14,
+            ),
+          ),
+          Text(
+            amount,
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              color: isDiscount ? Colors.green : (isTotal ? const Color(0xFF7C3AED) : Colors.black87),
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isTotal ? 16 : 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

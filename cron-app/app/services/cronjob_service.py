@@ -3,10 +3,15 @@ import os
 import json
 import logging
 import time
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Any, Optional, Union, Tuple
 from decimal import Decimal
 from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.types import TypeDeserializer
+
+# Define IST timezone (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 # Configure logging for Lambda environment
 logger = logging.getLogger(__name__)
@@ -23,424 +28,719 @@ JOBS_TABLE = os.getenv('JOBS_TABLE', 'jobs')
 JOB_EXECUTIONS_TABLE = os.getenv('JOB_EXECUTIONS_TABLE', 'job_executions')
 JOB_LOGS_TABLE = os.getenv('JOB_LOGS_TABLE', 'job_logs')
 BOOKINGS_TABLE = os.getenv('BOOKINGS_TABLE', 'bookings')
+PAYMENTS_TABLE = os.getenv('PAYMENTS_TABLE', 'payments')
 WALLET_TABLE = os.getenv('WALLET_TABLE', 'wallet')
 WALLET_TRANSACTIONS_TABLE = os.getenv('WALLET_TRANSACTIONS_TABLE', 'wallet_transactions')
 TRAINS_TABLE = os.getenv('TRAINS_TABLE', 'trains')
 
 # Get AWS region from environment variable
-# Use REGION env var first (our custom var), then fall back to AWS_REGION (set by Lambda automatically)
 AWS_REGION = os.getenv('REGION', os.getenv('AWS_REGION', 'ap-south-1'))
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
-jobs_table = dynamodb.Table(JOBS_TABLE)
-job_executions_table = dynamodb.Table(JOB_EXECUTIONS_TABLE)
-job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
 
-logger.info(f"Initialized DynamoDB tables: {JOBS_TABLE}, {JOB_EXECUTIONS_TABLE}, {JOB_LOGS_TABLE} in region {AWS_REGION}")
-
-# Helper function to convert DynamoDB items to Python types
+# Helper class for JSON serialization of Decimal types
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
-def convert_dynamodb_item(item):
+def convert_dynamodb_item(item: Dict) -> Dict:
     """Convert DynamoDB item to regular Python types"""
     if not item:
-        return item
+        return {}
+    
     return json.loads(json.dumps(item, cls=DecimalEncoder))
 
+def get_current_ist_time() -> datetime:
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
+
+def get_ist_date_string() -> str:
+    """Get current date in IST as YYYY-MM-DD string"""
+    return get_current_ist_time().strftime("%Y-%m-%d")
+
+def get_ist_time_string() -> str:
+    """Get current time in IST as HH:MM string"""
+    return get_current_ist_time().strftime("%H:%M")
+
+def utc_to_ist_string(utc_dt: datetime) -> str:
+    """Convert UTC datetime to IST string"""
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+    ist_dt = utc_dt.astimezone(IST)
+    return ist_dt.isoformat()
+
+def ist_to_utc(ist_dt: datetime) -> datetime:
+    """Convert IST datetime to UTC datetime"""
+    if ist_dt.tzinfo is None:
+        ist_dt = ist_dt.replace(tzinfo=IST)
+    return ist_dt.astimezone(timezone.utc)
+
+# Helper function to safely get values from dictionaries
+def safe_get(dictionary: Optional[Dict], key: str, default: Any = None) -> Any:
+    """Safely get a value from a dictionary, returning default if dictionary is None or key doesn't exist"""
+    if dictionary is None:
+        return default
+    return dictionary.get(key, default)
+
+# Helper function to validate required fields
+def validate_required_fields(data: Dict, required_fields: List[str]) -> Tuple[bool, List[str]]:
+    """Validate that all required fields are present and not None in the data dictionary"""
+    if not isinstance(data, dict):
+        return False, ["Data is not a dictionary"]
+    
+    missing_fields = []
+    for field in required_fields:
+        if not data.get(field):
+            missing_fields.append(field)
+    
+    return len(missing_fields) == 0, missing_fields
+
+# TypeDeserializer for DynamoDB items
+from boto3.dynamodb.types import TypeDeserializer
+deserializer = TypeDeserializer()
+
+def unmarshal_dynamodb_item(item: Dict) -> Dict:
+    """Recursively unmarshal a DynamoDB item to Python types"""
+    if isinstance(item, dict) and set(item.keys()) <= {'S', 'N', 'BOOL', 'NULL', 'M', 'L'}:
+        return deserializer.deserialize(item)
+    elif isinstance(item, dict):
+        return {k: unmarshal_dynamodb_item(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [unmarshal_dynamodb_item(x) for x in item]
+    else:
+        return item
+
 class CronjobService:
+    """Service for managing and executing scheduled jobs for train bookings"""
+    
     @staticmethod
-    def log_job_event(job_id: str, event_type: str, message: str, details: Optional[Dict[str, Any]] = None):
-        """Log a job event to the job_logs table"""
+    def log_job_event(job_id: str, event_type: str, description: str, details: Dict[str, Any] = None) -> bool:
+        """
+        Log a job event to the job logs table
+        
+        Args:
+            job_id: Job ID
+            event_type: Event type
+            description: Event description
+            details: Additional event details
+            
+        Returns:
+            True if successful, False otherwise
+        """
         try:
-            now = datetime.utcnow().isoformat()
-            log_item = {
+            # Create event ID
+            event_id = f"EVENT{int(time.time())}_{job_id}"
+            
+            # Create event item
+            event_item = {
                 'PK': f"JOB#{job_id}",
-                'SK': f"LOG#{now}",
+                'SK': f"EVENT#{event_id}",
                 'job_id': job_id,
+                'event_id': event_id,
                 'event_type': event_type,
-                'message': message,
-                'timestamp': now,
+                'description': description,
+                'timestamp': get_current_ist_time().isoformat(),
+                'created_at': get_current_ist_time().isoformat()
             }
             
-            if details and isinstance(details, dict):
-                log_item['details'] = details
-            elif details is not None:
-                logger.warning(f"Ignoring invalid details format in log_job_event: {type(details)}")
+            # Add details if provided
+            if details is not None:
+                if not isinstance(details, dict):
+                    logger.warning(f"Invalid details format for job event: {type(details)}")
+                    details = {"raw_details": str(details)}
                 
-            job_logs_table.put_item(Item=log_item)
-            logger.info(f"Logged event for job {job_id}: {event_type} - {message}")
+                # Convert any datetime objects to ISO format strings
+                sanitized_details = {}
+                for key, value in details.items():
+                    if isinstance(value, datetime):
+                        sanitized_details[key] = value.isoformat()
+                    elif isinstance(value, float):
+                        sanitized_details[key] = Decimal(str(value))
+                    else:
+                        sanitized_details[key] = value
+                
+                event_item['details'] = sanitized_details
+            
+            # Put event item into job logs table
+            job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
+            job_logs_table.put_item(Item=event_item)
+            
+            logger.info(f"Logged event for job {job_id}: {event_type} - {description}")
             return True
         except Exception as e:
-            logger.error(f"Error logging event for job {job_id}: {str(e)}")
+            logger.error(f"Error logging job event: {str(e)}")
             return False
     
     @staticmethod
-    def get_job_logs(job_id: str) -> List[Dict[str, Any]]:
-        """Get all logs for a specific job"""
+    def record_job_execution(job_id: str, execution_status: str, details: Dict[str, Any] = None) -> bool:
+        """
+        Record a job execution in the job_executions table
+        
+        Args:
+            job_id: The job ID
+            execution_status: The status of the execution (success, failed)
+            details: Additional execution details
+            
+        Returns:
+            bool: True if execution was recorded successfully, False otherwise
+        """
         try:
+            if not job_id or not execution_status:
+                logger.error("Missing required parameters for record_job_execution")
+                return False
+                
+            execution_id = str(uuid.uuid4())
+            timestamp = get_current_ist_time().isoformat()
+            
+            # Create the execution record
+            execution_item = {
+                'job_id': job_id,
+                'execution_id': execution_id,
+                'execution_status': execution_status,
+                'execution_time': timestamp,
+            }
+            
+            # Add additional details if provided
+            if details and isinstance(details, dict):
+                # Add specific fields from details
+                if 'booking_id' in details:
+                    execution_item['booking_id'] = details['booking_id']
+                if 'payment_id' in details:
+                    execution_item['payment_id'] = details['payment_id']
+                if 'pnr' in details:
+                    execution_item['pnr'] = details['pnr']
+                if 'error_message' in details:
+                    execution_item['error_message'] = details['error_message']
+                
+                # Add execution attempt number if available
+                if 'execution_attempts' in details:
+                    # Convert to int to avoid float issues with DynamoDB
+                    execution_item['attempt_number'] = int(details['execution_attempts'])
+            
+            # Put the item in the job_executions table
+            job_executions_table = dynamodb.Table(JOB_EXECUTIONS_TABLE)
+            job_executions_table.put_item(Item=execution_item)
+            
+            logger.info(f"Recorded job execution {execution_id} for job {job_id} with status {execution_status}")
+            return True
+        except Exception as e:
+            logger.error(f"Error recording job execution: {str(e)}")
+            return False
+    
+    @staticmethod
+    def get_job(job_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a job by its ID
+        
+        Args:
+            job_id: The ID of the job
+            
+        Returns:
+            Job data if found, None otherwise
+        """
+        try:
+            # Construct the PK and SK directly
+            pk = f"JOB#{job_id}"
+            sk = "METADATA"
+            
+            jobs_table = dynamodb.Table(JOBS_TABLE)
+            response = jobs_table.get_item(
+                Key={'PK': pk, 'SK': sk}
+            )
+            
+            if 'Item' in response:
+                return convert_dynamodb_item(response['Item'])
+            else:
+                logger.warning(f"Job {job_id} not found")
+                return None
+        except Exception as e:
+            logger.error(f"Error getting job {job_id}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def get_job_logs(job_id: str) -> List[Dict[str, Any]]:
+        """
+        Get all logs for a specific job
+        
+        Args:
+            job_id: The ID of the job
+            
+        Returns:
+            List of log entries
+        """
+        try:
+            job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
             response = job_logs_table.query(
-                KeyConditionExpression=Key('PK').eq(f"JOB#{job_id}") & Key('SK').begins_with("LOG#"),
+                KeyConditionExpression=Key('job_id').eq(job_id),
                 ScanIndexForward=True  # Sort by timestamp ascending
             )
             
-            logs = []
-            for item in response.get('Items', []):
-                logs.append(convert_dynamodb_item(item))
-                
-            return logs
+            return [convert_dynamodb_item(item) for item in response.get('Items', [])]
         except Exception as e:
-            logger.error(f"Error fetching logs for job {job_id}: {str(e)}")
+            logger.error(f"Error getting job logs: {str(e)}")
             return []
     
     @staticmethod
-    def update_job_status(job_id: str, status: str, details: Optional[Dict[str, Any]] = None):
-        """Update the status of a job"""
+    def update_job_status(job_id: str, status: str, additional_data: Dict[str, Any] = None) -> bool:
+        """
+        Update the status of a job
+        
+        Args:
+            job_id: Job ID
+            status: New job status
+            additional_data: Additional data to update
+            
+        Returns:
+            True if successful, False otherwise
+        """
         try:
+            # Construct the PK and SK directly instead of querying by index
+            # This avoids permission issues with GSIs
+            pk = f"JOB#{job_id}"
+            sk = "METADATA"
+            
+            # First check if the job exists
+            jobs_table = dynamodb.Table(JOBS_TABLE)
+            get_response = jobs_table.get_item(
+                Key={'PK': pk, 'SK': sk}
+            )
+            
+            if 'Item' not in get_response:
+                logger.error(f"Job {job_id} not found with PK={pk}, SK={sk}")
+                return False
+            
+            # Build update expression
             update_expression = "SET job_status = :status, updated_at = :updated_at"
             expression_values = {
                 ':status': status,
-                ':updated_at': datetime.utcnow().isoformat()
+                ':updated_at': get_current_ist_time().isoformat()
             }
             
-            if details:
-                for key, value in details.items():
-                    update_expression += f", {key} = :{key.replace('-', '_')}"
-                    expression_values[f":{key.replace('-', '_')}"] = value
+            # Add completed_at if status is terminal and it's not already in additional_data
+            if status in ['Completed', 'Failed'] and (not additional_data or 'completed_at' not in additional_data):
+                update_expression += ", completed_at = :completed_at"
+                expression_values[':completed_at'] = get_current_ist_time().isoformat()
             
+            # Add additional data if provided
+            if additional_data and isinstance(additional_data, dict):
+                # Sanitize the additional data to handle datetime and float values
+                sanitized_data = {}
+                for key, value in additional_data.items():
+                    if isinstance(value, datetime):
+                        sanitized_data[key] = value.isoformat()
+                    elif isinstance(value, float):
+                        sanitized_data[key] = Decimal(str(value))
+                    else:
+                        sanitized_data[key] = value
+                
+                # Add sanitized data to update expression
+                for i, (key, value) in enumerate(sanitized_data.items()):
+                    update_expression += f", {key} = :val{i}"
+                    expression_values[f":val{i}"] = value
+            elif additional_data is not None:
+                logger.warning(f"Ignoring invalid additional_data format: {type(additional_data)}")
+            
+            # Update the job
             jobs_table.update_item(
-                Key={
-                    'PK': f"JOB#{job_id}",
-                    'SK': "METADATA"
-                },
+                Key={'PK': pk, 'SK': sk},
                 UpdateExpression=update_expression,
                 ExpressionAttributeValues=expression_values
             )
             
+            # Log the status update
             logger.info(f"Updated job {job_id} status to {status}")
+            
+            # Also log this as a job event
+            CronjobService.log_job_event(
+                job_id,
+                'STATUS_UPDATED',
+                f"Job status updated to {status}",
+                {'status': status}
+            )
+            
             return True
         except Exception as e:
-            logger.error(f"Error updating job {job_id} status: {str(e)}")
+            logger.error(f"Error updating job status: {str(e)}")
             return False
-    
+            
     @staticmethod
-    def scan_jobs_for_execution():
-        """Scan the jobs table for jobs that need to be executed"""
+    def scan_jobs_for_execution() -> List[Dict[str, Any]]:
+        """
+        Scan the jobs table for jobs that need to be executed
+        
+        Returns:
+            List of jobs that need to be executed
+        """
         try:
-            now = datetime.utcnow()
-            today = now.strftime("%Y-%m-%d")
-            current_time = now.strftime("%H:%M")
+            # Get current date and time in IST
+            today_ist = get_ist_date_string()
+            current_time_ist = get_ist_time_string()
             
-            logger.info(f"Scanning for jobs with date={today} and current time={current_time}")
+            # Calculate time window for job execution (current time +/- 20 minutes)
+            current_dt = get_current_ist_time()
+            time_window_start = (current_dt - timedelta(minutes=20)).strftime("%H:%M")
+            time_window_end = (current_dt + timedelta(minutes=20)).strftime("%H:%M")
             
-            # First, let's see all jobs in the table for debugging
-            all_jobs_response = jobs_table.scan()
-            all_jobs = [convert_dynamodb_item(item) for item in all_jobs_response.get('Items', [])]
-            logger.info(f"Total jobs in table: {len(all_jobs)}")
+            logger.info(f"Scanning for jobs with date >= {today_ist} in IST timezone")
+            logger.info(f"Current IST time: {current_time_ist}, execution window: {time_window_start} to {time_window_end}")
             
-            if all_jobs:
-                # Log the structure of the first job to understand the schema
-                logger.info(f"Example job structure: {json.dumps(all_jobs[0], cls=DecimalEncoder)}")
-            
-            # PRODUCTION MODE: Uncomment this block to use in production
-            # This will find jobs scheduled for today with job_execution_time <= current time
-            '''
-            response = jobs_table.scan(
-                FilterExpression=Attr('job_status').eq('Scheduled') & 
-                                 Attr('job_date').eq(today) &
-                                 Attr('job_execution_time').lte(current_time)
-            )
-            '''
-            
-            # TESTING MODE: For testing, find any job for today or future dates
-            # For testing purposes, we'll look for any job regardless of status
-            # This helps with testing when there are no 'Scheduled' jobs
-            response = jobs_table.scan(
-                FilterExpression=Attr('job_date').gte(today)
-            )
-            
-            # Log the filter being used
-            logger.info(f"Using testing mode filter: job_date >= {today}")
-            
-            jobs_to_execute = []
+            jobs_table = dynamodb.Table(JOBS_TABLE)
             scheduled_jobs = []
             
+            # 1. Scan for scheduled jobs
+            logger.info("Scanning for jobs with status 'Scheduled'")
+            response = jobs_table.scan(
+                FilterExpression=(
+                    Attr('job_status').eq('Scheduled') & 
+                    Attr('job_date').gte(today_ist)
+                )
+            )
+            
             for item in response.get('Items', []):
-                job = convert_dynamodb_item(item)
-                scheduled_jobs.append(job)
+                try:
+                    job = convert_dynamodb_item(item)
+                    scheduled_jobs.append(job)
+                except Exception as job_error:
+                    logger.error(f"Error processing scheduled job item: {str(job_error)}")
+                    continue
             
-            logger.info(f"Found {len(scheduled_jobs)} scheduled jobs for today")
+            # 2. Scan for failed jobs with execution_attempts < 5
+            logger.info("Scanning for jobs with status 'Failed' and execution_attempts < 5")
+            failed_response = jobs_table.scan(
+                FilterExpression=(
+                    Attr('job_status').eq('Failed') & 
+                    Attr('job_date').gte(today_ist) &
+                    (Attr('execution_attempts').lt(5) | Attr('execution_attempts').not_exists())
+                )
+            )
             
-            if scheduled_jobs:
-                # For testing, we'll take the first job regardless of status
-                # In a real production environment, we'd filter by status and time
-                test_job = scheduled_jobs[0]
-                
-                # Temporarily reset the job status to 'Scheduled' for testing
-                if test_job.get('job_status') != 'Scheduled':
-                    logger.info(f"Found job with status '{test_job.get('job_status')}', temporarily treating as 'Scheduled' for testing")
+            for item in failed_response.get('Items', []):
+                try:
+                    job = convert_dynamodb_item(item)
+                    execution_attempts = job.get('execution_attempts', 0)
+                    logger.info(f"Found failed job {job.get('job_id')} with {execution_attempts} execution attempts")
+                    scheduled_jobs.append(job)
+                except Exception as job_error:
+                    logger.error(f"Error processing failed job item: {str(job_error)}")
+                    continue
+            
+            # 3. Scan for In Progress jobs that might be stuck
+            logger.info("Scanning for jobs with status 'In Progress' that might be stuck")
+            in_progress_response = jobs_table.scan(
+                FilterExpression=(
+                    Attr('job_status').eq('In Progress') & 
+                    Attr('job_date').gte(today_ist)
+                )
+            )
+            
+            for item in in_progress_response.get('Items', []):
+                try:
+                    job = convert_dynamodb_item(item)
+                    logger.info(f"Found job with status 'In Progress': {job.get('job_id')}")
+                    scheduled_jobs.append(job)
+                except Exception as job_error:
+                    logger.error(f"Error processing in-progress job item: {str(job_error)}")
+                    continue
+            
+            # Process and validate all collected jobs
+            validated_jobs = []
+            for job in scheduled_jobs:
+                try:
+                    # Validate job has all required fields
+                    required_fields = ['job_id', 'user_id', 'origin_station_code', 'destination_station_code', 
+                                       'journey_date', 'travel_class']
                     
-                    # For actual execution, we should update the job in DynamoDB
-                    # But for testing, we'll just modify the job object in memory
-                    test_job['original_status'] = test_job.get('job_status')  # Save original status
-                    test_job['job_status'] = 'Scheduled'
+                    is_valid, missing_fields = validate_required_fields(job, required_fields)
+                    if not is_valid:
+                        logger.warning(f"Job {job.get('job_id', 'UNKNOWN')} missing required fields: {', '.join(missing_fields)}")
+                        continue
                     
-                    # Update the job in DynamoDB if needed
-                    # Uncomment this block to actually update the job in DynamoDB
-                    '''
-                    jobs_table.update_item(
-                        Key={
-                            'PK': f"JOB#{test_job.get('job_id')}",
-                            'SK': "METADATA"
-                        },
-                        UpdateExpression="SET job_status = :status",
-                        ExpressionAttributeValues={
-                            ':status': 'Scheduled'
-                        }
-                    )
-                    '''
-                
-                logger.info(f"Selected job with ID {test_job.get('job_id')} for testing")
-                jobs_to_execute.append(test_job)
-                
-            logger.info(f"Found {len(jobs_to_execute)} jobs to execute")
-            return jobs_to_execute
+                    # Skip jobs with execution_attempts >= 5
+                    execution_attempts = job.get('execution_attempts', 0)
+                    job_id = job.get('job_id', 'UNKNOWN')
+                    job_status = job.get('job_status')
+                    
+                    if execution_attempts >= 5 and job_status == 'Failed':
+                        logger.warning(f"Skipping job {job_id} with {execution_attempts} failed attempts")
+                        continue
+                    
+                    # Check if job is scheduled for today in IST
+                    job_date = job.get('job_date')
+                    
+                    # For In Progress or Failed jobs, always include them for retry
+                    if job_status in ['In Progress', 'Failed']:
+                        logger.info(f"Including {job_status} job {job_id} for execution")
+                        validated_jobs.append(job)
+                        continue
+                        
+                    if job_date == today_ist:
+                        # Check if job has a specific execution time
+                        job_time = job.get('job_execution_time')
+                        if job_time:
+                            # Check if current time is within 20 minutes window of job execution time
+                            if time_window_start <= job_time <= time_window_end:
+                                logger.info(f"Job {job_id} scheduled for {job_time} is within execution window ({time_window_start} to {time_window_end})")
+                                validated_jobs.append(job)
+                            elif current_time_ist >= job_time:
+                                logger.info(f"Job {job_id} scheduled for {job_time} is past due, current time is {current_time_ist}")
+                                validated_jobs.append(job)
+                            else:
+                                logger.info(f"Job {job_id} scheduled for later today at {job_time}, current time is {current_time_ist}")
+                        else:
+                            # No specific time, execute today
+                            logger.info(f"Job {job_id} scheduled for today with no specific time")
+                            validated_jobs.append(job)
+                    else:
+                        # Job scheduled for future date
+                        logger.info(f"Job {job_id} scheduled for future date: {job_date}")
+                except Exception as job_error:
+                    logger.error(f"Error processing job item: {str(job_error)}")
+                    continue
+            
+            # Log the validated jobs
+            logger.info(f"Found {len(validated_jobs)} valid jobs to execute")
+            return validated_jobs
         except Exception as e:
-            logger.error(f"Error scanning jobs for execution: {str(e)}")
+            logger.error(f"Error scanning jobs: {str(e)}")
             return []
     
     @staticmethod
-    def execute_job(job: Dict[str, Any]):
-        """Execute a job by creating a booking"""
-        job_id = job.get('job_id')
+    def execute_job(job: Dict[str, Any]) -> bool:
+        """
+        Execute a job by creating a booking
         
+        Args:
+            job: The job to execute
+            
+        Returns:
+            bool: True if job execution was successful, False otherwise
+        """
+        if not job or not isinstance(job, dict):
+            logger.error("Invalid job object provided to execute_job")
+            return False
+            
+        job_id = job.get('job_id')
+        if not job_id:
+            logger.error("Job missing job_id")
+            return False
+            
         try:
-            # Check if this is a test re-execution of a previously completed job
-            is_test_rerun = 'original_status' in job and job.get('original_status') == 'Completed'
+            # Get current execution attempts and increment
+            execution_attempts = job.get('execution_attempts', 0)
+            execution_attempts += 1
             
-            if is_test_rerun:
-                logger.info(f"Test re-execution of previously completed job {job_id}")
-                
-            # Update job status to In Progress
-            CronjobService.update_job_status(job_id, 'In Progress')
-            CronjobService.log_job_event(job_id, 'EXECUTION_STARTED', 'Job execution started')
-            # Debug logging to identify NoneType errors
-            logger.info(f"DEBUG - Job object type: {type(job)}")
-            logger.info(f"DEBUG - Job keys: {list(job.keys()) if isinstance(job, dict) else 'Not a dict'}")
-
-            # Extract job details with detailed logging
-            logger.info(f"Extracting job details for job {job_id}")
+            # Update job status to In Progress and increment execution attempts
+            CronjobService.update_job_status(job_id, 'In Progress', {
+                'execution_attempts': execution_attempts,
+                'last_execution_time': get_current_ist_time().isoformat()
+            })
             
-            # Log all job keys for debugging
-            logger.info(f"Job keys: {list(job.keys())}")
-            
-            origin = job.get('origin_station_code')
-            logger.info(f"Origin: {origin}")
-            
-            destination = job.get('destination_station_code')
-            logger.info(f"Destination: {destination}")
-            
-            journey_date = job.get('journey_date')
-            logger.info(f"Journey date: {journey_date}")
-            
-            travel_class = job.get('travel_class')
-            logger.info(f"Travel class: {travel_class}")
-            
-            passengers = job.get('passengers', [])
-            logger.info(f"Passengers count: {len(passengers)}")
-            
-            booking_email = job.get('booking_email')
-            logger.info(f"Booking email: {booking_email}")
-            
-            booking_phone = job.get('booking_phone')
-            logger.info(f"Booking phone: {booking_phone}")
-            
-            auto_upgrade = job.get('auto_upgrade', False)
-            logger.info(f"Auto upgrade: {auto_upgrade}")
-            
-            auto_book_alternate_date = job.get('auto_book_alternate_date', False)
-            logger.info(f"Auto book alternate date: {auto_book_alternate_date}")
-            
-            train_details = job.get('train_details')
-            logger.info(f"Train details: {train_details}")
-            
-            # Log user_id for debugging
-            user_id = job.get('user_id')
-            logger.info(f"User ID: {user_id}")
-            
-            # Log payment method for debugging
-            payment_method = job.get('payment_method')
-            logger.info(f"Payment method: {payment_method}")
-            
-            # Log job details
+            # Log job event
             CronjobService.log_job_event(
                 job_id, 
-                'JOB_DETAILS', 
-                'Job details retrieved',
+                'EXECUTION_STARTED', 
+                f"Job execution started (attempt {execution_attempts})"
+            )
+            
+            # Record job execution start in job_executions table
+            CronjobService.record_job_execution(
+                job_id,
+                'started',
                 {
-                    'origin': origin,
-                    'destination': destination,
-                    'journey_date': journey_date,
-                    'travel_class': travel_class,
-                    'passenger_count': len(passengers),
-                    'auto_upgrade': auto_upgrade,
-                    'auto_book_alternate_date': auto_book_alternate_date
+                    'execution_attempts': int(execution_attempts),
+                    'start_time': get_current_ist_time().isoformat()
                 }
             )
             
-            # Check if we need to search for trains or use the specified train
+            # Extract job details
+            logger.info(f"Extracting job details for job {job_id} (attempt {execution_attempts})")
+            logger.info(f"Job keys: {list(job.keys())}")
+            
+            # Skip debug logging in production
+            
+            # Extract required fields with validation
+            user_id = safe_get(job, 'user_id')
+            if not user_id:
+                error_msg = "Job missing user_id"
+                logger.error(error_msg)
+                CronjobService.update_job_status(job_id, 'Failed', {
+                    'error_message': error_msg,
+                    'execution_attempts': execution_attempts,
+                    'last_execution_time': get_current_ist_time().isoformat()
+                })
+                CronjobService.log_job_event(job_id, 'EXECUTION_FAILED', error_msg)
+                return False
+                
+            origin = safe_get(job, 'origin_station_code')
+            destination = safe_get(job, 'destination_station_code')
+            journey_date = safe_get(job, 'journey_date')
+            travel_class = safe_get(job, 'travel_class')
+            
+            # Log extracted details
+            logger.info(f"Origin: {origin}")
+            logger.info(f"Destination: {destination}")
+            logger.info(f"Journey date: {journey_date}")
+            logger.info(f"Travel class: {travel_class}")
+            
+            # Extract optional fields with defaults
+            passengers = safe_get(job, 'passengers', [])
+            if not isinstance(passengers, list):
+                logger.warning(f"Invalid passengers format: {type(passengers)}, using empty list")
+                passengers = []
+                
+            logger.info(f"Passengers count: {len(passengers)}")
+            
+            booking_email = safe_get(job, 'booking_email', '')
+            booking_phone = safe_get(job, 'booking_phone', '')
+            auto_upgrade = safe_get(job, 'auto_upgrade', False)
+            auto_book_alternate_date = safe_get(job, 'auto_book_alternate_date', False)
+            
+            logger.info(f"Booking email: {booking_email}")
+            logger.info(f"Booking phone: {booking_phone}")
+            logger.info(f"Auto upgrade: {auto_upgrade}")
+            logger.info(f"Auto book alternate date: {auto_book_alternate_date}")
+            
+            # Extract train details if provided
+            train_details = safe_get(job, 'train_details')
+            logger.info(f"Train details: {train_details}")
+            
+            # Initialize train variables
             train_id = None
             train_name = None
             departure_time = None
             arrival_time = None
             duration = None
             
-            if train_details and isinstance(train_details, dict):
-                # Extract train details with safe defaults
-                train_id = train_details.get('train_number')
-                train_name = train_details.get('train_name')
+            # Process train details
+            CronjobService.log_job_event(job_id, 'JOB_DETAILS', 'Job details retrieved')
+            
+            # Check if we have train details
+            if train_details and isinstance(train_details, dict) and train_details.get('train_number'):
+                # Use provided train details
+                train_id = safe_get(train_details, 'train_number')
+                train_name = safe_get(train_details, 'train_name')
                 
-                # If we have a valid train_id from the job
-                if train_id:
-                    # Ensure train_details has all required fields with defaults if missing
-                    if train_details.get('departure_time') is None:
-                        train_details['departure_time'] = '08:00'
-                        logger.info(f"Using default departure_time: {train_details['departure_time']}")
-                    
-                    if train_details.get('arrival_time') is None:
-                        train_details['arrival_time'] = '14:30'
-                        logger.info(f"Using default arrival_time: {train_details['arrival_time']}")
-                    
-                    if train_details.get('duration') is None:
-                        train_details['duration'] = '6h 30m'
-                        logger.info(f"Using default duration: {train_details['duration']}")
-                    
-                    # Store these values for later use
-                    departure_time = train_details['departure_time']
-                    arrival_time = train_details['arrival_time']
-                    duration = train_details['duration']
-                    
-                    # If train_name is missing, create a default one
-                    if not train_name:
-                        train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                        train_details['train_name'] = train_name
-                        logger.info(f"Using default train_name: {train_name}")
-                    
-                    if train_details and isinstance(train_details, dict):
-                        CronjobService.log_job_event(
-                            job_id, 
-                            'TRAIN_SELECTED', 
-                            f"Using specified train: {train_id} - {train_name}",
-                            train_details
-                        )
-                    else:
-                        logger.warning("Invalid train_details provided; skipping detailed TRAIN_SELECTED log.")
-                        CronjobService.log_job_event(
-                            job_id, 
-                            'TRAIN_SELECTED', 
-                            f"Using specified train: {train_id} - {train_name}"
-                        )
+                # Ensure we have all required train details with fallbacks
+                if safe_get(train_details, 'departure_time') is None:
+                    train_details['departure_time'] = '08:00'
+                    logger.info(f"Using default departure_time: {train_details['departure_time']}")
+                
+                if safe_get(train_details, 'arrival_time') is None:
+                    train_details['arrival_time'] = '14:30'
+                    logger.info(f"Using default arrival_time: {train_details['arrival_time']}")
+                
+                if safe_get(train_details, 'duration') is None:
+                    train_details['duration'] = '6h 30m'
+                    logger.info(f"Using default duration: {train_details['duration']}")
+                
+                # Store these values for later use
+                departure_time = train_details['departure_time']
+                arrival_time = train_details['arrival_time']
+                duration = train_details['duration']
+                
+                # If train_name is missing, create a default one
+                if not train_name:
+                    train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                    train_details['train_name'] = train_name
+                    logger.info(f"Using default train_name: {train_name}")
+                
+                # Log train selection
+                if train_details and isinstance(train_details, dict):
+                    CronjobService.log_job_event(
+                        job_id, 
+                        'TRAIN_SELECTED', 
+                        f"Using specified train: {train_id} - {train_name}",
+                        train_details
+                    )
                 else:
-                    logger.warning("Train details provided but missing train_number")
-            elif train_details is not None:
+                    logger.warning("Invalid train_details provided; skipping detailed TRAIN_SELECTED log.")
+                    CronjobService.log_job_event(
+                        job_id, 
+                        'TRAIN_SELECTED', 
+                        f"Using specified train: {train_id} - {train_name}"
+                    )
+            elif train_details is not None and not isinstance(train_details, dict):
                 logger.warning(f"Invalid train_details format: {type(train_details)}")
-                
-            # If we don't have valid train details, train_id will be None and we'll search for trains
             else:
                 # Search for available trains using the same logic as in the backend
                 CronjobService.log_job_event(job_id, 'TRAIN_SEARCH', 'Searching for available trains')
                 logger.info(f"Train search requested: origin={origin}, destination={destination}, date={journey_date}")
                 
                 try:
-                    # Helper function to unmarshal DynamoDB items
-                    from boto3.dynamodb.types import TypeDeserializer
-                    deserializer = TypeDeserializer()
+                    # Get day of week for journey date
+                    journey_datetime = datetime.strptime(journey_date, '%Y-%m-%d')
+                    day_of_week = journey_datetime.strftime('%A')
                     
-                    def unmarshal(item):
-                        # Recursively unmarshal a DynamoDB item
-                        if isinstance(item, dict) and set(item.keys()) <= {'S','N','BOOL','NULL','M','L'}:
-                            return deserializer.deserialize(item)
-                        elif isinstance(item, dict):
-                            return {k: unmarshal(v) for k, v in item.items()}
-                        elif isinstance(item, list):
-                            return [unmarshal(x) for x in item]
-                        else:
-                            return item
-                    
-                    # Calculate day of week from journey date
-                    day_of_week = datetime.strptime(journey_date, "%Y-%m-%d").strftime("%a")
-                    logger.info(f"Journey day of week: {day_of_week}")
-                    
-                    # Query trains table using the source-destination-station-index GSI
+                    # Query trains table by source station
                     trains_table = dynamodb.Table(TRAINS_TABLE)
                     response = trains_table.query(
                         IndexName="source-destination-station-index",
-                        KeyConditionExpression=(
-                            Key("source_station").eq(origin)
-                        )
+                        KeyConditionExpression=Key("source_station").eq(origin)
                     )
                     
-                    trains = response.get("Items", [])
-                    logger.info(f"Found {len(trains)} trains with origin {origin}")
+                    # Process results
+                    trains = response.get('Items', [])
+                    logger.info(f"Found {len(trains)} trains with source station {origin}")
                     
+                    # Filter trains by destination and day of run
                     results = []
+                    
                     for train in trains:
-                        train = unmarshal(train)  # Always unmarshal!
-                        route_stations = train.get('route', [])
-                        # Robustly handle both string and dict route entries
-                        route_stations = [s if isinstance(s, str) else s.get('station_code') or s.get('S') for s in route_stations]
-                        train_source = train.get('source_station') or train.get('source_station_code')
-                        train_dest = train.get('destination_station') or train.get('destination_station_code')
-                        
-                        logger.info(f"Checking train_id={train.get('train_id')}, route_stations={route_stations}")
-                        logger.info(f"origin={origin}, destination={destination}, origin_in_route={origin in route_stations}, dest_in_route={destination in route_stations}")
-                        
-                        if origin in route_stations and destination in route_stations:
-                            logger.info(f"Order check: {route_stations.index(origin)} < {route_stations.index(destination)}")
-                            if route_stations.index(origin) < route_stations.index(destination):
-                                logger.info(f"Source match: {train_source} == {origin}, Dest match: {train_dest} == {destination}")
-                                if (not train_source or train_source == origin) and (not train_dest or train_dest == destination):
-                                    days_of_run = train.get('days_of_run', [])
-                                    # Normalize days_of_run to list of str
-                                    if days_of_run and isinstance(days_of_run[0], dict):
-                                        days_of_run = [d.get('S') or str(d) for d in days_of_run]
-                                    logger.info(f"days_of_run={days_of_run}, day_of_week={day_of_week}")
+                        try:
+                            # Unmarshal DynamoDB item
+                            train = unmarshal_dynamodb_item(train)
+                            
+                            # Check if train route includes both origin and destination
+                            route_stations = train.get('route_stations', [])
+                            if not isinstance(route_stations, list):
+                                logger.warning(f"Invalid route_stations format for train {train.get('train_number')}: {type(route_stations)}")
+                                continue
+                                
+                            # Check if train runs on the journey day
+                            days_of_run = train.get('days_of_run', [])
+                            if not isinstance(days_of_run, list):
+                                logger.warning(f"Invalid days_of_run format for train {train.get('train_number')}: {type(days_of_run)}")
+                                continue
+                                
+                            # Check if train route includes both stations
+                            if origin in route_stations and destination in route_stations:
+                                # Check origin comes before destination in route
+                                origin_index = route_stations.index(origin)
+                                destination_index = route_stations.index(destination)
+                                
+                                if origin_index < destination_index:
+                                    # Check if train runs on journey day
                                     if any(day.lower() == day_of_week.lower() for day in days_of_run):
-                                        logger.info(f"MATCH: Found suitable train_id={train.get('train_id')}")
                                         results.append(train)
-                                    else:
-                                        logger.info(f"Day of run mismatch for train_id={train.get('train_id')}")
-                                else:
-                                    logger.info(f"Source or destination mismatch for train_id={train.get('train_id')}")
-                            else:
-                                logger.info(f"Route order mismatch for train_id={train.get('train_id')}")
-                        else:
-                            logger.info(f"Origin or destination not in route for train_id={train.get('train_id')}")
+                        except Exception as train_error:
+                            logger.error(f"Error processing train: {str(train_error)}")
+                            continue
                     
                     logger.info(f"Found {len(results)} matching trains after filtering")
                     
+                    # Use first matching train or fallback to simulated train
                     if not results:
-                        # No matching trains found, create a simulated train for testing
-                        logger.warning("No matching trains found, creating a simulated train for testing")
+                        # Fallback to simulated train
                         now = datetime.utcnow()
                         train_id = f"TRN{now.strftime('%H%M%S')}"
                         train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                        departure_time = '08:00'
+                        arrival_time = '14:30'
+                        duration = '6h 30m'
                         
                         CronjobService.log_job_event(
                             job_id, 
-                            'TRAIN_FOUND', 
-                            f"Found available train: {train_id} - {train_name} (simulated)",
+                            'TRAIN_SEARCH_RESULT', 
+                            "No matching trains found, using simulated train",
                             {
-                                'train_number': train_id,
+                                'train_id': train_id,
                                 'train_name': train_name,
-                                'departure_time': '08:00',
-                                'arrival_time': '14:30',
-                                'duration': '6h 30m',
-                                'is_simulated': True
+                                'departure_time': departure_time,
+                                'arrival_time': arrival_time,
+                                'duration': duration
                             }
                         )
                     else:
@@ -463,14 +763,15 @@ class CronjobService:
                                     raise ValueError(f"Selected train is not a dictionary: {type(selected_train)}")
                                     
                                 # Safely extract train details with fallbacks
-                                train_id = (selected_train.get('train_number') or 
-                                           selected_train.get('train_id') or 
+                                now = datetime.utcnow()
+                                train_id = (safe_get(selected_train, 'train_number') or 
+                                           safe_get(selected_train, 'train_id') or 
                                            f"TRN{now.strftime('%H%M%S')}")
                                            
-                                train_name = selected_train.get('train_name') or f"{origin[:3]}-{destination[:3]} EXPRESS"
-                                departure_time = selected_train.get('departure_time', '08:00')
-                                arrival_time = selected_train.get('arrival_time', '14:30')
-                                duration = selected_train.get('duration', '6h 30m')
+                                train_name = safe_get(selected_train, 'train_name') or f"{origin[:3]}-{destination[:3]} EXPRESS"
+                                departure_time = safe_get(selected_train, 'departure_time', '08:00')
+                                arrival_time = safe_get(selected_train, 'arrival_time', '14:30')
+                                duration = safe_get(selected_train, 'duration', '6h 30m')
                                 
                                 logger.info(f"Successfully extracted train details from selected train: {train_id}")
                         except Exception as train_extract_error:
@@ -485,473 +786,590 @@ class CronjobService:
                         
                         CronjobService.log_job_event(
                             job_id, 
-                            'TRAIN_FOUND', 
-                            f"Found available train: {train_id} - {train_name}",
-                            {
-                                'train_number': train_id,
-                                'train_name': train_name,
-                                'departure_time': departure_time,
-                                'arrival_time': arrival_time,
-                                'duration': duration
-                            }
+                            'TRAIN_SELECTED', 
+                            f"Using train: {train_id} - {train_name}"
                         )
                 except Exception as search_error:
-                    logger.error(f"Error searching for trains: {str(search_error)}")
-                    # Fall back to simulated train in case of error
+                    logger.error(f"Error during train search: {str(search_error)}")
+                    # Fallback to simulated train
                     now = datetime.utcnow()
                     train_id = f"TRN{now.strftime('%H%M%S')}"
                     train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
+                    departure_time = '08:00'
+                    arrival_time = '14:30'
+                    duration = '6h 30m'
                     
                     CronjobService.log_job_event(
                         job_id, 
                         'TRAIN_SEARCH_ERROR', 
-                        f"Error searching for trains: {str(search_error)}, using fallback train",
-                        {
-                            'error': str(search_error),
-                            'train_number': train_id,
-                            'train_name': train_name,
-                            'departure_time': '08:00',
-                            'arrival_time': '14:30',
-                            'duration': '6h 30m',
-                            'is_fallback': True
-                        }
+                        f"Error during train search: {str(search_error)}"
                     )
-                
-              
-                
-                # Attempt to book the train
-                CronjobService.log_job_event(job_id, 'BOOKING_ATTEMPT', 'Attempting to book tickets')
-                
-                # Calculate fare based on train class and distance (simplified for demo)
-                fare = 0
+            
+            # Calculate fare based on travel class
+            try:
+                base_fare = Decimal('0')
                 if travel_class == '1A':
-                    fare = 1250.00
+                    base_fare = Decimal('1200')
                 elif travel_class == '2A':
-                    fare = 750.00
+                    base_fare = Decimal('800')
                 elif travel_class == '3A':
-                    fare = 500.00
+                    base_fare = Decimal('600')
+                elif travel_class == 'SL':
+                    base_fare = Decimal('400')
+                elif travel_class == '2S':
+                    base_fare = Decimal('200')
                 else:
-                    fare = 350.00
+                    base_fare = Decimal('500')  # Default fare
                 
-                # Apply passenger count to fare - with safer handling
-                try:
-                    # Ensure passengers is a list before trying to get its length
-                    if passengers is None:
-                        passenger_count = 1
-                        logger.info("No passengers found, using default count of 1")
-                    elif isinstance(passengers, list):
-                        passenger_count = len(passengers)
-                        logger.info(f"Found {passenger_count} passengers in list")
+                # Count passengers by type
+                adult_count = 0
+                senior_count = 0
+                adult_fare = Decimal('0')
+                senior_fare = Decimal('0')
+                
+                # Process each passenger
+                for passenger in passengers:
+                    if isinstance(passenger, dict) and passenger.get('is_senior', False):
+                        senior_count += 1
+                        # Apply 25% discount for seniors
+                        senior_fare += base_fare * Decimal('0.75')
                     else:
-                        # If passengers exists but is not a list, log its type and use default
-                        logger.warning(f"Passengers is not a list but {type(passengers)}, using default count of 1")
-                        passenger_count = 1
-                        
-                    total_fare = fare * passenger_count
-                    logger.info(f"Base fare: {fare}, Passenger count: {passenger_count}, Total fare: {total_fare}")
-                except Exception as fare_error:
-                    logger.error(f"Error calculating fare: {str(fare_error)}")
-                    # Default values if calculation fails
-                    passenger_count = 1
-                    total_fare = fare
-                    logger.info(f"Using default values: Base fare: {fare}, Passenger count: {passenger_count}, Total fare: {total_fare}")
+                        adult_count += 1
+                        adult_fare += base_fare
                 
-                # Log fare calculation
-                CronjobService.log_job_event(
-                    job_id,
-                    'FARE_CALCULATED',
-                    f"Calculated fare: {total_fare} for {passenger_count} passengers in class {travel_class}",
-                    {'fare': str(total_fare), 'base_fare': str(fare), 'passenger_count': passenger_count, 'travel_class': travel_class}
-                )
-                    
-                # Generate a booking ID and PNR
-                booking_id = f"BK-{int(time.time())}"
-                now = datetime.utcnow()
-                pnr = f"PNR{now.strftime('%Y%m%d')}{''.join([str(i) for i in range(6)])}"
+                # Calculate subtotal before tax
+                subtotal = adult_fare + senior_fare
                 
-                # Create booking in the bookings table
-                logger.info(f"Creating booking record in DynamoDB table: {BOOKINGS_TABLE}")
-                try:
-                    bookings_table = dynamodb.Table(BOOKINGS_TABLE)
-                except Exception as table_error:
-                    logger.error(f"Error accessing bookings table: {str(table_error)}")
-                    raise Exception(f"Error accessing bookings table: {str(table_error)}")
+                # Calculate tax (5% of subtotal)
+                tax = subtotal * Decimal('0.05')
                 
-                # Extensive validation and debug logging for required fields
-                logger.info(f"DEBUG - Checking required fields in job object")
-                required_fields = ['user_id', 'job_id']
-                missing_fields = []
+                # Calculate total amount
+                total_fare = subtotal + tax
                 
-                for field in required_fields:
-                    if not job.get(field):
-                        missing_fields.append(field)
-                        logger.error(f"Required field '{field}' is missing or None")
-                    else:
-                        logger.info(f"Field '{field}' is present with value: {job.get(field)}")
+                # Create price details object with string values for numeric fields to avoid float type errors
+                price_details = {
+                    'base_fare_per_adult': str(base_fare),
+                    'base_fare_per_senior': str(base_fare * Decimal('0.75')),
+                    'adult_count': adult_count,
+                    'senior_count': senior_count,
+                    'adult_fare_total': str(adult_fare),
+                    'senior_fare_total': str(senior_fare),
+                    'subtotal': str(subtotal),
+                    'tax': str(tax),
+                    'total': str(total_fare),
+                    'discount_applied': 'Senior citizen discount (25%)' if senior_count > 0 else None,
+                }
                 
-                if missing_fields:
-                    error_msg = f"Missing required fields for booking creation: {', '.join(missing_fields)}"
-                    logger.error(error_msg)
-                    raise Exception(error_msg)
-                
-                # Get train details with defaults for any missing values
-                # These variables should already be initialized at the top of the method
-                # But we'll double-check here to be safe
-                try:
-                    if train_id is None:
-                        train_id = f"TRN{now.strftime('%H%M%S')}"
-                        logger.info(f"Using generated train_id: {train_id}")
-                        
-                    if train_name is None:
-                        train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                        logger.info(f"Using generated train_name: {train_name}")
-                        
-                    if departure_time is None:
-                        departure_time = '08:00'
-                        logger.info(f"Using default departure_time: {departure_time}")
-                        
-                    if arrival_time is None:
-                        arrival_time = '14:30'
-                        logger.info(f"Using default arrival_time: {arrival_time}")
-                        
-                    if duration is None:
-                        duration = '6h 30m'
-                        logger.info(f"Using default duration: {duration}")
-                    
-                    logger.info(f"Final train details for booking: ID={train_id}, Name={train_name}, Departure={departure_time}, Arrival={arrival_time}, Duration={duration}")
-                    
-                    # Ensure passengers is a valid list
-                    if not isinstance(passengers, list):
-                        logger.warning(f"Passengers is not a list: {type(passengers)}, setting to empty list")
-                        passengers = []
-                    
-                    # Ensure all string fields are actually strings
-                    booking_email = str(booking_email) if booking_email else ""
-                    booking_phone = str(booking_phone) if booking_phone else ""
-                    
-                    # Create booking item with safe values
-                    booking_item = {
-                        'PK': f"BOOKING#{booking_id}",
-                        'SK': "METADATA",
-                        'booking_id': booking_id,
-                        'user_id': job.get('user_id'),
-                        'train_id': train_id,
-                        'train_name': train_name,
-                        'pnr': pnr,
-                        'booking_status': 'CONFIRMED',
-                        'journey_date': journey_date,
-                        'origin_station_code': origin,
-                        'destination_station_code': destination,
-                        'class': travel_class,
-                        'departure_time': departure_time,
-                        'arrival_time': arrival_time,
-                        'duration': duration,
-                        'fare': str(total_fare),  # Convert to string for DynamoDB
-                        'base_fare': str(fare),  # Store base fare for reference
-                        'passengers': passengers,
-                        'booking_email': booking_email,
-                        'booking_phone': booking_phone,
-                        'created_at': now.isoformat(),
-                        'updated_at': now.isoformat()
-                    }
-                    
-                    # Log the booking item for debugging
-                    logger.info(f"Created booking item with keys: {list(booking_item.keys())}")
-                    
-                except Exception as booking_prep_error:
-                    logger.error(f"Error preparing booking data: {str(booking_prep_error)}")
-                    raise Exception(f"Error preparing booking data: {str(booking_prep_error)}")
-                
-                logger.info(f"Booking item prepared: {json.dumps(booking_item, cls=DecimalEncoder)}")
-                
-                
-                try:
-                    # Save booking to DynamoDB
-                    bookings_table.put_item(Item=booking_item)
-                    CronjobService.log_job_event(job_id, 'BOOKING_CREATED', f"Created booking with ID: {booking_id}")
-                    
-                    # Handle wallet transaction if payment method is wallet
-                    payment_method = job.get('payment_method')
-                    logger.info(f"Processing payment with method: {payment_method}")
-                    
-                    if payment_method == 'wallet':
-                        user_id = job.get('user_id')
-                        if not user_id:
-                            logger.error("User ID is missing for wallet payment")
-                            raise Exception("User ID is required for wallet payment")
-                            
-                        logger.info(f"Processing wallet payment for user: {user_id}")
-                        
-                        # Get user's wallet
-                        try:
-                            wallet_table = dynamodb.Table(WALLET_TABLE)
-                            logger.info(f"Querying wallet for user: {user_id}")
-                            wallet_response = wallet_table.query(
-                                IndexName='user_id-index',
-                                KeyConditionExpression=Key('user_id').eq(user_id),
-                                Limit=1
-                            )
-                            logger.info(f"Wallet query response: {json.dumps(wallet_response, cls=DecimalEncoder)}")
-                        except Exception as wallet_error:
-                            logger.error(f"Error querying wallet: {str(wallet_error)}")
-                            raise Exception(f"Error retrieving wallet: {str(wallet_error)}")
-                        
-                        
-                        if wallet_response.get('Items'):
-                            logger.info(f"Found wallet for user {user_id}")
-                            wallet_item = wallet_response['Items'][0]
-                            
-                            # Check if wallet_id exists in the wallet item
-                            if 'wallet_id' not in wallet_item:
-                                logger.error(f"Wallet item missing wallet_id: {json.dumps(wallet_item, cls=DecimalEncoder)}")
-                                raise Exception("Wallet ID is missing from wallet record")
-                                
-                            wallet_id = wallet_item['wallet_id']
-                            logger.info(f"Wallet ID: {wallet_id}")
-                            
-                            # Check if balance exists in the wallet item
-                            if 'balance' not in wallet_item:
-                                logger.error(f"Wallet item missing balance: {json.dumps(wallet_item, cls=DecimalEncoder)}")
-                                raise Exception("Wallet balance is missing from wallet record")
-                                
-                            try:
-                                current_balance = Decimal(wallet_item['balance'])
-                                logger.info(f"Current wallet balance: {current_balance}")
-                            except Exception as balance_error:
-                                logger.error(f"Error converting wallet balance: {str(balance_error)}")
-                                raise Exception(f"Invalid wallet balance format: {str(balance_error)}")
-                            
-                            # Check if wallet has sufficient balance
-                            logger.info(f"Checking if balance {current_balance} is sufficient for fare {fare}")
-                            if current_balance >= Decimal(fare):
-                                                # Create wallet transaction
-                                try:
-                                    txn_id = f"TXN-{int(time.time())}"
-                                    logger.info(f"Creating transaction with ID: {txn_id}")
-                                    
-                                    try:
-                                        wallet_transactions_table = dynamodb.Table(WALLET_TRANSACTIONS_TABLE)
-                                    except Exception as table_error:
-                                        logger.error(f"Error accessing wallet transactions table: {str(table_error)}")
-                                        raise Exception(f"Error accessing wallet transactions table: {str(table_error)}")
-                                    
-                                    transaction_item = {
-                                        'PK': f"WALLET#{wallet_id}",
-                                        'SK': f"TXN#{txn_id}",
-                                        'txn_id': txn_id,
-                                        'wallet_id': wallet_id,
-                                        'user_id': user_id,
-                                        'type': 'DEBIT',
-                                        'amount': str(fare),
-                                        'source': 'BOOKING',
-                                        'status': 'COMPLETED',
-                                        'reference_id': booking_id,
-                                        'notes': f"Payment for booking {pnr}",
-                                        'created_at': now.isoformat()
-                                    }
-                                    
-                                    logger.info(f"Transaction item prepared: {json.dumps(transaction_item, cls=DecimalEncoder)}")
-                                    
-                                    # Save transaction
-                                    wallet_transactions_table.put_item(Item=transaction_item)
-                                    logger.info(f"Transaction {txn_id} saved successfully")
-                                    
-                                    # Update wallet balance
-                                    try:
-                                        new_balance = current_balance - Decimal(fare)
-                                        logger.info(f"Updating wallet balance from {current_balance} to {new_balance}")
-                                        
-                                        wallet_table.update_item(
-                                            Key={
-                                                'PK': f"WALLET#{wallet_id}",
-                                                'SK': "METADATA"
-                                            },
-                                            UpdateExpression="SET balance = :balance, updated_at = :updated_at",
-                                            ExpressionAttributeValues={
-                                                ':balance': str(new_balance),
-                                                ':updated_at': now.isoformat()
-                                            }
-                                        )
-                                        logger.info(f"Wallet {wallet_id} balance updated successfully")
-                                    except Exception as balance_update_error:
-                                        logger.error(f"Error updating wallet balance: {str(balance_update_error)}")
-                                        raise Exception(f"Error updating wallet balance: {str(balance_update_error)}")
-                                except Exception as txn_error:
-                                    logger.error(f"Error creating wallet transaction: {str(txn_error)}")
-                                    raise Exception(f"Error creating wallet transaction: {str(txn_error)}")
-                                
-                                
-                                CronjobService.log_job_event(
-                                    job_id, 
-                                    'PAYMENT_COMPLETED', 
-                                    f"Wallet payment completed. Transaction ID: {txn_id}",
-                                    {
-                                        'transaction_id': txn_id,
-                                        'amount': str(fare),
-                                        'wallet_id': wallet_id,
-                                        'new_balance': str(new_balance)
-                                    }
-                                )
-                            else:
-                                CronjobService.log_job_event(
-                                    job_id, 
-                                    'PAYMENT_FAILED', 
-                                    "Insufficient wallet balance",
-                                    {
-                                        'wallet_id': wallet_id,
-                                        'current_balance': str(current_balance),
-                                        'required_amount': str(fare)
-                                    }
-                                )
-                        else:
-                            CronjobService.log_job_event(job_id, 'PAYMENT_FAILED', f"No wallet found for user {user_id}")
-                    
-                    # Update job status to Completed
-                    CronjobService.update_job_status(
-                        job_id, 
-                        'Completed', 
-                        {
-                            'booking_id': booking_id,
-                            'pnr': pnr,
-                            'completed_at': datetime.utcnow().isoformat()
-                        }
-                    )
-                    
-                    CronjobService.log_job_event(
-                        job_id, 
-                        'BOOKING_SUCCESSFUL', 
-                        f"Booking successful! PNR: {pnr}",
-                        {
-                            'booking_id': booking_id,
-                            'pnr': pnr,
-                            'fare': str(fare),
-                            'seats': [f"B{i+1}-{10+i}" for i in range(len(passengers))]
-                        }
-                    )
-                    
-                except Exception as booking_error:
-                    error_message = str(booking_error)
-                    CronjobService.log_job_event(
-                        job_id, 
-                        'BOOKING_FAILED', 
-                        f"Error creating booking: {error_message}"
-                    )
-                    raise Exception(f"Booking creation failed: {error_message}")
+                logger.info(f"Calculated fare: {total_fare} (base: {base_fare}, adults: {adult_count}, seniors: {senior_count})")
+            except Exception as fare_error:
+                logger.error(f"Error calculating fare: {str(fare_error)}")
+                total_fare = Decimal('500')  # Default fallback fare as Decimal
+                tax = Decimal('25')  # Default tax
+                price_details = {
+                    'base_fare_per_adult': '500',
+                    'base_fare_per_senior': '375',
+                    'adult_count': 1,
+                    'senior_count': 0,
+                    'adult_fare_total': '500',
+                    'senior_fare_total': '0',
+                    'subtotal': '500',
+                    'tax': '25',
+                    'total': '525',
+                    'discount_applied': None,
+                }
 
+        except Exception as booking_error:
+            logger.error(f"Error creating booking: {str(booking_error)}")
+        
+        # Create booking
+        try:
+            # Generate booking ID
+            booking_id = f"BK{int(time.time())}"
+            pnr = f"PNR{int(time.time())}"  # Simulated PNR
+            
+            # Process passengers to ensure proper serialization
+            sanitized_passengers = []
+            for passenger in passengers:
+                if isinstance(passenger, dict):
+                    # Convert any float values to Decimal
+                    sanitized_passenger = {}
+                    for key, value in passenger.items():
+                        if isinstance(value, float):
+                            sanitized_passenger[key] = Decimal(str(value))
+                        else:
+                            sanitized_passenger[key] = value
+                    sanitized_passengers.append(sanitized_passenger)
+                else:
+                    logger.warning(f"Skipping invalid passenger format: {type(passenger)}")
+            
+            # Create booking item
+            booking_item = {
+                'PK': f"BOOKING#{booking_id}",
+                'SK': "METADATA",
+                'booking_id': booking_id,
+                'user_id': user_id,
+                'pnr': pnr,
+                'train_id': train_id,
+                'train_name': train_name,
+                'train_number': safe_get(job, 'train_details', {}).get('train_number', ''),
+                'journey_date': journey_date,
+                'origin_station_code': origin,
+                'destination_station_code': destination,
+                'class': travel_class,  # Changed from 'class' to match frontend
+                'passengers': sanitized_passengers,  # Use sanitized passengers
+                'booking_status': 'confirmed',  # Match frontend lowercase value
+                'fare': str(total_fare),  # Convert to string to avoid float type errors
+                'tax': str(tax),  # Add tax field as string
+                'total_amount': str(total_fare),  # Add total_amount field as string
+                'price_details': price_details,  # Add price_details object from calculation
+                'payment_status': 'paid',  # Match frontend lowercase value
+                'payment_method': safe_get(job, 'payment_method', 'wallet'),
+                'booking_date': get_current_ist_time().strftime('%Y-%m-%d'),
+                'booking_time': get_current_ist_time().strftime('%H:%M:%S'),
+                'booking_email': safe_get(job, 'booking_email', ''),
+                'booking_phone': safe_get(job, 'booking_phone', ''),
+                'created_at': get_current_ist_time().isoformat(),
+                'updated_at': get_current_ist_time().isoformat(),
+            }
+            
+            bookings_table = dynamodb.Table(BOOKINGS_TABLE)
+            bookings_table.put_item(Item=booking_item)
+            
+            logger.info(f"Created booking with ID: {booking_id}")
+            
+            # Create payment record with initial status
+            import uuid
+            payment_id = str(uuid.uuid4())
+            current_time = get_current_ist_time().isoformat()
+            payment_table = dynamodb.Table(PAYMENTS_TABLE)
+            payment_item = {
+                'PK': f"PAYMENT#{payment_id}",
+                'SK': "METADATA",
+                'payment_id': payment_id,
+                'user_id': user_id,
+                'booking_id': booking_id,
+                'amount': str(total_fare),  # Match frontend string format
+                'payment_method': safe_get(job, 'payment_method', 'wallet'),
+                'payment_status': 'pending',  # Initial status before wallet transaction
+                'initiated_at': current_time
+                # transaction_reference and completed_at will be added after wallet transaction
+            }
+            payment_table.put_item(Item=payment_item)
+            
+            logger.info(f"Created payment with ID: {payment_id}")
+            
+            # Update booking with payment ID (matching frontend Step 5)
+            bookings_table.update_item(
+                Key={'PK': f"BOOKING#{booking_id}", 'SK': "METADATA"},
+                UpdateExpression="SET payment_id = :payment_id",
+                ExpressionAttributeValues={
+                    ':payment_id': payment_id
+                }
+            )
+            
+            # Update job with booking details
+            CronjobService.update_job_status(
+                job_id, 
+                'Completed', 
+                {
+                    'booking_id': booking_id,
+                    'pnr': pnr,
+                    'payment_id': payment_id,  # Include payment ID
+                    'completed_at': get_current_ist_time().isoformat()
+                }
+            )
                 
-                return {
-                    'success': True,
+            # Log booking creation
+            CronjobService.log_job_event(
+                job_id, 
+                'BOOKING_CREATED', 
+                f"Created booking with ID: {booking_id}, payment ID: {payment_id}",
+                {'booking_id': booking_id, 'pnr': pnr, 'payment_id': payment_id}
+            )
+            
+            # Add a small delay to ensure payment record is created before any wallet operations
+            time.sleep(0.1)
+                
+            # Create wallet transaction if payment method is wallet
+            if safe_get(job, 'payment_method') == 'wallet':
+                try:
+                    # Get user's wallet
+                    wallet_table = dynamodb.Table(WALLET_TABLE)
+                    wallet_response = wallet_table.query(
+                    IndexName="user_id-index",
+                    KeyConditionExpression=Key('user_id').eq(user_id),
+                    Limit=1
+                    )
+                        
+                    if wallet_response.get('Items'):
+                        wallet = wallet_response['Items'][0]
+                        wallet_id = wallet.get('wallet_id')
+                            
+                        if wallet_id:
+                            # Create transaction with UUID format to match frontend
+                            import uuid
+                            txn_id = str(uuid.uuid4())
+                                
+                            wallet_transactions_table = dynamodb.Table(WALLET_TRANSACTIONS_TABLE)
+                            transaction_item = {
+                                'PK': f"WALLET#{wallet_id}",
+                                'SK': f"TXN#{txn_id}",
+                                'txn_id': txn_id,
+                                'wallet_id': wallet_id,
+                                'user_id': user_id,
+                                'amount': str(total_fare),  # Convert to string to match frontend format
+                                'type': 'debit',  # Match frontend key
+                                'source': 'booking',  # Match frontend key
+                                'notes': f"Payment for booking {pnr} on {train_name}",  # Match frontend key
+                                'reference_id': booking_id,
+                                'status': 'success',  # Match frontend value
+                                'created_at': get_current_ist_time().isoformat(),
+                            }
+                                
+                            wallet_transactions_table.put_item(Item=transaction_item)
+                            
+                            # Update payment record with transaction reference and completed status
+                            payment_table.update_item(
+                                Key={'PK': f"PAYMENT#{payment_id}", 'SK': "METADATA"},
+                                UpdateExpression="SET payment_status = :status, completed_at = :completed_at, transaction_reference = :txn_id, gateway_response = :gateway_response",
+                                ExpressionAttributeValues={
+                                    ':status': 'success',
+                                    ':completed_at': get_current_ist_time().isoformat(),
+                                    ':txn_id': txn_id,
+                                    ':gateway_response': {
+                                        'method': safe_get(job, 'payment_method', 'wallet'),
+                                        'status': 'success',
+                                        'timestamp': get_current_ist_time().isoformat(),
+                                        'transaction_id': txn_id
+                                    }
+                                }
+                            )
+                                
+                            # Update wallet balance
+                            # Get current balance as Decimal to avoid float issues
+                            if 'balance' in wallet:
+                                if isinstance(wallet['balance'], Decimal):
+                                    current_balance = wallet['balance']
+                                else:
+                                    current_balance = Decimal(str(wallet.get('balance', '0')))
+                            else:
+                                current_balance = Decimal('0')
+                                    
+                            new_balance = current_balance - total_fare
+                                
+                            wallet_table.update_item(
+                                Key={'PK': wallet.get('PK'), 'SK': wallet.get('SK')},
+                                UpdateExpression="SET balance = :balance, updated_at = :updated_at",
+                                ExpressionAttributeValues={
+                                    ':balance': new_balance,
+                                    ':updated_at': get_current_ist_time().isoformat()
+                                }
+                            )
+                                
+                            logger.info(f"Updated wallet balance: {current_balance} -> {new_balance}")
+                                
+                            CronjobService.log_job_event(
+                                job_id, 
+                                'WALLET_TRANSACTION', 
+                                f"Created wallet transaction: {txn_id}",
+                                {'txn_id': txn_id, 'amount': str(total_fare), 'new_balance': str(new_balance)}
+                            )
+                        else:
+                            logger.error(f"Wallet ID not found for user {user_id}")
+                            
+                            # Update payment record to indicate failure
+                            try:
+                                payment_table.update_item(
+                                    Key={ 'PK': f"PAYMENT#{payment_id}", 'SK': "METADATA"},
+                                    UpdateExpression="SET payment_status = :status, completed_at = :completed_at, error_message = :error_message, gateway_response = :gateway_response",
+                                    ExpressionAttributeValues={
+                                        ':status': 'failed',
+                                        ':completed_at': get_current_ist_time().isoformat(),
+                                        ':error_message': f"Wallet ID not found for user {user_id}",
+                                        ':gateway_response': {
+                                            'method': safe_get(job, 'payment_method', 'wallet'),
+                                            'status': 'failed',
+                                            'timestamp': get_current_ist_time().isoformat(),
+                                            'error': f"Wallet ID not found for user {user_id}"
+                                        }
+                                    }
+                                )
+                                logger.info(f"Updated payment {payment_id} status to failed due to missing wallet ID")
+                            except Exception as payment_update_error:
+                                logger.error(f"Error updating payment status after wallet ID not found: {str(payment_update_error)}")
+                    else:
+                        logger.error(f"Wallet not found for user {user_id}")
+                        
+                        # Update payment record to indicate failure
+                        try:
+                            payment_table.update_item(
+                                Key={'PK': f"PAYMENT#{payment_id}", 'SK': "METADATA"},
+                                UpdateExpression="SET payment_status = :status, completed_at = :completed_at, error_message = :error_message, gateway_response = :gateway_response",
+                                ExpressionAttributeValues={
+                                    ':status': 'failed',
+                                    ':completed_at': get_current_ist_time().isoformat(),
+                                    ':error_message': f"Wallet not found for user {user_id}",
+                                    ':gateway_response': {
+                                        'method': safe_get(job, 'payment_method', 'wallet'),
+                                        'status': 'failed',
+                                        'timestamp': get_current_ist_time().isoformat(),
+                                        'error': f"Wallet not found for user {user_id}"
+                                    }
+                                }
+                            )
+                            logger.info(f"Updated payment {payment_id} status to failed due to missing wallet")
+                        except Exception as payment_update_error:
+                            logger.error(f"Error updating payment status after wallet not found: {str(payment_update_error)}")
+                except Exception as wallet_error:
+                    error_message = f"Error processing wallet transaction: {str(wallet_error)}"
+                    logger.error(error_message)
+                    
+                    # Update payment record to indicate failure
+                    try:
+                        payment_table.update_item(
+                            Key={'PK': f"PAYMENT#{payment_id}", 'SK': "METADATA"},
+                            UpdateExpression="SET payment_status = :status, completed_at = :completed_at, error_message = :error_message, gateway_response = :gateway_response",
+                            ExpressionAttributeValues={
+                                ':status': 'failed',
+                                ':completed_at': get_current_ist_time().isoformat(),
+                                ':error_message': error_message,
+                                ':gateway_response': {
+                                    'method': safe_get(job, 'payment_method', 'wallet'),
+                                    'status': 'failed',
+                                    'timestamp': get_current_ist_time().isoformat(),
+                                    'error': str(wallet_error)
+                                }
+                            }
+                        )
+                        logger.info(f"Updated payment {payment_id} status to failed due to wallet transaction error")
+                    except Exception as payment_update_error:
+                        logger.error(f"Error updating payment status after wallet transaction failure: {str(payment_update_error)}")
+                    # Don't fail the job if wallet transaction fails
+            else:
+                # For non-wallet payment methods, update payment with success status
+                # In a real implementation, this would integrate with other payment gateways
+                try:
+                    # Generate a transaction reference for non-wallet payments
+                    transaction_id = str(uuid.uuid4())
+                    
+                    payment_table.update_item(
+                        Key={'PK': f"PAYMENT#{payment_id}", 'SK': "METADATA"},
+                        UpdateExpression="SET payment_status = :status, completed_at = :completed_at, transaction_reference = :txn_id, gateway_response = :gateway_response",
+                        ExpressionAttributeValues={
+                            ':status': 'success',
+                            ':completed_at': get_current_ist_time().isoformat(),
+                            ':txn_id': transaction_id,
+                            ':gateway_response': {
+                                'method': safe_get(job, 'payment_method', 'other'),
+                                'status': 'success',
+                                'timestamp': get_current_ist_time().isoformat(),
+                                'transaction_id': transaction_id
+                            }
+                        }
+                    )
+                    logger.info(f"Updated payment {payment_id} for non-wallet payment method")
+                except Exception as payment_update_error:
+                    logger.error(f"Error updating payment for non-wallet method: {str(payment_update_error)}")
+                
+                # Job completed successfully - update status with execution attempts
+                completion_time = get_current_ist_time().isoformat()
+                
+                # Update job status to Completed
+                CronjobService.update_job_status(job_id, 'Completed', {
+                    'execution_attempts': execution_attempts,
+                    'last_execution_time': completion_time,
+                    'completion_time': completion_time
+                })
+                
+                # Log job event
+                CronjobService.log_job_event(
+                    job_id, 
+                    'EXECUTION_COMPLETED', 
+                    f"Job execution completed successfully (attempt {execution_attempts})"
+                )
+                
+                # Record successful job execution in job_executions table
+                execution_details = {
+                    'execution_attempts': int(execution_attempts),
+                    'completion_time': completion_time,
                     'booking_id': booking_id,
                     'pnr': pnr
                 }
-            
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"Error executing job {job_id}: {error_message}")
-            
-            # Update job status based on auto-retry settings
-            execution_attempts = job.get('execution_attempts', 0) + 1
-            max_attempts = job.get('max_attempts', 3)
-            
-            if execution_attempts >= max_attempts:
-                # Max attempts reached, mark as failed
-                CronjobService.update_job_status(
-                    job_id, 
-                    'Failed', 
-                    {
-                        'execution_attempts': execution_attempts,
-                        'failure_reason': error_message,
-                        'failed_at': datetime.utcnow().isoformat()
-                    }
+                
+                CronjobService.record_job_execution(
+                    job_id,
+                    'success',
+                    execution_details
                 )
                 
-                CronjobService.log_job_event(
-                    job_id, 
-                    'EXECUTION_FAILED', 
-                    f"Job failed after {execution_attempts} attempts: {error_message}"
-                )
-            else:
-                # Increment attempt count and retry later
-                CronjobService.update_job_status(
-                    job_id, 
-                    'Scheduled', 
-                    {
-                        'execution_attempts': execution_attempts,
-                        'next_execution_time': (datetime.utcnow() + timedelta(minutes=15)).isoformat()
-                    }
-                )
-                
-                CronjobService.log_job_event(
-                    job_id, 
-                    'EXECUTION_RETRY', 
-                    f"Execution attempt {execution_attempts} failed. Will retry in 15 minutes: {error_message}"
-                )
+                return True
+        except Exception as booking_error:
+            error_msg = f"Error creating booking: {str(booking_error)}"
+            logger.error(error_msg)
             
-            return {
-                'success': False,
-                'error': error_message
+            # Get current time for consistent timestamps
+            failure_time = get_current_ist_time().isoformat()
+            
+            # Update job status with execution attempts
+            CronjobService.update_job_status(job_id, 'Failed', {
+                'error_message': error_msg,
+                'execution_attempts': execution_attempts,
+                'last_execution_time': failure_time,
+                'failure_time': failure_time
+            })
+            
+            # Log job event
+            CronjobService.log_job_event(
+                job_id, 
+                'EXECUTION_FAILED', 
+                f"Job execution failed (attempt {execution_attempts}): {error_msg}"
+            )
+            
+            # Record failed job execution in job_executions table
+            execution_details = {
+                'execution_attempts': execution_attempts,
+                'failure_time': failure_time,
+                'error_message': error_msg
             }
+            
+            CronjobService.record_job_execution(
+                job_id,
+                'failed',
+                execution_details
+            )
+            
+            return False
+        except Exception as e:
+            error_msg = f"Error executing job {job_id}: {str(e)}"
+            logger.error(error_msg)
+            
+            # Get current time for consistent timestamps
+            failure_time = get_current_ist_time().isoformat()
+            
+            # Update job status with execution attempts
+            CronjobService.update_job_status(job_id, 'Failed', {
+                'error_message': error_msg,
+                'execution_attempts': execution_attempts,
+                'last_execution_time': failure_time,
+                'failure_time': failure_time
+            })
+            
+            # Log job event
+            CronjobService.log_job_event(
+                job_id, 
+                'EXECUTION_FAILED', 
+                f"Job execution failed (attempt {execution_attempts}): {error_msg}"
+            )
+            
+            # Record failed job execution in job_executions table
+            execution_details = {
+                'execution_attempts': execution_attempts,
+                'failure_time': failure_time,
+                'error_message': error_msg
+            }
+            
+            CronjobService.record_job_execution(
+                job_id,
+                'failed',
+                execution_details
+            )
+            
+            return False
 
-# Function to run the cronjob service - optimized for Lambda execution
-def run_cronjob_service():
-    """Main function to run the cronjob service"""
-    logger.info("Starting cronjob service...")
-    execution_results = {
-        'execution_start': datetime.utcnow().isoformat(),
+
+def run_cronjob_service(event=None, context=None):
+    """
+    Main Lambda handler function for the cronjob service
+    
+    Args:
+        event: Lambda event
+        context: Lambda context
+        
+    Returns:
+        Dictionary with execution results
+    """
+    # Log Lambda event and context information
+    logger.info(f"Cronjob Lambda triggered with event: {json.dumps(event)}")
+    
+    if context:
+        logger.info(f"Lambda function ARN: {context.invoked_function_arn}")
+        logger.info(f"CloudWatch log stream name: {context.log_stream_name}")
+        logger.info(f"CloudWatch log group name: {context.log_group_name}")
+        logger.info(f"Lambda Request ID: {context.aws_request_id}")
+        logger.info(f"Lambda function memory limits in MB: {context.memory_limit_in_mb}")
+    
+    # Start time for execution metrics (in IST)
+    current_ist_time = get_current_ist_time()
+    execution_start = current_ist_time.isoformat()
+    logger.info(f"Starting cronjob service at {execution_start} (IST)")
+    
+    results = {
+        'execution_start': execution_start,
         'jobs_executed': 0,
         'jobs_succeeded': 0,
         'jobs_failed': 0,
-        'errors': []
+        'errors': [],
+        'jobs_found': 0
     }
     
     try:
-        # Scan for jobs that need to be executed
-        jobs_to_execute = CronjobService.scan_jobs_for_execution()
+        # Scan for jobs to execute
+        jobs = CronjobService.scan_jobs_for_execution()
+        results['jobs_found'] = len(jobs)
         
-        if not jobs_to_execute:
-            logger.info("No jobs to execute at this time")
-            execution_results['message'] = "No jobs to execute at this time"
-            return execution_results
-        
-        execution_results['jobs_found'] = len(jobs_to_execute)
-        logger.info(f"Found {len(jobs_to_execute)} jobs to execute")
+        logger.info(f"Found {len(jobs)} jobs to execute")
         
         # Execute each job
-        for job in jobs_to_execute:
-            job_id = job.get('job_id')
-            execution_results['jobs_executed'] += 1
+        for job in jobs:
+            job_id = job.get('job_id', 'UNKNOWN')
             
             try:
                 logger.info(f"Executing job {job_id}")
-                result = CronjobService.execute_job(job)
+                # Execute the job and track success/failure
+                success = CronjobService.execute_job(job)
                 
-                if result.get('success'):
-                    logger.info(f"Job {job_id} executed successfully")
-                    execution_results['jobs_succeeded'] += 1
+                results['jobs_executed'] += 1
+                
+                # The job is considered successful if execute_job returns True
+                # or if the job status is 'Completed' regardless of the return value
+                # This fixes cases where the job completes successfully but returns False
+                job_status = job.get('job_status', '')
+                
+                # Check if job was updated to Completed status during execution
+                updated_job = CronjobService.get_job(job_id)
+                updated_status = updated_job.get('job_status', '') if updated_job else ''
+                
+                if success or updated_status == 'Completed':
+                    results['jobs_succeeded'] += 1
+                    logger.info(f"Job {job_id} execution marked as successful")
                 else:
-                    logger.error(f"Job {job_id} execution failed: {result.get('error')}")
-                    execution_results['jobs_failed'] += 1
-                    execution_results['errors'].append({
+                    results['jobs_failed'] += 1
+                    results['errors'].append({
                         'job_id': job_id,
-                        'error': result.get('error')
+                        'error': 'Job execution failed'
                     })
+                    logger.info(f"Job {job_id} execution marked as failed")
             except Exception as job_error:
-                error_message = str(job_error)
-                logger.error(f"Error executing job {job_id}: {error_message}")
-                execution_results['jobs_failed'] += 1
-                execution_results['errors'].append({
+                logger.error(f"Error executing job {job_id}: {str(job_error)}")
+                results['jobs_failed'] += 1
+                results['errors'].append({
                     'job_id': job_id,
-                    'error': error_message
+                    'error': str(job_error)
                 })
-    
     except Exception as e:
-        error_message = str(e)
-        logger.error(f"Error running cronjob service: {error_message}")
-        execution_results['service_error'] = error_message
+        logger.error(f"Error in cronjob service: {str(e)}")
+        results['errors'].append({
+            'error': str(e)
+        })
     
-    execution_results['execution_end'] = datetime.utcnow().isoformat()
-    execution_duration = datetime.fromisoformat(execution_results['execution_end']) - datetime.fromisoformat(execution_results['execution_start'])
-    execution_results['execution_duration_seconds'] = execution_duration.total_seconds()
+    # Calculate execution time
+    end_ist_time = get_current_ist_time()
+    execution_end = end_ist_time.isoformat()
+    execution_duration = (end_ist_time - current_ist_time).total_seconds()
     
-    logger.info(f"Cronjob service completed. Results: {json.dumps(execution_results, default=str)}")
-    return execution_results
+    results['execution_end'] = execution_end
+    results['execution_duration_seconds'] = execution_duration
+    
+    logger.info(f"Cronjob service completed. Results: {json.dumps(results)}")
+    
+    return results
