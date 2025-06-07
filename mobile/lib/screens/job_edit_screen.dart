@@ -804,66 +804,70 @@ class _JobEditScreenState extends State<JobEditScreen> {
     );
   }
   
-  Widget _buildPassengersSection() {
+  // Map to track expanded state of each passenger accordion
+  final Map<int, bool> _customTileExpanded = {};
+  
+  // Helper method to build passenger detail item with full width
+  Widget _buildPassengerDetailItem(String label, dynamic value) {
+    final displayValue = value?.toString() ?? 'Not specified';
+    
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add passenger button
-          InkWell(
-            onTap: () {
-              // Show dialog to add passenger
-              _showAddPassengerDialog(context);
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Color(0xFFF3E8FF),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Color(0xFFE9D5FF)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, color: Color(0xFF7C3AED)),
-                  SizedBox(width: 8),
-                  Text(
-                    'Add Passenger',
-                    style: TextStyle(
-                      fontFamily: 'ProductSans',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF7C3AED),
-                    ),
-                  ),
-                ],
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'ProductSans',
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
-          
-          SizedBox(height: 16),
-          
-          // Passengers list
-          _passengers.isEmpty
-              ? Container(
-                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                  padding: EdgeInsets.all(16.0),
+          const SizedBox(height: 4),
+          Text(
+            displayValue,
+            style: const TextStyle(
+              fontFamily: 'ProductSans',
+              fontSize: 14,
+              color: Color(0xFF222222),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPassengersSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Individual Passenger Accordions
+        _passengers.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF7F7FA),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Center(
                     child: Text(
@@ -875,113 +879,169 @@ class _JobEditScreenState extends State<JobEditScreen> {
                       ),
                     ),
                   ),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: _passengers.length,
-                  itemBuilder: (context, index) {
-                    final passenger = _passengers[index];
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12),
-                      padding: EdgeInsets.all(16),
+                ),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: _passengers.length,
+                itemBuilder: (context, index) {
+                  final passenger = _passengers[index];
+                  // Initialize expansion state if not already set
+                  _customTileExpanded.putIfAbsent(index, () => false);
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                    child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFFE5E7EB)),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 4,
                             offset: Offset(0, 2),
                           ),
                         ],
+                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          tilePadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          childrenPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          backgroundColor: Colors.white,
+                          collapsedBackgroundColor: Colors.white,
+                          title: Row(
                             children: [
                               Text(
-                                passenger['name'] ?? '',
+                                'Passenger ${index + 1}',
                                 style: TextStyle(
                                   fontFamily: 'ProductSans',
-                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF111827),
+                                  color: Color(0xFF7C3AED),
+                                  fontSize: 16,
                                 ),
                               ),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               IconButton(
-                                icon: Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => _removePassenger(index),
-                                tooltip: 'Remove passenger',
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  // Remove passenger
+                                  setState(() {
+                                    _passengers.removeAt(index);
+                                  });
+                                },
+                                iconSize: 20,
                                 padding: EdgeInsets.zero,
                                 constraints: BoxConstraints(),
-                                splashRadius: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Icon(
+                                _customTileExpanded[index] == true
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: Color(0xFF7C3AED),
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Age: ${passenger['age'] ?? ''}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
+                          onExpansionChanged: (expanded) {
+                            setState(() {
+                              _customTileExpanded[index] = expanded;
+                            });
+                          },
+                          initiallyExpanded: _customTileExpanded[index] ?? false,
+                          children: [
+                            // Passenger details
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildPassengerDetailItem('Name', passenger['name']),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildPassengerDetailItem('Age', passenger['age']),
                                       ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Gender: ${passenger['gender'] ?? ''}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _buildPassengerDetailItem('Gender', passenger['gender']),
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildPassengerDetailItem('ID Type', passenger['id_type']),
+                                  const SizedBox(height: 8),
+                                  _buildPassengerDetailItem('ID Number', passenger['id_number']),
+                                  if (passenger['berth_preference'] != null) ...[
+                                    const SizedBox(height: 8),
+                                    _buildPassengerDetailItem('Berth Preference', passenger['berth_preference']),
                                   ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'ID Type: ${passenger['id_type'] ?? ''}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'ID Number: ${passenger['id_number'] ?? ''}',
-                                      style: TextStyle(
-                                        fontFamily: 'ProductSans',
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
-                                      ),
-                                    ),
+                                  if (passenger['is_senior_citizen'] != null) ...[
+                                    const SizedBox(height: 8),
+                                    _buildPassengerDetailItem('Senior Citizen', passenger['is_senior_citizen'] ? 'Yes' : 'No'),
                                   ],
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  },
-                ),
-        ],
-      ),
+                    ),
+                  );
+                },
+              ),
+        
+        // Add Passenger Button
+        SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: InkWell(
+            onTap: () {
+              _showAddPassengerDialog(context);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+              child: Row(
+                children: [
+                  Icon(Icons.add, color: Color(0xFF7C3AED)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Add Passenger',
+                    style: TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
   
@@ -1324,195 +1384,295 @@ class _JobEditScreenState extends State<JobEditScreen> {
                     const SizedBox(height: 24),
                     
                     // Name field
-                    TextFormField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Name',
-                        prefixIcon: const Icon(Icons.person, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
+                          child: Text(
+                            'Full Name',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF7F7FA),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextFormField(
+                            controller: nameController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter full name',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter passenger name';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter passenger name';
-                        }
-                        return null;
-                      },
+                      ],
                     ),
                     const SizedBox(height: 20),
                     
                     // Age field
-                    TextFormField(
-                      controller: ageController,
-                      decoration: InputDecoration(
-                        labelText: 'Age',
-                        prefixIcon: const Icon(Icons.cake, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter passenger age';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Gender dropdown
-                    DropdownButtonFormField<String>(
-                      value: selectedGender,
-                      decoration: InputDecoration(
-                        labelText: 'Gender',
-                        prefixIcon: const Icon(Icons.people, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      items: ['Male', 'Female', 'Other']
-                          .map((gender) => DropdownMenuItem(
-                                value: gender,
-                                child: Text(gender),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        selectedGender = value!;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Berth preference dropdown
-                    DropdownButtonFormField<String>(
-                      value: selectedBerthPreference,
-                      decoration: InputDecoration(
-                        labelText: 'Berth Preference',
-                        prefixIcon: const Icon(Icons.airline_seat_recline_normal, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      items: ['No Preference', 'Lower', 'Middle', 'Upper', 'Side Lower', 'Side Upper']
-                          .map((berth) => DropdownMenuItem(
-                                value: berth,
-                                child: Text(berth),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        selectedBerthPreference = value!;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Senior citizen checkbox
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.elderly, color: Color(0xFF7C3AED)),
-                          const SizedBox(width: 12),
-                          const Text('Senior Citizen'),
-                          const Spacer(),
-                          Switch(
-                            value: isSeniorCitizen,
-                            onChanged: (value) {
-                              setState(() {
-                                isSeniorCitizen = value;
-                              });
-                            },
-                            activeColor: const Color(0xFF7C3AED),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                child: Text(
+                                  'Age',
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF7F7FA),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: TextFormField(
+                                  controller: ageController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Age',
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter age';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(width: 16),
+                        // ID Type field will be added in the next update
+                        Expanded(
+                          child: Container(),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     
-                    // Section title for ID
-                    const Text(
-                      'ID Information',
-                      style: TextStyle(
-                        fontFamily: 'ProductSans',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // ID Type dropdown
-                    DropdownButtonFormField<String>(
-                      value: selectedIdType,
-                      decoration: InputDecoration(
-                        labelText: 'ID Type',
-                        prefixIcon: const Icon(Icons.badge, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Gender and ID Type row
+                    Row(
+                      children: [
+                        // Gender dropdown
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                child: Text(
+                                  'Gender',
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF7F7FA),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedGender,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  ),
+                                  icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                  items: ['Male', 'Female', 'Other']
+                                      .map((gender) => DropdownMenuItem(
+                                            value: gender,
+                                            child: Text(gender),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    selectedGender = value!;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        SizedBox(width: 16),
+                        // ID Type dropdown
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                child: Text(
+                                  'ID Type',
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF7F7FA),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedIdType,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  ),
+                                  icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
+                                  style: TextStyle(
+                                    fontFamily: 'ProductSans',
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                  items: ['Aadhar', 'PAN', 'Passport', 'Driving License']
+                                      .map((idType) => DropdownMenuItem(
+                                            value: idType,
+                                            child: Text(idType),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    selectedIdType = value!;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      items: ['Aadhar', 'PAN', 'Passport', 'Driving License']
-                          .map((idType) => DropdownMenuItem(
-                                value: idType,
-                                child: Text(idType),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        selectedIdType = value!;
-                      },
+                      ],
                     ),
                     const SizedBox(height: 20),
                     
                     // ID Number field
-                    TextFormField(
-                      controller: idNumberController,
-                      decoration: InputDecoration(
-                        labelText: 'ID Number',
-                        prefixIcon: const Icon(Icons.credit_card, color: Color(0xFF7C3AED)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
+                          child: Text(
+                            'ID Number',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF7F7FA),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextFormField(
+                            controller: idNumberController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter ID number',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter ID number';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter ID number';
-                        }
-                        return null;
-                      },
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Senior citizen checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isSeniorCitizen,
+                          onChanged: (value) {
+                            setState(() {
+                              isSeniorCitizen = value ?? false;
+                            });
+                          },
+                          activeColor: Color(0xFF7C3AED),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Text(
+                          'Senior Citizen (60+)',
+                          style: TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Add to passenger list checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: true, // Default to checked
+                          onChanged: (value) {
+                            // Handle checkbox change
+                          },
+                          activeColor: Color(0xFF7C3AED),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Add to Passenger List - For Tatkal Mode',
+                            style: TextStyle(
+                              fontFamily: 'ProductSans',
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 40),
                   ],
@@ -1615,6 +1775,11 @@ class _JobEditScreenState extends State<JobEditScreen> {
     return TextFormField(
       controller: controller,
       readOnly: true, // Always read-only as we'll open search screen
+      style: const TextStyle(
+        color: Colors.black, // Make input text black
+        fontFamily: 'ProductSans',
+        fontSize: 16,
+      ),
       onTap: () async {
         // Navigate to city search screen
         final result = await Navigator.push(
@@ -1631,13 +1796,16 @@ class _JobEditScreenState extends State<JobEditScreen> {
         // Handle the selected city/station
         if (result != null && result is Map<String, dynamic>) {
           setState(() {
-            controller.text = result['station_code'] ?? '';
-            // You could also store the full station data in a separate variable if needed
+            // Display the station name instead of just the code
+            String stationName = result['station_name'] ?? '';
+            String stationCode = result['station_code'] ?? '';
+            controller.text = stationCode.isNotEmpty ? "$stationName ($stationCode)" : '';
           });
         }
       },
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: controller.text.isEmpty ? Colors.grey.shade500 : Colors.grey.shade700),
         prefixIcon: Icon(prefixIcon, color: const Color(0xFF7C3AED)),
         suffixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
         border: OutlineInputBorder(
@@ -1648,6 +1816,8 @@ class _JobEditScreenState extends State<JobEditScreen> {
           borderSide: const BorderSide(color: Color(0xFF7C3AED)),
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        // Make hint text darker
+        hintStyle: const TextStyle(color: Colors.black87),
       ),
       validator: validator,
     );

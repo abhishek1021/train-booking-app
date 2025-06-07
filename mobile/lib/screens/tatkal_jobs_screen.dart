@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'booking_details_screen.dart';
 import 'tatkal_mode_screen.dart';
 import 'job_logs_screen.dart';
 import 'job_details_screen.dart';
@@ -663,36 +664,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                       ),
                       Row(
                         children: [
-                          // Edit button - only show for scheduled jobs
-                          if (status == 'Scheduled')
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Color(0xFF7C3AED),
-                                size: 20,
-                              ),
-                              onPressed: () async {
-                                // Navigate to edit screen
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => JobEditScreen(
-                                      jobId: jobId,
-                                      jobData: job,
-                                    ),
-                                  ),
-                                );
-
-                                // If changes were made, refresh the jobs list
-                                if (result == true) {
-                                  _refreshJobs();
-                                }
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              splashRadius: 24,
-                              tooltip: 'Edit Job',
-                            ),
+                          // Removed top edit button as per requirements
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -1023,9 +995,22 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                   ],
                   if (status == 'Scheduled') ...[
                     TextButton.icon(
-                      onPressed: () {
-                        // Edit job
-                        // TODO: Implement job editing
+                      onPressed: () async {
+                        // Navigate to edit screen
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => JobEditScreen(
+                              jobId: jobId,
+                              jobData: job,
+                            ),
+                          ),
+                        );
+
+                        // If changes were made, refresh the jobs list
+                        if (result == true) {
+                          _refreshJobs();
+                        }
                       },
                       icon: const Icon(Icons.edit, size: 18),
                       label: const Text('Edit'),
@@ -1037,13 +1022,20 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                       ),
                     ),
                   ],
-                  if (status == 'Completed') ...[
+                  if (status == 'Completed' && job['booking_id'] != null) ...[
                     TextButton.icon(
                       onPressed: () {
-                        // View booking
-                        // TODO: Implement booking details view
+                        // Navigate to booking details screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookingDetailsScreen(
+                              bookingId: job['booking_id'],
+                            ),
+                          ),
+                        );
                       },
-                      icon: const Icon(Icons.visibility, size: 18),
+                      icon: const Icon(Icons.receipt, size: 18),
                       label: const Text('View Booking'),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF7C3AED),

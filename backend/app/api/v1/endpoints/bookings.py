@@ -229,24 +229,36 @@ async def get_booking(booking_id: str):
             
         item = response['Item']
         
-        # Convert DynamoDB item to Booking model
+        # Convert DynamoDB item to Booking model with all fields
         booking_data = {
-            'booking_id': item['booking_id'],
-            'user_id': item['user_id'],
-            'train_id': item['train_id'],
-            'pnr': item['pnr'],
-            'booking_status': item['booking_status'],
-            'journey_date': item['journey_date'],
-            'origin_station_code': item['origin_station_code'],
-            'destination_station_code': item['destination_station_code'],
-            'travel_class': item['class'],
-            'fare': item['fare'],
-            'passengers': item['passengers'],
+            'PK': item.get('PK'),
+            'SK': item.get('SK'),
+            'booking_id': item.get('booking_id'),
+            'user_id': item.get('user_id'),
+            'train_id': item.get('train_id'),
+            'train_name': item.get('train_name'),
+            'train_number': item.get('train_number'),
+            'pnr': item.get('pnr'),
+            'booking_status': item.get('booking_status'),
+            'payment_status': item.get('payment_status'),
+            'payment_method': item.get('payment_method'),
+            'journey_date': item.get('journey_date'),
+            'origin_station_code': item.get('origin_station_code'),
+            'destination_station_code': item.get('destination_station_code'),
+            'class': item.get('class'),
+            'travel_class': item.get('class'),  # For backward compatibility
+            'fare': item.get('fare'),
+            'tax': item.get('tax', '0'),
+            'total_amount': item.get('total_amount'),
+            'price_details': item.get('price_details', {}),
+            'passengers': item.get('passengers', []),
             'payment_id': item.get('payment_id'),
             'booking_email': item.get('booking_email'),
             'booking_phone': item.get('booking_phone'),
-            'created_at': datetime.fromisoformat(item['created_at']),
-            'updated_at': datetime.fromisoformat(item['updated_at']),
+            'booking_date': item.get('booking_date'),
+            'booking_time': item.get('booking_time'),
+            'created_at': datetime.fromisoformat(item['created_at']) if 'created_at' in item else None,
+            'updated_at': datetime.fromisoformat(item['updated_at']) if 'updated_at' in item else None,
             'cancellation_details': item.get('cancellation_details'),
             'refund_status': item.get('refund_status')
         }
