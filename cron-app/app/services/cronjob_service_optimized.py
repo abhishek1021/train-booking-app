@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import uuid
+import random
 import decimal
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -79,6 +80,43 @@ def ist_to_utc(ist_dt: datetime) -> datetime:
     if ist_dt.tzinfo is None:
         ist_dt = ist_dt.replace(tzinfo=IST)
     return ist_dt.astimezone(timezone.utc)
+
+# Generate seat numbers for passengers
+def generate_seat_numbers(train_number: str, travel_class: str, passenger_count: int) -> List[str]:
+    """
+        Generate seat numbers for passengers based on train number and travel class.
+                
+        Args:
+        train_number: The train number (e.g., '12345')
+        travel_class: The travel class (e.g., '3A', '2A', 'SL')
+        passenger_count: Number of seat numbers to generate
+                    
+        Returns:
+        List of seat numbers as strings
+    """
+                
+        # Define seat patterns based on class
+    class_patterns = {
+            '1A': {'prefix': 'A', 'rows': range(1, 10), 'seats': range(1, 5)},  # 1st AC
+            '2A': {'prefix': 'B', 'rows': range(1, 15), 'seats': range(1, 5)},  # 2nd AC
+            '3A': {'prefix': 'C', 'rows': range(1, 21), 'seats': range(1, 9)},  # 3rd AC
+            'SL': {'prefix': 'S', 'rows': range(1, 26), 'seats': range(1, 9)},  # Sleeper
+            'CC': {'prefix': 'D', 'rows': range(1, 16), 'seats': range(1, 6)},  # Chair Car
+            '2S': {'prefix': 'E', 'rows': range(1, 31), 'seats': range(1, 9)},  # 2nd Seater
+        }
+                
+        # Get the pattern for the requested class, default to SL if not found
+    pattern = class_patterns.get(travel_class.upper(), class_patterns['SL'])
+                
+        # Generate seat numbers
+    seat_numbers = []
+    for _ in range(passenger_count):
+        row = random.choice(pattern['rows'])
+        seat = random.choice(pattern['seats'])
+        seat_number = f"{pattern['prefix']}{row:02d}{seat:02d}"
+        seat_numbers.append(seat_number)
+                
+    return seat_numbers
 
 # Helper function to safely get values from dictionaries
 def safe_get(dictionary: Optional[Dict], key: str, default: Any = None) -> Any:
@@ -1108,9 +1146,12 @@ class CronjobService:
             current_datetime = get_current_ist_time()
             pnr = f"PNR{current_datetime.strftime('%y%m%d%H%M%S')}"  # Format: PNRyymmddHHMMSS
             
-            # Process passengers to ensure proper serialization
+            # Process passengers to ensure proper serialization and assign seat numbers
             sanitized_passengers = []
-            for passenger in passengers:
+            passenger_count = len([p for p in passengers if isinstance(p, dict)])
+            seat_numbers = generate_seat_numbers(train_id, travel_class, passenger_count)
+            
+            for idx, passenger in enumerate(passengers):
                 if isinstance(passenger, dict):
                     # Convert any float values to Decimal
                     sanitized_passenger = {}
@@ -1119,6 +1160,11 @@ class CronjobService:
                             sanitized_passenger[key] = Decimal(str(value))
                         else:
                             sanitized_passenger[key] = value
+                    
+                    # Assign seat number if available
+                    if idx < len(seat_numbers):
+                        sanitized_passenger['seat'] = seat_numbers[idx]
+                    
                     sanitized_passengers.append(sanitized_passenger)
                 else:
                     logger.warning(f"Skipping invalid passenger format: {type(passenger)}")
