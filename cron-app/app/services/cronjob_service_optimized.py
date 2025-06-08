@@ -4,6 +4,8 @@ import json
 import logging
 import time
 import uuid
+import decimal
+import traceback
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Union, Tuple
 from decimal import Decimal
@@ -281,6 +283,84 @@ class CronjobService:
             return [convert_dynamodb_item(item) for item in response.get('Items', [])]
         except Exception as e:
             logger.error(f"Error getting job logs: {str(e)}")
+            return []
+    
+    @staticmethod
+    def _search_trains_for_date(job_id: str, origin: str, destination: str, date_str: str, day_of_week: str, travel_class: str) -> List[Dict]:
+        """
+        Helper method to search for trains with available seats for a specific date
+        
+        Args:
+            job_id: Job ID for logging
+            origin: Origin station code
+            destination: Destination station code
+            date_str: Date string in YYYY-MM-DD format
+            day_of_week: Day of week (e.g., Monday, Tuesday)
+            travel_class: Travel class code (e.g., 1A, 2A, 3A, SL, 2S)
+            
+        Returns:
+            List of available trains sorted by departure time (earliest first)
+        """
+        try:
+            # Query trains table by source station
+            trains_table = dynamodb.Table(TRAINS_TABLE)
+            response = trains_table.query(
+                IndexName="source-destination-station-index",
+                KeyConditionExpression=Key("source_station").eq(origin)
+            )
+            
+            # Process results
+            trains = response.get('Items', [])
+            logger.info(f"Found {len(trains)} trains with source station {origin} for date {date_str}")
+            
+            # Filter trains by destination, day of run, and seat availability
+            available_trains = []
+            
+            for train in trains:
+                try:
+                    # Unmarshal DynamoDB item
+                    train = unmarshal_dynamodb_item(train)
+                    
+                    # Check if train route includes both origin and destination
+                    route_stations = train.get('route_stations', [])
+                    if not isinstance(route_stations, list):
+                        continue
+                        
+                    # Check if train runs on the journey day
+                    days_of_run = train.get('days_of_run', [])
+                    if not isinstance(days_of_run, list):
+                        continue
+                        
+                    # Check if train route includes both stations in correct order
+                    if origin in route_stations and destination in route_stations:
+                        origin_index = route_stations.index(origin)
+                        destination_index = route_stations.index(destination)
+                        
+                        if origin_index < destination_index:
+                            # Check if train runs on journey day
+                            if any(day.lower() == day_of_week.lower() for day in days_of_run):
+                                # Check seat availability in requested travel class
+                                availability = safe_get(train, 'availability', {})
+                                class_availability = safe_get(availability, travel_class, {})
+                                available_seats = safe_get(class_availability, 'available_seats', 0)
+                                
+                                if available_seats > 0:
+                                    train['available_seats'] = available_seats
+                                    available_trains.append(train)
+                except Exception as train_error:
+                    logger.error(f"Error processing train: {str(train_error)}")
+                    continue
+            
+            logger.info(f"Found {len(available_trains)} trains with available seats in {travel_class} class for {date_str}")
+            
+            # Sort trains by departure time (earliest first)
+            if available_trains:
+                available_trains.sort(key=lambda x: safe_get(x, 'departure_time', '23:59'))
+                
+            return available_trains
+            
+        except Exception as e:
+            logger.error(f"Error searching trains for date {date_str}: {str(e)}")
             return []
     
     @staticmethod
@@ -665,161 +745,212 @@ class CronjobService:
             elif train_details is not None and not isinstance(train_details, dict):
                 logger.warning(f"Invalid train_details format: {type(train_details)}")
             else:
-                # Search for available trains using the same logic as in the backend
+                # Enhanced train search with seat availability check and alternate date support
                 CronjobService.log_job_event(job_id, 'TRAIN_SEARCH', 'Searching for available trains')
                 logger.info(f"Train search requested: origin={origin}, destination={destination}, date={journey_date}")
                 
+                # Initialize variables for train search
+                train_found = False
+                max_days_to_check = 7  # Maximum number of days to check for alternate dates
+                auto_book_alternate_date = safe_get(job, 'auto_book_alternate_date', False)
+                
                 try:
-                    # Get day of week for journey date
+                    # First check the original journey date
                     journey_datetime = datetime.strptime(journey_date, '%Y-%m-%d')
                     day_of_week = journey_datetime.strftime('%A')
                     
-                    # Query trains table by source station
-                    trains_table = dynamodb.Table(TRAINS_TABLE)
-                    response = trains_table.query(
-                        IndexName="source-destination-station-index",
-                        KeyConditionExpression=Key("source_station").eq(origin)
+                    # Search for trains on the original journey date
+                    available_trains = CronjobService._search_trains_for_date(
+                        job_id, origin, destination, journey_date, day_of_week, travel_class
                     )
                     
-                    # Process results
-                    trains = response.get('Items', [])
-                    logger.info(f"Found {len(trains)} trains with source station {origin}")
-                    
-                    # Filter trains by destination and day of run
-                    results = []
-                    
-                    for train in trains:
-                        try:
-                            # Unmarshal DynamoDB item
-                            train = unmarshal_dynamodb_item(train)
-                            
-                            # Check if train route includes both origin and destination
-                            route_stations = train.get('route_stations', [])
-                            if not isinstance(route_stations, list):
-                                logger.warning(f"Invalid route_stations format for train {train.get('train_number')}: {type(route_stations)}")
-                                continue
-                                
-                            # Check if train runs on the journey day
-                            days_of_run = train.get('days_of_run', [])
-                            if not isinstance(days_of_run, list):
-                                logger.warning(f"Invalid days_of_run format for train {train.get('train_number')}: {type(days_of_run)}")
-                                continue
-                                
-                            # Check if train route includes both stations
-                            if origin in route_stations and destination in route_stations:
-                                # Check origin comes before destination in route
-                                origin_index = route_stations.index(origin)
-                                destination_index = route_stations.index(destination)
-                                
-                                if origin_index < destination_index:
-                                    # Check if train runs on journey day
-                                    if any(day.lower() == day_of_week.lower() for day in days_of_run):
-                                        results.append(train)
-                        except Exception as train_error:
-                            logger.error(f"Error processing train: {str(train_error)}")
-                            continue
-                    
-                    logger.info(f"Found {len(results)} matching trains after filtering")
-                    
-                    # Use first matching train or fallback to simulated train
-                    if not results:
-                        # Fallback to simulated train
-                        now = datetime.utcnow()
-                        train_id = f"TRN{now.strftime('%H%M%S')}"
-                        train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                        departure_time = '08:00'
-                        arrival_time = '14:30'
-                        duration = '6h 30m'
+                    if available_trains:
+                        # Found trains on original date
+                        train_found = True
+                        selected_train = available_trains[0]
                         
+                        # Extract train details
+                        train_id = safe_get(selected_train, 'train_number')
+                        train_name = safe_get(selected_train, 'train_name')
+                        departure_time = safe_get(selected_train, 'departure_time')
+                        arrival_time = safe_get(selected_train, 'arrival_time')
+                        duration = safe_get(selected_train, 'duration')
+                        
+                        # Log train selection
                         CronjobService.log_job_event(
                             job_id, 
-                            'TRAIN_SEARCH_RESULT', 
-                            "No matching trains found, using simulated train",
+                            'TRAIN_SELECTED', 
+                            f"Selected train {train_id} - {train_name} with {selected_train.get('available_seats')} available seats in {travel_class} class for {journey_date}",
                             {
                                 'train_id': train_id,
                                 'train_name': train_name,
                                 'departure_time': departure_time,
                                 'arrival_time': arrival_time,
-                                'duration': duration
+                                'duration': duration,
+                                'available_seats': selected_train.get('available_seats'),
+                                'travel_class': travel_class,
+                                'journey_date': journey_date
                             }
                         )
-                    else:
-                        # Use the first matching train with proper error handling
-                        try:
-                            if not results or len(results) == 0:
-                                logger.warning("Results list is empty but was expected to have trains")
-                                # Fall back to simulated train
-                                now = datetime.utcnow()
-                                train_id = f"TRN{now.strftime('%H%M%S')}"
-                                train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                                departure_time = '08:00'
-                                arrival_time = '14:30'
-                                duration = '6h 30m'
-                            else:
-                                selected_train = results[0]
-                                # Check if selected_train is a dictionary
-                                if not isinstance(selected_train, dict):
-                                    logger.error(f"Selected train is not a dictionary: {type(selected_train)}")
-                                    raise ValueError(f"Selected train is not a dictionary: {type(selected_train)}")
-                                    
-                                # Safely extract train details with fallbacks
-                                now = datetime.utcnow()
-                                train_id = (safe_get(selected_train, 'train_number') or 
-                                           safe_get(selected_train, 'train_id') or 
-                                           f"TRN{now.strftime('%H%M%S')}")
-                                           
-                                train_name = safe_get(selected_train, 'train_name') or f"{origin[:3]}-{destination[:3]} EXPRESS"
-                                departure_time = safe_get(selected_train, 'departure_time', '08:00')
-                                arrival_time = safe_get(selected_train, 'arrival_time', '14:30')
-                                duration = safe_get(selected_train, 'duration', '6h 30m')
+                    elif auto_book_alternate_date:
+                        # No trains found on original date, check alternate dates if enabled
+                        for day_offset in range(1, max_days_to_check):
+                            # Calculate the alternate date to check
+                            current_date = journey_datetime + timedelta(days=day_offset)
+                            current_date_str = current_date.strftime('%Y-%m-%d')
+                            day_of_week = current_date.strftime('%A')
+                            
+                            # Log search attempt for this alternate date
+                            CronjobService.log_job_event(
+                                job_id, 
+                                'ALTERNATE_DATE_SEARCH', 
+                                f"Searching for trains on alternate date: {current_date_str} ({day_of_week})",
+                                {'date_offset': day_offset, 'search_date': current_date_str}
+                            )
+                            
+                            # Search for trains on this alternate date
+                            available_trains = CronjobService._search_trains_for_date(
+                                job_id, origin, destination, current_date_str, day_of_week, travel_class
+                            )
+                            
+                            if available_trains:
+                                # Found trains on alternate date
+                                train_found = True
+                                selected_train = available_trains[0]
                                 
-                                logger.info(f"Successfully extracted train details from selected train: {train_id}")
-                        except Exception as train_extract_error:
-                            logger.error(f"Error extracting train details: {str(train_extract_error)}")
-                            # Fall back to simulated train
-                            now = datetime.utcnow()
-                            train_id = f"TRN{now.strftime('%H%M%S')}"
-                            train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                            departure_time = '08:00'
-                            arrival_time = '14:30'
-                            duration = '6h 30m'
+                                # Extract train details
+                                train_id = safe_get(selected_train, 'train_number')
+                                train_name = safe_get(selected_train, 'train_name')
+                                departure_time = safe_get(selected_train, 'departure_time')
+                                arrival_time = safe_get(selected_train, 'arrival_time')
+                                duration = safe_get(selected_train, 'duration')
+                                
+                                # Update journey date to the alternate date
+                                journey_date = current_date_str
+                                
+                                # Log train selection
+                                CronjobService.log_job_event(
+                                    job_id, 
+                                    'TRAIN_SELECTED', 
+                                    f"Selected train {train_id} - {train_name} with {selected_train.get('available_seats')} available seats in {travel_class} class for alternate date {journey_date}",
+                                    {
+                                        'train_id': train_id,
+                                        'train_name': train_name,
+                                        'departure_time': departure_time,
+                                        'arrival_time': arrival_time,
+                                        'duration': duration,
+                                        'available_seats': selected_train.get('available_seats'),
+                                        'travel_class': travel_class,
+                                        'journey_date': journey_date,
+                                        'is_alternate_date': True
+                                    }
+                                )
+                                break
+                    
+                    # If no train found after checking all dates, fail the job
+                    if not train_found:
+                        error_message = "No trains found with available seats"
+                        if auto_book_alternate_date:
+                            error_message += f" in the next {max_days_to_check} days"
                         
                         CronjobService.log_job_event(
                             job_id, 
-                            'TRAIN_SELECTED', 
-                            f"Using train: {train_id} - {train_name}"
+                            'TRAIN_SEARCH_FAILED', 
+                            error_message,
+                            {
+                                'origin': origin,
+                                'destination': destination,
+                                'travel_class': travel_class,
+                                'journey_date': journey_date,
+                                'days_checked': 1 if not auto_book_alternate_date else max_days_to_check
+                            }
                         )
+                        
+                        # Update job status to Failed
+                        CronjobService.update_job_status(
+                            job_id, 
+                            'Failed', 
+                            {
+                                'failure_reason': error_message,
+                                'failure_time': get_current_ist_time()
+                            }
+                        )
+                        
+                        return False
                 except Exception as search_error:
-                    logger.error(f"Error during train search: {str(search_error)}")
-                    # Fallback to simulated train
-                    now = datetime.utcnow()
-                    train_id = f"TRN{now.strftime('%H%M%S')}"
-                    train_name = f"{origin[:3]}-{destination[:3]} EXPRESS"
-                    departure_time = '08:00'
-                    arrival_time = '14:30'
-                    duration = '6h 30m'
+                    error_message = f"Error during train search: {str(search_error)}"
+                    logger.error(error_message)
                     
                     CronjobService.log_job_event(
                         job_id, 
                         'TRAIN_SEARCH_ERROR', 
-                        f"Error during train search: {str(search_error)}"
+                        error_message
                     )
+                    
+                    # Update job status to Failed
+                    CronjobService.update_job_status(
+                        job_id, 
+                        'Failed', 
+                        {
+                            'failure_reason': error_message,
+                            'failure_time': get_current_ist_time()
+                        }
+                    )
+                    
+                    return False
             
-            # Calculate fare based on travel class
+            # Calculate fare based on selected train and travel class
             try:
+                # Get fare from selected train if available, otherwise use default fare structure
                 base_fare = Decimal('0')
-                if travel_class == '1A':
-                    base_fare = Decimal('1200')
-                elif travel_class == '2A':
-                    base_fare = Decimal('800')
-                elif travel_class == '3A':
-                    base_fare = Decimal('600')
-                elif travel_class == 'SL':
-                    base_fare = Decimal('400')
-                elif travel_class == '2S':
-                    base_fare = Decimal('200')
-                else:
-                    base_fare = Decimal('500')  # Default fare
+                
+                # Check if we have a selected_train from our search with fare information
+                if 'selected_train' in locals() and isinstance(selected_train, dict) and 'fares' in selected_train:
+                    # Get fare for the selected travel class from the found train
+                    fares = selected_train.get('fares', {})
+                    class_fare = fares.get(travel_class)
+                    if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                        try:
+                            base_fare = Decimal(str(class_fare))
+                            logger.info(f"Using fare {base_fare} from found train {safe_get(selected_train, 'train_number')} for class {travel_class}")
+                        except (decimal.InvalidOperation, TypeError) as e:
+                            logger.warning(f"Invalid fare in found train: {e}. Checking train_details.")
+                
+                # If fare not found in selected_train or if we're using provided train details
+                if base_fare <= Decimal('0') and train_details and isinstance(train_details, dict) and 'fares' in train_details:
+                    # Get fare for the selected travel class from train details
+                    fares = train_details.get('fares', {})
+                    class_fare = fares.get(travel_class)
+                    if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                        try:
+                            base_fare = Decimal(str(class_fare))
+                            logger.info(f"Using fare {base_fare} from train details for class {travel_class}")
+                        except (decimal.InvalidOperation, TypeError) as e:
+                            logger.warning(f"Invalid fare in train details: {e}. Using default fare.")
+                
+                # If fare not found in train details or is zero, use default fare structure
+                if base_fare <= Decimal('0'):
+                    if travel_class == '1A':
+                        base_fare = Decimal('1200')
+                    elif travel_class == '2A':
+                        base_fare = Decimal('800')
+                    elif travel_class == '3A':
+                        base_fare = Decimal('600')
+                    elif travel_class == 'SL':
+                        base_fare = Decimal('400')
+                    elif travel_class == '2S':
+                        base_fare = Decimal('200')
+                    else:
+                        base_fare = Decimal('500')  # Default fare
+                    logger.info(f"Using default fare {base_fare} for class {travel_class}")
+                    
+                # Log the fare being used
+                CronjobService.log_job_event(
+                    job_id,
+                    'FARE_CALCULATION',
+                    f"Using base fare of {base_fare} for travel class {travel_class}",
+                    {'travel_class': travel_class, 'base_fare': str(base_fare)}
+                )
                 
                 # Count passengers by type
                 adult_count = 0
@@ -859,8 +990,69 @@ class CronjobService:
                     'total': str(total_fare),
                     'discount_applied': 'Senior citizen discount (25%)' if senior_count > 0 else None,
                 }
+        
+                # Log the fare being used
+                CronjobService.log_job_event(
+                    job_id,
+                    'FARE_CALCULATION',
+                    f"Using base fare of {base_fare} for travel class {travel_class}",
+                    {'travel_class': travel_class, 'base_fare': str(base_fare)}
+                )
                 
-                logger.info(f"Calculated fare: {total_fare} (base: {base_fare}, adults: {adult_count}, seniors: {senior_count})")
+                # Count passengers by type
+                adult_count = 0
+                senior_count = 0
+                adult_fare = Decimal('0')
+                senior_fare = Decimal('0')
+                
+                # Process each passenger
+                for passenger in passengers:
+                    if isinstance(passenger, dict) and passenger.get('is_senior', False):
+                        senior_count += 1
+                        # Apply 25% discount for seniors
+                        senior_fare += base_fare * Decimal('0.75')
+                    else:
+                        adult_count += 1
+                        adult_fare += base_fare
+                
+                # Calculate subtotal before tax
+                subtotal = adult_fare + senior_fare
+                
+                # Calculate tax (5% of subtotal)
+                tax = subtotal * Decimal('0.05')
+                
+                # Calculate total amount
+                total_fare = subtotal + tax
+                
+                # Calculate price details for booking record
+                senior_discount_percentage = 25  # 25% discount for seniors
+                senior_discount_text = f"Senior citizen discount ({senior_discount_percentage}%)"
+                
+                # Calculate base fares as strings
+                base_fare_per_adult_str = str(base_fare)
+                base_fare_per_senior_str = str(Decimal(base_fare) * Decimal(str(100 - senior_discount_percentage)) / Decimal('100'))
+                
+                # Calculate fare totals
+                adult_fare_total = Decimal(base_fare) * Decimal(str(adult_count))
+                senior_fare_total = Decimal(base_fare_per_senior_str) * Decimal(str(senior_count))
+                
+                # Calculate subtotal and total
+                subtotal = adult_fare_total + senior_fare_total
+                total = subtotal + Decimal(str(tax))
+                
+                # Create price details object matching the example format
+                price_details = {
+                    'base_fare_per_adult': base_fare_per_adult_str,
+                    'base_fare_per_senior': base_fare_per_senior_str,
+                    'adult_count': adult_count,
+                    'senior_count': senior_count,
+                    'adult_fare_total': str(adult_fare_total),
+                    'senior_fare_total': str(senior_fare_total),
+                    'subtotal': str(subtotal),
+                    'tax': str(tax),
+                    'total': str(total),
+                    'discount_applied': senior_discount_text if senior_count > 0 else None,
+                }
             except Exception as fare_error:
                 logger.error(f"Error calculating fare: {str(fare_error)}")
                 total_fare = Decimal('500')  # Default fallback fare as Decimal
@@ -878,14 +1070,43 @@ class CronjobService:
                     'discount_applied': None,
                 }
 
-        except Exception as booking_error:
-            logger.error(f"Error creating booking: {str(booking_error)}")
-        
+                # Add missing except clause for the try statement at line 609
+        except Exception as e:
+            error_msg = f"Unexpected error in job execution: {str(e)}"
+            logger.error(error_msg)
+            logger.error(traceback.format_exc())
+            
+            # Update job status to Failed
+            CronjobService.update_job_status(job_id, 'Failed', {
+                'error_message': error_msg,
+                'failure_time': get_current_ist_time().isoformat()
+            })
+            
+            # Log job event
+            CronjobService.log_job_event(
+                job_id,
+                'EXECUTION_ERROR',
+                error_msg
+            )
+            
+            # Record failed job execution
+            CronjobService.record_job_execution(
+                job_id,
+                'failed',
+                {
+                    'error_message': error_msg,
+                    'failure_time': get_current_ist_time().isoformat()
+                }
+            )
+            
+            return False
+
         # Create booking
         try:
-            # Generate booking ID
-            booking_id = f"BK{int(time.time())}"
-            pnr = f"PNR{int(time.time())}"  # Simulated PNR
+            # Generate booking ID using UUID for consistency with example
+            booking_id = str(uuid.uuid4())
+            current_datetime = get_current_ist_time()
+            pnr = f"PNR{current_datetime.strftime('%y%m%d%H%M%S')}"  # Format: PNRyymmddHHMMSS
             
             # Process passengers to ensure proper serialization
             sanitized_passengers = []
@@ -911,7 +1132,7 @@ class CronjobService:
                 'pnr': pnr,
                 'train_id': train_id,
                 'train_name': train_name,
-                'train_number': safe_get(job, 'train_details', {}).get('train_number', ''),
+                'train_number': train_id,  # Use train_id as train_number for consistency
                 'journey_date': journey_date,
                 'origin_station_code': origin,
                 'destination_station_code': destination,
