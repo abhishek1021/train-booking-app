@@ -4,9 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'cron-app/**'
       - 'terraform-cron-app/**'
-      - '.github/workflows/cron-app-deploy.yml'
 
 jobs:
   deploy_cron_lambda:

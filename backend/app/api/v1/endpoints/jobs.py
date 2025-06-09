@@ -297,7 +297,7 @@ async def get_user_jobs(
         )
 
 @router.put("/{job_id}", response_model=Job)
-async def update_job(job_id: str, job_update: JobUpdate):
+async def update_job(job_id: str, job_update: JobUpdate, request_data: Dict[str, Any] = Depends(lambda request: request.json())):
     """Update an existing job"""
     try:
         # First check if job exists
@@ -328,6 +328,31 @@ async def update_job(job_id: str, job_update: JobUpdate):
         expression_attribute_values = {
             ':updated_at': datetime.utcnow().isoformat()
         }
+        
+        # Check for explicit null values in the raw request data
+        explicit_nulls = {k for k, v in request_data.items() if v is None}
+        print(f"Explicit nulls in request: {explicit_nulls}")
+        
+        # Handle explicit null values for failure-related fields
+        if 'last_execution_time' in explicit_nulls:
+            update_expression += ", last_execution_time = :null_last_execution_time"
+            expression_attribute_values[':null_last_execution_time'] = None
+            
+        if 'failure_reason' in explicit_nulls:
+            update_expression += ", failure_reason = :null_failure_reason"
+            expression_attribute_values[':null_failure_reason'] = None
+            
+        if 'completed_at' in explicit_nulls:
+            update_expression += ", completed_at = :null_completed_at"
+            expression_attribute_values[':null_completed_at'] = None
+            
+        if 'failure_time' in explicit_nulls:
+            update_expression += ", failure_time = :null_failure_time"
+            expression_attribute_values[':null_failure_time'] = None
+            
+        if 'execution_attempts' in explicit_nulls:
+            update_expression += ", execution_attempts = :null_execution_attempts"
+            expression_attribute_values[':null_execution_attempts'] = 0
         
         # Add fields to update
         if job_update.origin_station_code is not None:
