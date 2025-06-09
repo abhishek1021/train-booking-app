@@ -1206,20 +1206,21 @@ class _JobEditScreenState extends State<JobEditScreen> {
         
         // Prepare job data
         final Map<String, dynamic> jobData = {
-          'id': widget.jobId,
-          'origin': _originController.text,
-          'destination': _destinationController.text,
+          'id': widget.jobId,  // Include job ID in the update data
+          'origin_station_code': _originController.text,
+          'destination_station_code': _destinationController.text,
           'journey_date': _journeyDateController.text,
           'booking_time': _bookingTimeController.text,
           'travel_class': _travelClassController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
+          'booking_email': _emailController.text,
+          'booking_phone': _phoneController.text,
           'notes': _notesController.text,
           'passengers': _passengers,
           'auto_upgrade': _autoUpgrade,
           'auto_book_alternate_date': _autoBookAlternateDate,
           'job_date': _jobDateController.text,
           'job_execution_time': _jobExecutionTimeController.text,
+          'payment_method': widget.jobData['payment_method'], // Preserve existing payment method
         };
 
         // Add optional fields if enabled
@@ -1232,23 +1233,26 @@ class _JobEditScreenState extends State<JobEditScreen> {
           jobData['opt_for_insurance'] = true;
         }
 
-        // Call API to update job
+        // Check if this is a failed job that needs to be reset
+        final currentStatus = widget.jobData['job_status']?.toString().toLowerCase() ?? 
+                            widget.jobData['status']?.toString().toLowerCase() ?? '';
+        
+        if (currentStatus.contains('fail')) {
+          // Reset job status and clear failure-related fields
+          jobData['job_status'] = 'Scheduled';
+          jobData['last_execution_time'] = null;
+          jobData['failure_reason'] = null;
+          jobData['completed_at'] = null;
+          jobData['failure_time'] = null;
+          jobData['execution_attempts'] = 0;
+          
+          print('Resetting failed job status and clearing failure fields');
+        }
+
+        // Call API to update job using the map-based update method
         final response = await _jobService.updateJob(
           jobId: widget.jobId,
-          originStationCode: _originController.text,
-          destinationStationCode: _destinationController.text,
-          journeyDate: _journeyDateController.text,
-          bookingTime: _bookingTimeController.text,
-          travelClass: _travelClassController.text,
-          bookingEmail: _emailController.text,
-          bookingPhone: _phoneController.text,
-          notes: _notesController.text,
-          passengers: _passengers,
-          autoUpgrade: _autoUpgrade,
-          autoBookAlternateDate: _autoBookAlternateDate,
-          paymentMethod: widget.jobData['payment_method'], // Preserve existing payment method
-          jobDate: _jobDateController.text,
-          jobExecutionTime: _jobExecutionTimeController.text
+          updateData: jobData,
         );
 
         if (response['success'] == true) {

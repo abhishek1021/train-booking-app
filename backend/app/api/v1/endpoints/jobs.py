@@ -414,6 +414,25 @@ async def update_job(job_id: str, job_update: JobUpdate):
         if job_update.job_execution_time is not None:
             update_expression += ", job_execution_time = :job_execution_time"
             expression_attribute_values[':job_execution_time'] = job_update.job_execution_time
+            
+        # Handle the new fields for resetting failed jobs
+        if job_update.completed_at is not None:
+            update_expression += ", completed_at = :completed_at"
+            if job_update.completed_at == datetime.min:  # Use datetime.min as a sentinel value for null
+                expression_attribute_values[':completed_at'] = None
+            else:
+                expression_attribute_values[':completed_at'] = job_update.completed_at.isoformat()
+                
+        if job_update.failure_time is not None:
+            update_expression += ", failure_time = :failure_time"
+            if job_update.failure_time == datetime.min:  # Use datetime.min as a sentinel value for null
+                expression_attribute_values[':failure_time'] = None
+            else:
+                expression_attribute_values[':failure_time'] = job_update.failure_time.isoformat()
+                
+        if job_update.execution_attempts is not None:
+            update_expression += ", execution_attempts = :execution_attempts"
+            expression_attribute_values[':execution_attempts'] = job_update.execution_attempts
         
         # Update job in DynamoDB
         response = jobs_table.update_item(
@@ -458,7 +477,9 @@ async def update_job(job_id: str, job_update: JobUpdate):
             'execution_attempts': updated_item.get('execution_attempts', 0),
             'max_attempts': updated_item.get('max_attempts', 3),
             'job_date': updated_item.get('job_date'),
-            'job_execution_time': updated_item.get('job_execution_time')
+            'job_execution_time': updated_item.get('job_execution_time'),
+            'completed_at': datetime.fromisoformat(updated_item['completed_at']) if updated_item.get('completed_at') else None,
+            'failure_time': datetime.fromisoformat(updated_item['failure_time']) if updated_item.get('failure_time') else None
         }
         
         return job_data

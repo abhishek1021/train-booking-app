@@ -158,7 +158,7 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     await _fetchJobs();
   }
 
-  // Filter options
+  // Filter options with counts
   String _selectedFilter = 'All';
   final List<String> _filterOptions = [
     'All',
@@ -167,15 +167,48 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     'Completed',
     'Failed'
   ];
+  
+  // Get the status from job, handling both 'status' and 'job_status' fields
+  String _getJobStatus(Map<String, dynamic> job) {
+    return (job['job_status'] ?? job['status'] ?? '').toString();
+  }
+
+  // Get count of jobs by status
+  int _getStatusCount(String status) {
+    if (status == 'All') return _tatkalJobs.length;
+    
+    return _tatkalJobs.where((job) {
+      final jobStatus = _getJobStatus(job).toLowerCase();
+      final filter = status.toLowerCase();
+      
+      if (jobStatus.contains(filter)) return true;
+      if (filter == 'in progress' && jobStatus.contains('progress')) return true;
+      if (filter == 'scheduled' && jobStatus.contains('schedule')) return true;
+      if (filter == 'completed' && jobStatus.contains('complete')) return true;
+      if (filter == 'failed' && jobStatus.contains('fail')) return true;
+      
+      return jobStatus == filter;
+    }).length;
+  }
 
   // Get filtered jobs based on selected filter
   List<Map<String, dynamic>> get _filteredJobs {
     if (_selectedFilter == 'All') {
       return _tatkalJobs;
     } else {
-      return _tatkalJobs
-          .where((job) => job['status'] == _selectedFilter)
-          .toList();
+      return _tatkalJobs.where((job) {
+        final status = _getJobStatus(job).toLowerCase();
+        final filter = _selectedFilter.toLowerCase();
+        
+        // Handle different status formats
+        if (status.contains(filter)) return true;
+        if (filter == 'in progress' && status.contains('progress')) return true;
+        if (filter == 'scheduled' && status.contains('schedule')) return true;
+        if (filter == 'completed' && status.contains('complete')) return true;
+        if (filter == 'failed' && status.contains('fail')) return true;
+        
+        return status == filter;
+      }).toList();
     }
   }
 
@@ -191,7 +224,8 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
     if (normalizedStatus.contains('schedule')) {
       return Colors.blue;
     } else if (normalizedStatus.contains('progress') ||
-        normalizedStatus.contains('in-progress')) {
+        normalizedStatus.contains('in-progress') ||
+        normalizedStatus.contains('in progress')) {
       return Colors.orange;
     } else if (normalizedStatus.contains('complete')) {
       return Colors.green;
@@ -279,12 +313,13 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                                 padding: const EdgeInsets.only(right: 8),
                                 child: FilterChip(
                                   label: Text(
-                                    filter,
+                                    '${filter} (${_getStatusCount(filter)})',
                                     style: TextStyle(
                                       color: isSelected
                                           ? Colors.white
                                           : Color(0xFF7C3AED),
                                       fontFamily: 'ProductSans',
+                                      fontSize: 13,
                                     ),
                                   ),
                                   selected: isSelected,
@@ -664,8 +699,21 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                       ),
                       Row(
                         children: [
-                          // Removed top edit button as per requirements
-                          const SizedBox(width: 8),
+                          // Edit button for Failed jobs
+                          if (status.toLowerCase().contains('fail')) ...[
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: const Icon(Icons.edit, color: Color(0xFF7C3AED), size: 20),
+                              tooltip: 'Edit Failed Job',
+                              onPressed: () {
+                                _navigateToEditJob(job);
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          // Removed top edit button as per requirements (this comment might be outdated)
+                          // const SizedBox(width: 8), // Original SizedBox if needed elsewhere
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 4),
@@ -1047,11 +1095,25 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
                   ],
                   if (status == 'Failed') ...[
                     TextButton.icon(
-                      onPressed: () {
-                        // Retry job
+                      onPressed: () async {
+                        // Navigate to edit screen for failed job
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => JobEditScreen(
+                              jobId: jobId,
+                              jobData: job,
+                            ),
+                          ),
+                        );
+
+                        // If changes were made, refresh the jobs list
+                        if (result == true) {
+                          _refreshJobs();
+                        }
                       },
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Retry'),
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit'),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF7C3AED),
                         textStyle: const TextStyle(
@@ -1067,6 +1129,27 @@ class _TatkalJobsScreenState extends State<TatkalJobsScreen> {
         ),
       ),
     );
+  }
+
+  // Navigate to edit job screen and handle the result
+  Future<void> _navigateToEditJob(Map<String, dynamic> job) async {
+    final String jobId = job['job_id'] ?? job['id'] ?? '';
+    
+    // Navigate to the edit screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobEditScreen(
+          jobId: jobId,
+          jobData: job,
+        ),
+      ),
+    );
+
+    // If changes were made, refresh the jobs list
+    if (result == true) {
+      _refreshJobs();
+    }
   }
 
   Widget _buildDetailItem(IconData icon, String text) {

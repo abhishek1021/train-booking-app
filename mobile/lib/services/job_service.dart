@@ -204,6 +204,8 @@ class JobService {
   // Update an existing job
   Future<Map<String, dynamic>> updateJob({
     required String jobId,
+    Map<String, dynamic>? updateData,
+    // Legacy parameters
     String? originStationCode,
     String? destinationStationCode,
     String? journeyDate,
@@ -221,24 +223,31 @@ class JobService {
     String? jobExecutionTime,
   }) async {
     try {
-      // Create the request body with only the fields that are provided
+      // Create the request body
       Map<String, dynamic> requestBody = {};
       
-      if (originStationCode != null) requestBody['origin_station_code'] = originStationCode;
-      if (destinationStationCode != null) requestBody['destination_station_code'] = destinationStationCode;
-      if (journeyDate != null) requestBody['journey_date'] = journeyDate;
-      if (bookingTime != null) requestBody['booking_time'] = bookingTime;
-      if (travelClass != null) requestBody['travel_class'] = travelClass;
-      if (passengers != null) requestBody['passengers'] = passengers;
-      if (jobType != null) requestBody['job_type'] = jobType;
-      if (bookingEmail != null) requestBody['booking_email'] = bookingEmail;
-      if (bookingPhone != null) requestBody['booking_phone'] = bookingPhone;
-      if (autoUpgrade != null) requestBody['auto_upgrade'] = autoUpgrade;
-      if (autoBookAlternateDate != null) requestBody['auto_book_alternate_date'] = autoBookAlternateDate;
-      if (paymentMethod != null) requestBody['payment_method'] = paymentMethod;
-      if (notes != null) requestBody['notes'] = notes;
-      if (jobDate != null) requestBody['job_date'] = jobDate;
-      if (jobExecutionTime != null) requestBody['job_execution_time'] = jobExecutionTime;
+      // If updateData is provided, use it directly (new approach)
+      if (updateData != null) {
+        requestBody = updateData;
+      } 
+      // Otherwise use the individual parameters (legacy approach)
+      else {
+        if (originStationCode != null) requestBody['origin_station_code'] = originStationCode;
+        if (destinationStationCode != null) requestBody['destination_station_code'] = destinationStationCode;
+        if (journeyDate != null) requestBody['journey_date'] = journeyDate;
+        if (bookingTime != null) requestBody['booking_time'] = bookingTime;
+        if (travelClass != null) requestBody['travel_class'] = travelClass;
+        if (passengers != null) requestBody['passengers'] = passengers;
+        if (jobType != null) requestBody['job_type'] = jobType;
+        if (bookingEmail != null) requestBody['booking_email'] = bookingEmail;
+        if (bookingPhone != null) requestBody['booking_phone'] = bookingPhone;
+        if (autoUpgrade != null) requestBody['auto_upgrade'] = autoUpgrade;
+        if (autoBookAlternateDate != null) requestBody['auto_book_alternate_date'] = autoBookAlternateDate;
+        if (paymentMethod != null) requestBody['payment_method'] = paymentMethod;
+        if (notes != null) requestBody['notes'] = notes;
+        if (jobDate != null) requestBody['job_date'] = jobDate;
+        if (jobExecutionTime != null) requestBody['job_execution_time'] = jobExecutionTime;
+      }
 
       final response = await http.put(
         Uri.parse('$baseUrl/jobs/$jobId'),

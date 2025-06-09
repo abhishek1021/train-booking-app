@@ -95,6 +95,9 @@ class JobUpdate(BaseModel):
     next_execution_time: Optional[datetime] = None
     job_date: Optional[str] = None
     job_execution_time: Optional[str] = None
+    completed_at: Optional[datetime] = None
+    failure_time: Optional[datetime] = None
+    execution_attempts: Optional[int] = None
 
     @validator('journey_date')
     def validate_journey_date(cls, v):
