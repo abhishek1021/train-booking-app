@@ -1236,17 +1236,13 @@ class _JobEditScreenState extends State<JobEditScreen> {
         // Check if this is a failed job that needs to be reset
         final currentStatus = widget.jobData['job_status']?.toString().toLowerCase() ?? 
                             widget.jobData['status']?.toString().toLowerCase() ?? '';
-        
+      
         if (currentStatus.contains('fail')) {
-          // Reset job status and clear failure-related fields
+          // Reset job status to Scheduled when editing a failed job
+          // The backend will handle clearing the failure-related fields
           jobData['job_status'] = 'Scheduled';
-          jobData['last_execution_time'] = null;
-          jobData['failure_reason'] = null;
-          jobData['completed_at'] = null;
-          jobData['failure_time'] = null;
-          jobData['execution_attempts'] = 0;
           
-          print('Resetting failed job status and clearing failure fields');
+          print('Setting failed job status to Scheduled - backend will reset failure fields');
         }
 
         // Call API to update job using the map-based update method
