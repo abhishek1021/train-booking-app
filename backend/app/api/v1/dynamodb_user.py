@@ -57,6 +57,12 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class UserUpdateRequest(BaseModel):
+    FullName: Optional[str] = None
+    Phone: Optional[str] = None
+    Username: Optional[str] = None
+
+
 router = APIRouter()
 
 from decimal import Decimal
@@ -268,6 +274,56 @@ def login_user(login: UserLoginRequest):
         # Remove sensitive info before returning
         user.pop("PasswordHash", None)
         return {"message": "Login successful", "user": user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/dynamodb/users/update/{email}")
+def update_user_profile(email: str, user_update: UserUpdateRequest):
+    """Update user profile information"""
+    try:
+        # Check if user exists
+        response = users_table.get_item(
+            Key={"PK": f"USER#{email}", "SK": "PROFILE"}
+        )
+        user = response.get("Item")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        # Prepare update expression and attributes
+        update_expression = "SET updated_at = :updated_at"
+        expression_attribute_values = {
+            ':updated_at': datetime.utcnow().isoformat()
+        }
+        
+        # Add fields to update
+        if user_update.FullName is not None:
+            update_expression += ", OtherAttributes.FullName = :full_name"
+            expression_attribute_values[':full_name'] = user_update.FullName
+            
+        if user_update.Phone is not None:
+            update_expression += ", Phone = :phone"
+            expression_attribute_values[':phone'] = user_update.Phone
+            
+        if user_update.Username is not None:
+            update_expression += ", Username = :username"
+            expression_attribute_values[':username'] = user_update.Username
+        
+        # Update user in DynamoDB
+        response = users_table.update_item(
+            Key={"PK": f"USER#{email}", "SK": "PROFILE"},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
+            ReturnValues="ALL_NEW"
+        )
+        
+        updated_user = response.get("Attributes", {})
+        # Remove sensitive info before returning
+        updated_user.pop("PasswordHash", None)
+        
+        return {"message": "Profile updated successfully", "user": updated_user}
     except HTTPException:
         raise
     except Exception as e:

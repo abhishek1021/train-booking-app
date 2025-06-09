@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../profile/profile_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -132,7 +133,14 @@ class _ProfileTabState extends State<ProfileTab> {
                     height: 1, thickness: 1, indent: 24, endIndent: 24),
                 const SizedBox(height: 12),
                 _sectionHeader('General'),
-                _menuItem(Icons.person, 'Personal Info', onTap: () {}),
+                _menuItem(Icons.person, 'Personal Info', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                }),
                 _menuItem(Icons.groups, 'Passengers List', onTap: () {}),
                 _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {}),
                 _menuItem(Icons.notifications, 'Notification', onTap: () {}),
