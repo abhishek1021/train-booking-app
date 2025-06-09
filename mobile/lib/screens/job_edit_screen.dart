@@ -33,7 +33,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
   late TextEditingController _destinationController;
   late TextEditingController _journeyDateController;
   late TextEditingController _bookingTimeController;
-  late TextEditingController _travelClassController;
+  late String _selectedTravelClass; // Changed to String for dropdown
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _notesController;
@@ -84,7 +84,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
     // Initialize other journey details
     _journeyDateController = TextEditingController(text: jobData['journey_date'] ?? '');
     _bookingTimeController = TextEditingController(text: jobData['booking_time'] ?? '');
-    _travelClassController = TextEditingController(text: jobData['travel_class'] ?? '');
+    _selectedTravelClass = jobData['travel_class'] ?? 'SL'; // Default to Sleeper class if not specified
     
     // Initialize job scheduling details
     _jobDateController = TextEditingController(text: jobData['job_date'] ?? jobData['journey_date'] ?? '');
@@ -194,7 +194,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
     _destinationController.dispose();
     _journeyDateController.dispose();
     _bookingTimeController.dispose();
-    _travelClassController.dispose();
+    // No need to dispose _selectedTravelClass as it's a String
     _jobDateController.dispose();
     _jobExecutionTimeController.dispose();
     _emailController.dispose();
@@ -419,16 +419,75 @@ class _JobEditScreenState extends State<JobEditScreen> {
             prefixIcon: Icons.access_time,
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            controller: _travelClassController,
-            label: 'Travel Class',
-            prefixIcon: Icons.airline_seat_recline_normal,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter travel class';
-              }
-              return null;
-            },
+          _buildTravelClassDropdown(),
+        ],
+      ),
+    );
+  }
+  
+  // Build travel class dropdown with available train classes
+  Widget _buildTravelClassDropdown() {
+    // List of available train classes based on Indian Railways
+    final List<Map<String, String>> travelClasses = [
+      {'code': 'SL', 'name': 'Sleeper Class (SL)'},
+      {'code': '3A', 'name': 'AC 3 Tier (3A)'},
+      {'code': '2A', 'name': 'AC 2 Tier (2A)'},
+      {'code': '1A', 'name': 'AC First Class (1A)'},
+      {'code': 'CC', 'name': 'AC Chair Car (CC)'},
+      {'code': '2S', 'name': 'Second Sitting (2S)'},
+      {'code': 'EC', 'name': 'Executive Class (EC)'},
+      {'code': 'FC', 'name': 'First Class (FC)'},
+      {'code': '3E', 'name': 'AC 3 Tier Economy (3E)'},
+      {'code': 'GN', 'name': 'General (GN)'}
+    ];
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Color(0xFFD1D5DB)),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Icon(Icons.airline_seat_recline_normal, color: Color(0xFF6B7280)),
+          SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButtonFormField<String>(
+                value: _selectedTravelClass,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  labelText: 'Travel Class',
+                  contentPadding: EdgeInsets.zero,
+                ),
+                items: travelClasses.map((Map<String, String> classItem) {
+                  return DropdownMenuItem<String>(
+                    value: classItem['code'],
+                    child: Text(classItem['name']!),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedTravelClass = newValue!;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a travel class';
+                  }
+                  return null;
+                },
+                isExpanded: true,
+                icon: Icon(Icons.keyboard_arrow_down, color: Color(0xFF6B7280)),
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontSize: 16,
+                  color: Color(0xFF111827),
+                ),
+                dropdownColor: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -1211,7 +1270,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
           'destination_station_code': _destinationController.text,
           'journey_date': _journeyDateController.text,
           'booking_time': _bookingTimeController.text,
-          'travel_class': _travelClassController.text,
+          'travel_class': _selectedTravelClass,
           'booking_email': _emailController.text,
           'booking_phone': _phoneController.text,
           'notes': _notesController.text,

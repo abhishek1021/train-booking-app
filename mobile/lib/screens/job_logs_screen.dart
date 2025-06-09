@@ -319,13 +319,23 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
                     final message = log['message'] ?? 'No message';
                     final timestamp = log['timestamp'] ?? '';
                     final details = log['details'];
+                    
+                    // For events like EXECUTION_FAILED, if there's no message but description exists,
+                    // convert the description into details for better visibility
+                    Map<String, dynamic>? enhancedDetails = details;
+                    if ((message == 'No message' || message.isEmpty) && 
+                        log['description'] != null && 
+                        (eventType.contains('FAILED') || eventType.contains('ERROR'))) {
+                      enhancedDetails = details != null ? Map<String, dynamic>.from(details) : {};
+                      enhancedDetails['Error Details'] = log['description'];
+                    }
                     final isLast = index == _jobLogs.length - 1;
 
                     return _buildTimelineItem(
                       eventType: eventType,
                       message: message,
                       timestamp: timestamp,
-                      details: details,
+                      details: enhancedDetails,
                       isLast: isLast,
                     );
                   },
@@ -342,6 +352,11 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
     Map<String, dynamic>? details,
     required bool isLast,
   }) {
+    // Extract description from the log event if available
+    final String? description = _jobLogs.firstWhere(
+      (log) => log['timestamp'] == timestamp && log['event_type'] == eventType,
+      orElse: () => {}
+    )['description'];
     final color = _getEventColor(eventType);
     final icon = _getEventIcon(eventType);
 
@@ -419,13 +434,27 @@ class _JobLogsScreenState extends State<JobLogsScreen> {
               const SizedBox(height: 8),
               // Message
               Text(
-                message,
+                message != 'No message' ? message : (description ?? 'No message'),
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[800],
                   fontFamily: 'ProductSans',
                 ),
               ),
+              
+              // Description (if available and different from message)
+              if (description != null && description != message && message != 'No message') ...[  
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontFamily: 'ProductSans',
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
               // Details card if available
               if (details != null) ...[
                 const SizedBox(height: 8),
