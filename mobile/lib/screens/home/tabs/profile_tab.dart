@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:ui';
 import '../../profile/profile_screen.dart';
+import '../../saved_passengers_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -38,10 +40,10 @@ class _ProfileTabState extends State<ProfileTab> {
     final email = userProfile?['Email'] ?? userProfile?['email'] ?? '';
     final avatarUrl = userProfile?['avatarUrl'];
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       body: Column(
         children: [
-          // Purple gradient app bar
+          // Modern purple gradient app bar with decorative elements
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 48, bottom: 24),
@@ -52,24 +54,59 @@ class _ProfileTabState extends State<ProfileTab> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Column(
+            child: Stack(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.account_circle, color: Colors.white, size: 32),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Account',
-                      style: const TextStyle(
-                        fontFamily: 'ProductSans',
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        letterSpacing: 0.2,
-                      ),
+                // Decorative circles
+                Positioned(
+                  top: -20,
+                  right: -30,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.1),
                     ),
-                  ],
+                  ),
+                ),
+                Positioned(
+                  bottom: -15,
+                  left: -20,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+                // Header content
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                        child: Icon(Icons.account_circle, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Account',
+                        style: const TextStyle(
+                          fontFamily: 'ProductSans',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -78,23 +115,57 @@ class _ProfileTabState extends State<ProfileTab> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               children: [
-                // Profile header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0, vertical: 24),
+                // Modern profile header with card effect
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage:
-                            avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                        child: avatarUrl == null
-                            ? Icon(Icons.person,
-                                size: 38, color: Colors.grey[700])
-                            : null,
+                      // Profile avatar with border
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF7C3AED), width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF7C3AED).withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 32,
+                          backgroundColor: const Color(0xFFF3EEFF),
+                          backgroundImage:
+                              avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                          child: avatarUrl == null
+                              ? Text(
+                                  _getInitials(fullName),
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
-                      const SizedBox(width: 18),
+                      const SizedBox(width: 20),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,10 +176,10 @@ class _ProfileTabState extends State<ProfileTab> {
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
-                                color: Colors.black,
+                                color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               email,
                               style: const TextStyle(
@@ -121,17 +192,24 @@ class _ProfileTabState extends State<ProfileTab> {
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon:
-                            const Icon(Icons.qr_code_2, color: Colors.black54),
-                        onPressed: () {},
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3EEFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.qr_code_2, color: Color(0xFF7C3AED)),
+                          onPressed: () {},
+                          iconSize: 24,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const Divider(
-                    height: 1, thickness: 1, indent: 24, endIndent: 24),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _sectionHeader('General'),
                 _menuItem(Icons.person, 'Personal Info', onTap: () {
                   Navigator.push(
@@ -141,38 +219,65 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   );
                 }),
-                _menuItem(Icons.groups, 'Passengers List', onTap: () {}),
+                _menuItem(Icons.groups, 'Passengers List', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SavedPassengersScreen(),
+                    ),
+                  );
+                }),
                 _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {}),
                 _menuItem(Icons.notifications, 'Notification', onTap: () {}),
                 _menuItem(Icons.security, 'Security', onTap: () {}),
                 _menuItem(Icons.language, 'Language',
-                    trailing: Text('English (US)', style: _trailingStyle)),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3EEFF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text('English (US)', style: _trailingStyle),
+                    )),
                 _menuItem(Icons.remove_red_eye, 'Dark Mode',
-                    trailing: Switch(value: false, onChanged: (_) {})),
+                    trailing: Switch(
+                      value: false,
+                      onChanged: (_) {},
+                      activeColor: const Color(0xFF7C3AED),
+                      activeTrackColor: const Color(0xFFD8CCFF),
+                      inactiveThumbColor: Colors.white,
+                      inactiveTrackColor: Colors.grey[300],
+                    )),
                 const SizedBox(height: 12),
                 _sectionHeader('About'),
                 _menuItem(Icons.help_outline, 'Help Center', onTap: () {}),
                 _menuItem(Icons.privacy_tip, 'Privacy Policy', onTap: () {}),
                 _menuItem(Icons.info_outline, 'About TatkalPro', onTap: () {}),
                 const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: TextButton.icon(
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: ElevatedButton.icon(
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.clear(); // Clear all preferences
                       Navigator.pushReplacementNamed(context, '/login');
                     },
-                    icon: const Icon(Icons.logout, color: Colors.red),
+                    icon: const Icon(Icons.logout, color: Colors.white),
                     label: const Text('Logout',
                         style: TextStyle(
-                            color: Colors.red,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16)),
-                    style: TextButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 0),
+                            fontSize: 16,
+                            fontFamily: 'ProductSans')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(double.infinity, 50),
                     ),
                   ),
                 ),
@@ -186,16 +291,29 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'ProductSans',
-            color: Colors.black54,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            letterSpacing: 0.1,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C3AED),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'ProductSans',
+                color: Color(0xFF7C3AED),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       );
 
@@ -203,18 +321,41 @@ class _ProfileTabState extends State<ProfileTab> {
           {Widget? trailing, VoidCallback? onTap}) =>
       InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: const Color(0xFFF3EEFF),
+        highlightColor: const Color(0xFFF3EEFF).withOpacity(0.5),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
-              Icon(icon, color: Colors.black87, size: 22),
-              const SizedBox(width: 22),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3EEFF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: const Color(0xFF7C3AED), size: 20),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
                   style: const TextStyle(
                     fontFamily: 'ProductSans',
-                    color: Colors.black,
+                    color: Colors.black87,
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
                   ),
@@ -222,8 +363,15 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
               if (trailing != null) trailing,
               if (trailing == null)
-                const Icon(Icons.chevron_right,
-                    color: Colors.black26, size: 22),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3EEFF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.chevron_right,
+                      color: Color(0xFF7C3AED), size: 18),
+                ),
             ],
           ),
         ),
@@ -231,8 +379,22 @@ class _ProfileTabState extends State<ProfileTab> {
 
   TextStyle get _trailingStyle => const TextStyle(
         fontFamily: 'ProductSans',
-        color: Colors.black54,
-        fontWeight: FontWeight.normal,
-        fontSize: 15,
+        color: Color(0xFF7C3AED),
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
       );
+      
+  // Helper method to get initials from name
+  String _getInitials(String name) {
+    if (name.isEmpty) return '';
+    
+    final nameParts = name.trim().split(' ');
+    if (nameParts.length >= 2) {
+      return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
+    } else if (nameParts.length == 1) {
+      return nameParts[0][0].toUpperCase();
+    }
+    
+    return '';
+  }
 }

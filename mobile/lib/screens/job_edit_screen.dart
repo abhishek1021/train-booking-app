@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/job_service.dart';
-import '../utils/validators.dart';
+import '../api_constants.dart';
 import 'city_search_screen.dart';
 import '../widgets/success_animation_dialog.dart';
 import '../widgets/failure_animation_dialog.dart';
 import '../services/passenger_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/validators.dart';
 
 class JobEditScreen extends StatefulWidget {
   final String jobId;
@@ -1373,9 +1375,13 @@ class _JobEditScreenState extends State<JobEditScreen> {
     String selectedIdType = 'Aadhar';
     String selectedBerthPreference = 'No Preference';
     bool isSeniorCitizen = false;
+    bool addToPassengerList = true; // Default to checked
     final idNumberController = TextEditingController();
     
     final formKey = GlobalKey<FormState>();
+    
+    // Get SharedPreferences instance
+    SharedPreferences? prefs;
     
     // Use Navigator to push a full-screen modal instead of dialog
     Navigator.of(context).push(
@@ -1437,7 +1443,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
                         fontFamily: 'ProductSans',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827),
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -1470,6 +1476,9 @@ class _JobEditScreenState extends State<JobEditScreen> {
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                            ),
+                            style : TextStyle(
+                            color: Colors.black,  
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -1514,6 +1523,9 @@ class _JobEditScreenState extends State<JobEditScreen> {
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                  ),
+                                  style : TextStyle(
+                                    color: Colors.black,  
                                   ),
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
@@ -1566,13 +1578,16 @@ class _JobEditScreenState extends State<JobEditScreen> {
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                    filled: true,
+                                    fillColor: Colors.white,
                                   ),
                                   icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontSize: 14,
-                                    color: Colors.black87,
+                                    color: Colors.black,
                                   ),
+                                  dropdownColor: Colors.white,
                                   items: ['Male', 'Female', 'Other']
                                       .map((gender) => DropdownMenuItem(
                                             value: gender,
@@ -1615,13 +1630,16 @@ class _JobEditScreenState extends State<JobEditScreen> {
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                    filled: true,
+                                    fillColor: Colors.white,
                                   ),
                                   icon: Icon(Icons.arrow_drop_down, color: Color(0xFF7C3AED)),
                                   style: TextStyle(
                                     fontFamily: 'ProductSans',
                                     fontSize: 14,
-                                    color: Colors.black87,
+                                    color: Colors.black,
                                   ),
+                                  dropdownColor: Colors.white,
                                   items: ['Aadhar', 'PAN', 'Passport', 'Driving License']
                                       .map((idType) => DropdownMenuItem(
                                             value: idType,
@@ -1669,6 +1687,9 @@ class _JobEditScreenState extends State<JobEditScreen> {
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                             ),
+                            style : TextStyle(
+                              color: Colors.black,  
+                            ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter ID number';
@@ -1707,14 +1728,15 @@ class _JobEditScreenState extends State<JobEditScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Add to passenger list checkbox
+                                        // Add to passenger list checkbox
                     Row(
                       children: [
                         Checkbox(
-                          value: true, // Default to checked
+                          value: addToPassengerList, // Use the state variable
                           onChanged: (value) {
-                            // Handle checkbox change
+                            setState(() {
+                              addToPassengerList = value ?? false;
+                            });
                           },
                           activeColor: Color(0xFF7C3AED),
                           shape: RoundedRectangleBorder(
@@ -1778,17 +1800,80 @@ class _JobEditScreenState extends State<JobEditScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         final passenger = {
                           'name': nameController.text,
-                          'age': ageController.text,
+                          'age': int.tryParse(ageController.text) ?? 0,
                           'gender': selectedGender,
                           'id_type': selectedIdType,
                           'id_number': idNumberController.text,
                           'berth_preference': selectedBerthPreference,
-                          'is_senior_citizen': isSeniorCitizen,
+                          'is_senior_citizen': isSeniorCitizen || (int.tryParse(ageController.text) ?? 0) >= 60,
+                          'carriage': '-', // Placeholder
+                          'seat': '-', // Placeholder
                         };
+                        
+                        // Save to passenger list if checkbox is checked
+                        if (addToPassengerList) {
+                          try {
+                            // Show loading indicator
+                            _showCustomSnackBar(
+                              message: 'Saving passenger to your list...',
+                              icon: Icons.save,
+                              backgroundColor: Color(0xFF7C3AED),
+                            );
+                            
+                            // Get user ID from shared preferences
+                            prefs ??= await SharedPreferences.getInstance();
+                            String userId = '';
+                            final userProfileJson = prefs!.getString('user_profile');
+                            if (userProfileJson != null && userProfileJson.isNotEmpty) {
+                              try {
+                                final userProfile = jsonDecode(userProfileJson);
+                                userId = userProfile['UserID'] ?? '';
+                              } catch (e) {
+                                print('Error parsing user profile: $e');
+                              }
+                            }
+                            
+                            if (userId.isNotEmpty) {
+                              final passengerToSave = {
+                                ...passenger,
+                                'user_id': userId,
+                              };
+                              
+                              // Save passenger to database
+                              final baseUrl = ApiConstants.baseUrl;
+                              final response = await http.post(
+                                Uri.parse('$baseUrl/api/v1/passengers'),
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: jsonEncode(passengerToSave),
+                              );
+                              
+                              if (response.statusCode >= 200 && response.statusCode < 300) {
+                                // Show success message
+                                _showCustomSnackBar(
+                                  message: 'Passenger saved to your list!',
+                                  icon: Icons.check_circle,
+                                  backgroundColor: Colors.green,
+                                );
+                              } else {
+                                print('Failed to save passenger: ${response.statusCode} - ${response.body}');
+                              }
+                            }
+                          } catch (e) {
+                            print('Error saving passenger: $e');
+                            _showCustomSnackBar(
+                              message: 'Failed to save passenger to your list',
+                              icon: Icons.error_outline,
+                              backgroundColor: Colors.red,
+                            );
+                          }
+                        }
+                        
                         setState(() {
                           _passengers.add(passenger);
                         });
@@ -1994,6 +2079,43 @@ class _JobEditScreenState extends State<JobEditScreen> {
         }
       },
     );
+  }
+
+  // Custom SnackBar to show messages with icons
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: EdgeInsets.all(10),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   // Helper method to build time fields with time picker

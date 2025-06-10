@@ -172,10 +172,17 @@ class CronjobService:
             True if successful, False otherwise
         """
         try:
-            # Create event ID
-            event_id = f"EVENT{int(time.time())}_{job_id}"
+            # Validate inputs
+            if not job_id:
+                logger.error("Cannot log job event: job_id is empty")
+                return False
+                
+            # Create event ID with microsecond precision to avoid collisions
+            timestamp = int(time.time() * 1000)  # millisecond precision
+            event_id = f"EVENT{timestamp}_{job_id}"
             
             # Create event item
+            current_time = get_current_ist_time()
             event_item = {
                 'PK': f"JOB#{job_id}",
                 'SK': f"EVENT#{event_id}",
@@ -183,8 +190,8 @@ class CronjobService:
                 'event_id': event_id,
                 'event_type': event_type,
                 'description': description,
-                'timestamp': get_current_ist_time().isoformat(),
-                'created_at': get_current_ist_time().isoformat()
+                'timestamp': current_time.isoformat(),
+                'created_at': current_time.isoformat()
             }
             
             # Add details if provided
@@ -196,23 +203,42 @@ class CronjobService:
                 # Convert any datetime objects to ISO format strings
                 sanitized_details = {}
                 for key, value in details.items():
-                    if isinstance(value, datetime):
-                        sanitized_details[key] = value.isoformat()
-                    elif isinstance(value, float):
-                        sanitized_details[key] = Decimal(str(value))
-                    else:
-                        sanitized_details[key] = value
+                    try:
+                        if isinstance(value, datetime):
+                            sanitized_details[key] = value.isoformat()
+                        elif isinstance(value, float):
+                            sanitized_details[key] = Decimal(str(value))
+                        elif isinstance(value, (list, dict)):
+                            # Convert lists and dicts to strings to avoid potential DynamoDB issues
+                            sanitized_details[key] = json.dumps(value)
+                        else:
+                            sanitized_details[key] = value
+                    except Exception as detail_error:
+                        logger.warning(f"Error sanitizing detail {key}: {str(detail_error)}. Using string representation.")
+                        sanitized_details[key] = str(value)
                 
                 event_item['details'] = sanitized_details
             
+            # Log the item being inserted for debugging
+            logger.info(f"Inserting job event: {event_type} for job {job_id} with ID {event_id}")
+            
             # Put event item into job logs table
             job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
-            job_logs_table.put_item(Item=event_item)
+            response = job_logs_table.put_item(Item=event_item)
             
-            logger.info(f"Logged event for job {job_id}: {event_type} - {description}")
-            return True
+            # Check if the put_item was successful
+            if response.get('ResponseMetadata', {}).get('HTTPStatusCode') == 200:
+                logger.info(f"Logged event for job {job_id}: {event_type} - {description}")
+                return True
+            else:
+                logger.error(f"Failed to log event for job {job_id}: {event_type}. DynamoDB response: {response}")
+                return False
+                
         except Exception as e:
             logger.error(f"Error logging job event: {str(e)}")
+            logger.error(f"Event details: job_id={job_id}, event_type={event_type}, description={description[:100]}...")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
     @staticmethod
@@ -314,10 +340,15 @@ class CronjobService:
         """
         try:
             job_logs_table = dynamodb.Table(JOB_LOGS_TABLE)
+            
+            # Query using the PK (partition key) and filter for EVENT items
             response = job_logs_table.query(
-                KeyConditionExpression=Key('job_id').eq(job_id),
+                KeyConditionExpression=Key('PK').eq(f"JOB#{job_id}") & Key('SK').begins_with('EVENT#'),
                 ScanIndexForward=True  # Sort by timestamp ascending
             )
+            
+            # Log the number of items found for debugging
+            logger.info(f"Found {len(response.get('Items', []))} log entries for job {job_id}")
             
             return [convert_dynamodb_item(item) for item in response.get('Items', [])]
         except Exception as e:
@@ -514,12 +545,65 @@ class CronjobService:
             # If no trains found, add a summary error message
             if not available_trains and not error_details:
                 error_details.append(f"No trains found from {origin} to {destination} on {date_str} for {travel_class} class")
+            
+            # Log the search results to the job log table
+            if not available_trains and error_details:
+                error_summary = "\n- " + "\n- ".join(error_details)
+                CronjobService.log_job_event(
+                    job_id,
+                    'TRAIN_SEARCH_DETAILS',
+                    f"No trains found for {date_str}. Reasons:{error_summary}",
+                    {
+                        'origin': origin,
+                        'destination': destination,
+                        'date': date_str,
+                        'day_of_week': day_of_week,
+                        'travel_class': travel_class,
+                        'trains_checked': len(trains),
+                        'route_matches': len(trains_with_route_match),
+                        'day_matches': len(trains_with_day_match),
+                        'error_count': len(error_details)
+                    }
+                )
+            elif available_trains:
+                # Log successful train search
+                CronjobService.log_job_event(
+                    job_id,
+                    'TRAIN_SEARCH_SUCCESS',
+                    f"Found {len(available_trains)} trains with available seats for {date_str}",
+                    {
+                        'origin': origin,
+                        'destination': destination,
+                        'date': date_str,
+                        'day_of_week': day_of_week,
+                        'travel_class': travel_class,
+                        'trains_found': len(available_trains),
+                        'trains_checked': len(trains)
+                    }
+                )
                 
             return available_trains, error_details
             
         except Exception as e:
             error_msg = f"Error searching trains for date {date_str}: {str(e)}"
             logger.error(error_msg)
+            
+            # Log the exception to the job log table
+            CronjobService.log_job_event(
+                job_id,
+                'TRAIN_SEARCH_ERROR',
+                f"Error searching trains for {date_str}: {str(e)}",
+                {
+                    'origin': origin,
+                    'destination': destination,
+                    'date': date_str,
+                    'day_of_week': day_of_week,
+                    'travel_class': travel_class,
+                    'error_type': type(e).__name__,
+                    'error_message': str(e)
+                }
+            )
+            
             return [], [error_msg]
     
     @staticmethod
@@ -576,9 +660,12 @@ class CronjobService:
                         sanitized_data[key] = value
                 
                 # Add sanitized data to update expression
+                # Skip job_status if it's in additional_data to avoid duplicate path error
                 for i, (key, value) in enumerate(sanitized_data.items()):
-                    update_expression += f", {key} = :val{i}"
-                    expression_values[f":val{i}"] = value
+                    # Skip job_status as it's already being set in the base expression
+                    if key != 'job_status':
+                        update_expression += f", {key} = :val{i}"
+                        expression_values[f":val{i}"] = value
             elif additional_data is not None:
                 logger.warning(f"Ignoring invalid additional_data format: {type(additional_data)}")
             
@@ -912,6 +999,7 @@ class CronjobService:
                 train_found = False
                 max_days_to_check = 7  # Maximum number of days to check for alternate dates
                 auto_book_alternate_date = safe_get(job, 'auto_book_alternate_date', False)
+                all_errors = []  # Initialize all_errors to avoid UnboundLocalError
                 
                 try:
                     # First check the original journey date
@@ -923,14 +1011,7 @@ class CronjobService:
                         job_id, origin, destination, journey_date, day_of_week, travel_class
                     )
                     
-                    # Log search errors to job events
-                    if error_details and not available_trains:
-                        error_summary = "\n- " + "\n- ".join(error_details)
-                        CronjobService.log_job_event(
-                            job_id,
-                            'TRAIN_SEARCH_DETAILS',
-                            f"No trains found for {journey_date}. Reasons:{error_summary}"
-                        )
+                    # Note: The _search_trains_for_date method now handles logging errors to job_logs table
                     
                     if available_trains:
                         # Found trains on original date
@@ -961,7 +1042,8 @@ class CronjobService:
                             }
                         )
                     elif auto_book_alternate_date:
-                        all_errors = error_details.copy()  # Keep track of all errors across dates
+                        # Update all_errors with the current error details
+                        all_errors.extend([err for err in error_details if err not in all_errors])
                         
                         for i in range(1, max_days_to_check):
                             # Calculate next date to check
@@ -984,6 +1066,10 @@ class CronjobService:
                             for error in date_errors:
                                 if error not in all_errors:
                                     all_errors.append(error)
+                            
+                            # Log detailed train search information for each station
+                            if not alternate_trains:
+                                logger.info(f"No trains found for alternate date {next_date}")
                             
                             if alternate_trains:
                                 # Found trains on alternate date
@@ -1024,14 +1110,41 @@ class CronjobService:
                         # Create a detailed error message with all the reasons
                         if all_errors:
                             error_summary = "\n- " + "\n- ".join(all_errors)
-                            failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days.\nReasons:{error_summary}"
+                            
+                            # Create more specific failure reason based on whether alternate dates were checked
+                            if auto_book_alternate_date:
+                                failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days.\nReasons:{error_summary}"
+                                # Log detailed train search statistics for alternate dates
+                                logger.info(f"Train search completed for job {job_id}: No trains found after checking {max_days_to_check} days")
+                            else:
+                                failure_reason = f"No trains found with available seats in {travel_class} class for journey date {journey_date}.\nReasons:{error_summary}"
+                                logger.info(f"Train search completed for job {job_id}: No trains found for journey date {journey_date}")
                         else:
-                            failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days"
+                            if auto_book_alternate_date:
+                                failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days"
+                                logger.info(f"Train search completed for job {job_id}: No trains found after checking {max_days_to_check} days")
+                            else:
+                                failure_reason = f"No trains found with available seats in {travel_class} class for journey date {journey_date}"
+                                logger.info(f"Train search completed for job {job_id}: No trains found for journey date {journey_date}")
                         
+                        # Include more specific details in the event log
+                        event_details = {
+                            'travel_class': travel_class,
+                            'journey_date': journey_date,
+                            'origin': origin,
+                            'destination': destination,
+                            'auto_book_alternate_date': auto_book_alternate_date,
+                            'error_count': len(all_errors) if all_errors else 0
+                        }
+                        
+                        if auto_book_alternate_date:
+                            event_details['days_checked'] = max_days_to_check
+                            
                         CronjobService.log_job_event(
                             job_id, 
                             'TRAIN_SEARCH_FAILED', 
-                            failure_reason
+                            failure_reason,
+                            event_details
                         )
                         
                         # Update job status to Failed with detailed reason
@@ -1052,14 +1165,37 @@ class CronjobService:
                         # Create a detailed error message with all the reasons
                         if all_errors:
                             error_summary = "\n- " + "\n- ".join(all_errors)
-                            failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days.\nReasons:{error_summary}"
+                            
+                            # Create more specific failure reason based on whether alternate dates were checked
+                            if auto_book_alternate_date:
+                                failure_reason = f"Error during search: No trains found with available seats in {travel_class} class for the next {max_days_to_check} days.\nReasons:{error_summary}"
+                            else:
+                                failure_reason = f"Error during search: No trains found with available seats in {travel_class} class for journey date {journey_date}.\nReasons:{error_summary}"
                         else:
-                            failure_reason = f"No trains found with available seats in {travel_class} class for the next {max_days_to_check} days"
+                            if auto_book_alternate_date:
+                                failure_reason = f"Error during search: No trains found with available seats in {travel_class} class for the next {max_days_to_check} days"
+                            else:
+                                failure_reason = f"Error during search: No trains found with available seats in {travel_class} class for journey date {journey_date}"
                         
+                        # Include more specific details in the event log
+                        event_details = {
+                            'travel_class': travel_class,
+                            'journey_date': journey_date,
+                            'origin': origin,
+                            'destination': destination,
+                            'auto_book_alternate_date': auto_book_alternate_date,
+                            'error_count': len(all_errors) if all_errors else 0,
+                            'search_error': str(search_error)
+                        }
+                        
+                        if auto_book_alternate_date:
+                            event_details['days_checked'] = max_days_to_check
+                            
                         CronjobService.log_job_event(
                             job_id, 
                             'TRAIN_SEARCH_FAILED', 
-                            failure_reason
+                            failure_reason,
+                            event_details
                         )
                         
                         # Update job status to Failed with detailed reason
@@ -1082,28 +1218,52 @@ class CronjobService:
                 base_fare = Decimal('0')
                 
                 # Check if we have a selected_train from our search with fare information
-                if 'selected_train' in locals() and isinstance(selected_train, dict) and 'fares' in selected_train:
-                    # Get fare for the selected travel class from the found train
-                    fares = selected_train.get('fares', {})
-                    class_fare = fares.get(travel_class)
-                    if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
-                        try:
-                            base_fare = Decimal(str(class_fare))
-                            logger.info(f"Using fare {base_fare} from found train {safe_get(selected_train, 'train_number')} for class {travel_class}")
-                        except (decimal.InvalidOperation, TypeError) as e:
-                            logger.warning(f"Invalid fare in found train: {e}. Checking train_details.")
+                if 'selected_train' in locals() and isinstance(selected_train, dict):
+                    # First check class_prices field (new format)
+                    if 'class_prices' in selected_train:
+                        class_prices = selected_train.get('class_prices', {})
+                        class_fare = class_prices.get(travel_class)
+                        if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                            try:
+                                base_fare = Decimal(str(class_fare))
+                                logger.info(f"Using fare {base_fare} from found train {safe_get(selected_train, 'train_number')} class_prices for class {travel_class}")
+                            except (decimal.InvalidOperation, TypeError) as e:
+                                logger.warning(f"Invalid fare in found train class_prices: {e}. Checking fares field.")
+                    
+                    # Fallback to fares field (old format) if class_prices didn't work
+                    if base_fare <= Decimal('0') and 'fares' in selected_train:
+                        fares = selected_train.get('fares', {})
+                        class_fare = fares.get(travel_class)
+                        if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                            try:
+                                base_fare = Decimal(str(class_fare))
+                                logger.info(f"Using fare {base_fare} from found train {safe_get(selected_train, 'train_number')} fares for class {travel_class}")
+                            except (decimal.InvalidOperation, TypeError) as e:
+                                logger.warning(f"Invalid fare in found train fares: {e}. Checking train_details.")
                 
                 # If fare not found in selected_train or if we're using provided train details
-                if base_fare <= Decimal('0') and train_details and isinstance(train_details, dict) and 'fares' in train_details:
-                    # Get fare for the selected travel class from train details
-                    fares = train_details.get('fares', {})
-                    class_fare = fares.get(travel_class)
-                    if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
-                        try:
-                            base_fare = Decimal(str(class_fare))
-                            logger.info(f"Using fare {base_fare} from train details for class {travel_class}")
-                        except (decimal.InvalidOperation, TypeError) as e:
-                            logger.warning(f"Invalid fare in train details: {e}. Using default fare.")
+                if base_fare <= Decimal('0') and train_details and isinstance(train_details, dict):
+                    # First check class_prices field (new format)
+                    if 'class_prices' in train_details:
+                        class_prices = train_details.get('class_prices', {})
+                        class_fare = class_prices.get(travel_class)
+                        if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                            try:
+                                base_fare = Decimal(str(class_fare))
+                                logger.info(f"Using fare {base_fare} from train details class_prices for class {travel_class}")
+                            except (decimal.InvalidOperation, TypeError) as e:
+                                logger.warning(f"Invalid fare in train details class_prices: {e}. Checking fares field.")
+                    
+                    # Fallback to fares field (old format) if class_prices didn't work
+                    if base_fare <= Decimal('0') and 'fares' in train_details:
+                        fares = train_details.get('fares', {})
+                        class_fare = fares.get(travel_class)
+                        if class_fare and isinstance(class_fare, (str, int, float, Decimal)):
+                            try:
+                                base_fare = Decimal(str(class_fare))
+                                logger.info(f"Using fare {base_fare} from train details fares for class {travel_class}")
+                            except (decimal.InvalidOperation, TypeError) as e:
+                                logger.warning(f"Invalid fare in train details fares: {e}. Using default fare.")
                 
                 # If fare not found in train details or is zero, use default fare structure
                 if base_fare <= Decimal('0'):
@@ -1344,7 +1504,6 @@ class CronjobService:
             logger.info(f"Created booking with ID: {booking_id}")
             
             # Create payment record with initial status
-            import uuid
             payment_id = str(uuid.uuid4())
             current_time = get_current_ist_time().isoformat()
             payment_table = dynamodb.Table(PAYMENTS_TABLE)
@@ -1413,7 +1572,6 @@ class CronjobService:
                             
                         if wallet_id:
                             # Create transaction with UUID format to match frontend
-                            import uuid
                             txn_id = str(uuid.uuid4())
                                 
                             wallet_transactions_table = dynamodb.Table(WALLET_TRANSACTIONS_TABLE)

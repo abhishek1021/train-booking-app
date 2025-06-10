@@ -184,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: 220,
+                  height: 400, // Increased height to accommodate fixed header
                   child: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -222,84 +222,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 
-                // Main content
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // Profile header with avatar
-                      Container(
-                        padding: const EdgeInsets.only(top: 100),
-                        alignment: Alignment.center,
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 110,
-                              height: 110,
+                // Fixed header with avatar, name and email
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.only(top: 100, bottom: 60),
+                    alignment: Alignment.center,
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 110,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 100,
+                              height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
+                                color: const Color(0xFFF3EEFF),
+                                border: Border.all(
+                                  color: const Color(0xFF7C3AED),
+                                  width: 2,
+                                ),
                               ),
                               child: Center(
-                                child: Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: const Color(0xFFF3EEFF),
-                                    border: Border.all(
-                                      color: const Color(0xFF7C3AED),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      _getInitials(),
-                                      style: const TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF7C3AED),
-                                        fontFamily: 'ProductSans',
-                                      ),
-                                    ),
+                                child: Text(
+                                  _getInitials(),
+                                  style: const TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF7C3AED),
+                                    fontFamily: 'ProductSans',
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _fullNameController.text,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontFamily: 'ProductSans',
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _emailController.text,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontFamily: 'ProductSans',
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                          ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _fullNameController.text,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'ProductSans',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _emailController.text,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontFamily: 'ProductSans',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Scrollable content - only the personal information card
+                Positioned(
+                  top: 320, // Increased top position to add more space below the fixed header
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(top: 20), // Added padding at the top
+                    child: Column(
+                      children: [
                       
                       // Form content in a card
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        margin: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -449,6 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
+                ),
                 ),
               ],
             ),
