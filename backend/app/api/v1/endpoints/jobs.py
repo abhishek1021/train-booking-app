@@ -6,7 +6,12 @@ import boto3
 import os
 import uuid
 import json
+import asyncio
 from decimal import Decimal
+
+# Import notification utilities
+from app.api.v1.utils.notification_utils import create_notification
+from app.schemas.notification import NotificationType
 
 # Import schemas
 from app.schemas.job import Job, JobCreate, JobUpdate, JobStatus, JobType
@@ -114,6 +119,45 @@ async def create_job(job: JobCreate):
             job_item['next_execution_time'] = None
         
         jobs_table.put_item(Item=job_item)
+        
+        # Create job notification
+        try:
+            print(f"[TatkalPro][Notification] Creating job notification for user {job.user_id}")
+            
+            # Format job type for notification
+            job_type_display = {
+                JobType.TATKAL.value: "Tatkal",
+                JobType.PREMIUM_TATKAL.value: "Premium Tatkal",
+                JobType.GENERAL.value: "General"
+            }.get(job.job_type, "Booking")
+            
+            # Create notification message
+            notification_title = f"New {job_type_display} Job Created"
+            notification_message = f"Your {job_type_display} booking job from {job.origin_station_code} to {job.destination_station_code} for {job.journey_date} has been scheduled."
+            
+            # Create notification with job details
+            notification_id = asyncio.run(create_notification(
+                user_id=job.user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.BOOKING,
+                reference_id=job_id,
+                metadata={
+                    "event": "job_created",
+                    "job_id": job_id,
+                    "job_type": job.job_type,
+                    "journey_date": job.journey_date,
+                    "origin": job.origin_station_code,
+                    "destination": job.destination_station_code,
+                    "travel_class": job.travel_class,
+                    "passenger_count": len(job.passengers) if job.passengers else 0
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Job notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating job notification: {notif_err}")
+            # Don't fail job creation if notification fails
         
         return {
             'job_id': job_id,
@@ -504,6 +548,65 @@ async def update_job(job_id: str, job_update: JobUpdate):
             'failure_time': datetime.fromisoformat(updated_item['failure_time']) if updated_item.get('failure_time') else None
         }
         
+        # Create notification for job update
+        try:
+            print(f"[TatkalPro][Notification] Creating job update notification for user {updated_item['user_id']}")
+            
+            # Only send notification for significant changes
+            should_notify = False
+            notification_details = []
+            
+            # Check which fields were updated for notification
+            if job_update.job_status is not None:
+                should_notify = True
+                status_display = {
+                    JobStatus.SCHEDULED.value: "Scheduled",
+                    JobStatus.IN_PROGRESS.value: "In Progress",
+                    JobStatus.COMPLETED.value: "Completed",
+                    JobStatus.FAILED.value: "Failed"
+                }.get(job_update.job_status.value, job_update.job_status.value)
+                notification_details.append(f"Status: {status_display}")
+            
+            if job_update.journey_date is not None:
+                should_notify = True
+                notification_details.append(f"Journey Date: {job_update.journey_date}")
+                
+            if job_update.travel_class is not None:
+                should_notify = True
+                notification_details.append(f"Travel Class: {job_update.travel_class}")
+            
+            if should_notify:
+                # Format job type for notification
+                job_type_display = {
+                    JobType.TATKAL.value: "Tatkal",
+                    JobType.PREMIUM_TATKAL.value: "Premium Tatkal",
+                    JobType.GENERAL.value: "General"
+                }.get(updated_item.get('job_type', 'Booking'), "Booking")
+                
+                # Create notification message
+                notification_title = f"Booking Job Updated"
+                notification_message = f"Your {job_type_display} booking job ({job_id}) has been updated. Changes: {', '.join(notification_details)}"
+                
+                # Create notification with job details
+                notification_id = asyncio.run(create_notification(
+                    user_id=updated_item['user_id'],
+                    title=notification_title,
+                    message=notification_message,
+                    notification_type=NotificationType.BOOKING,
+                    reference_id=job_id,
+                    metadata={
+                        "event": "job_updated",
+                        "job_id": job_id,
+                        "job_type": updated_item.get('job_type'),
+                        "updated_fields": [field for field in job_update.__dict__ if job_update.__dict__[field] is not None]
+                    }
+                ))
+                
+                print(f"[TatkalPro][Notification] Job update notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating job update notification: {notif_err}")
+            # Don't fail job update if notification fails
+        
         return job_data
     except Exception as e:
         if isinstance(e, HTTPException):
@@ -604,6 +707,48 @@ async def cancel_job(job_id: str):
             },
             ReturnValues="UPDATED_NEW"
         )
+        
+        # Create notification for job cancellation
+        try:
+            print(f"[TatkalPro][Notification] Creating job cancellation notification for user {existing_job['user_id']}")
+            
+            # Format job type for notification
+            job_type_display = {
+                JobType.TATKAL.value: "Tatkal",
+                JobType.PREMIUM_TATKAL.value: "Premium Tatkal",
+                JobType.GENERAL.value: "General"
+            }.get(existing_job.get('job_type', 'Booking'), "Booking")
+            
+            # Format origin and destination for notification
+            origin = existing_job.get('origin_station_code', '')
+            destination = existing_job.get('destination_station_code', '')
+            journey_date = existing_job.get('journey_date', '')
+            
+            # Create notification message
+            notification_title = f"Booking Job Cancelled"
+            notification_message = f"Your {job_type_display} booking job from {origin} to {destination} for {journey_date} has been cancelled."
+            
+            # Create notification with job details
+            notification_id = asyncio.run(create_notification(
+                user_id=existing_job['user_id'],
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.BOOKING,
+                reference_id=job_id,
+                metadata={
+                    "event": "job_cancelled",
+                    "job_id": job_id,
+                    "job_type": existing_job.get('job_type'),
+                    "journey_date": journey_date,
+                    "origin": origin,
+                    "destination": destination
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Job cancellation notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating job cancellation notification: {notif_err}")
+            # Don't fail job cancellation if notification fails
         
         return {
             'job_id': job_id,

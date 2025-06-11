@@ -4,8 +4,13 @@ from datetime import datetime
 import boto3
 import os
 import json
+import asyncio
 from boto3.dynamodb.conditions import Key
 from pydantic import BaseModel
+
+# Import notification utilities
+from app.api.v1.utils.notification_utils import create_notification
+from app.schemas.notification import NotificationType
 
 # Import schemas from app.schemas.passenger
 from app.schemas.passenger import PassengerBase, PassengerCreate, Passenger
@@ -67,6 +72,43 @@ async def create_passenger(
     
     try:
         passengers_table.put_item(Item=passenger_item)
+        
+        # Create passenger notification
+        try:
+            print(f"[TatkalPro][Notification] Creating passenger notification for user {passenger.user_id}")
+            
+            # Create notification message
+            if is_update:
+                notification_title = "Passenger Details Updated"
+                notification_message = f"Passenger details for {passenger.name} have been updated successfully."
+                event_type = "passenger_updated"
+            else:
+                notification_title = "Passenger Added"
+                notification_message = f"New passenger {passenger.name} has been added to your account."
+                event_type = "passenger_created"
+            
+            # Create notification with passenger details
+            notification_id = asyncio.run(create_notification(
+                user_id=passenger.user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.ACCOUNT,
+                reference_id=passenger_id,
+                metadata={
+                    "event": event_type,
+                    "passenger_id": passenger_id,
+                    "passenger_name": passenger.name,
+                    "passenger_age": passenger.age,
+                    "passenger_gender": passenger.gender,
+                    "is_senior": passenger.is_senior
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Passenger notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating passenger notification: {notif_err}")
+            # Don't fail passenger creation if notification fails
+        
         return passenger_item
     except Exception as e:
         operation = "updating" if is_update else "creating"
@@ -105,7 +147,39 @@ async def delete_passenger(
         if response['Item']['user_id'] != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this passenger")
         
+        # Get passenger details for notification
+        passenger_name = response['Item'].get('name', 'Unknown')
+        
+        # Delete the passenger
         passengers_table.delete_item(Key={'id': passenger_id})
+        
+        # Create passenger deletion notification
+        try:
+            print(f"[TatkalPro][Notification] Creating passenger deletion notification for user {user_id}")
+            
+            # Create notification message
+            notification_title = "Passenger Removed"
+            notification_message = f"Passenger {passenger_name} has been removed from your account."
+            
+            # Create notification with passenger details
+            notification_id = asyncio.run(create_notification(
+                user_id=user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.ACCOUNT,
+                reference_id=passenger_id,
+                metadata={
+                    "event": "passenger_deleted",
+                    "passenger_id": passenger_id,
+                    "passenger_name": passenger_name
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Passenger deletion notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating passenger deletion notification: {notif_err}")
+            # Don't fail passenger deletion if notification fails
+        
         return None
     except HTTPException:
         raise

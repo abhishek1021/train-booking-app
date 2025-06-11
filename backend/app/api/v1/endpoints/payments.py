@@ -5,8 +5,13 @@ import boto3
 import os
 import json
 import uuid
+import asyncio
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
+
+# Import notification utilities
+from app.api.v1.utils.notification_utils import create_notification
+from app.schemas.notification import NotificationType
 
 # Import schemas
 from app.schemas.payment import PaymentBase, PaymentCreate, PaymentUpdate, Payment, PaymentStatus, PaymentMethod
@@ -40,6 +45,45 @@ async def create_payment(payment: PaymentCreate):
     try:
         # Save to DynamoDB
         payments_table.put_item(Item=payment_item)
+        
+        # Create payment notification
+        try:
+            print(f"[TatkalPro][Notification] Creating payment notification for user {payment.user_id}")
+            
+            # Format payment method for notification
+            payment_method_display = {
+                PaymentMethod.WALLET.value: "Wallet",
+                PaymentMethod.UPI.value: "UPI",
+                PaymentMethod.CREDIT_CARD.value: "Credit Card",
+                PaymentMethod.DEBIT_CARD.value: "Debit Card",
+                PaymentMethod.NET_BANKING.value: "Net Banking"
+            }.get(payment.payment_method.value, "Online Payment")
+            
+            # Create notification message
+            notification_title = "Payment Initiated"
+            notification_message = f"A payment of ₹{payment.amount} has been initiated using {payment_method_display}. Payment ID: {payment_id}"
+            
+            # Create notification with payment details
+            notification_id = asyncio.run(create_notification(
+                user_id=payment.user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.WALLET,
+                reference_id=payment_id,
+                metadata={
+                    "event": "payment_initiated",
+                    "payment_id": payment_id,
+                    "booking_id": payment.booking_id,
+                    "amount": str(payment.amount),
+                    "payment_method": payment.payment_method.value,
+                    "payment_status": PaymentStatus.PENDING.value
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Payment notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating payment notification: {notif_err}")
+            # Don't fail payment creation if notification fails
         
         # Convert to response model
         response = {**payment.dict(), 

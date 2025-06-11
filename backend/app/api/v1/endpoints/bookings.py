@@ -11,7 +11,12 @@ import sendgrid
 from sendgrid.helpers.mail import Mail
 import jinja2
 import pathlib
+import asyncio
 from typing import List, Dict, Any
+
+# Import notification utilities
+from app.api.v1.utils.notification_utils import create_notification
+from app.schemas.notification import NotificationType
 
 
 # Import schemas
@@ -256,6 +261,42 @@ async def create_booking(booking: BookingCreate):
         }
         
         bookings_table.put_item(Item=booking_item)
+        
+        # Create booking notification
+        try:
+            print(f"[TatkalPro][Notification] Creating booking notification for user {booking.user_id}")
+            
+            # Format origin and destination for notification
+            origin = booking.origin_station_code
+            destination = booking.destination_station_code
+            
+            # Create notification message
+            notification_title = f"Booking Confirmed: {origin} to {destination}"
+            notification_message = f"Your booking for {train_name} ({train_number}) from {origin} to {destination} on {booking.journey_date} has been confirmed. PNR: {pnr}"
+            
+            # Create notification with booking details
+            notification_id = asyncio.run(create_notification(
+                user_id=booking.user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.BOOKING,
+                reference_id=booking_id,
+                metadata={
+                    "event": "booking_created",
+                    "pnr": pnr,
+                    "train_number": train_number,
+                    "journey_date": booking.journey_date,
+                    "origin": origin,
+                    "destination": destination,
+                    "travel_class": booking.travel_class,
+                    "passenger_count": len(booking.passengers) if booking.passengers else 0
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Booking notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating booking notification: {notif_err}")
+            # Don't fail booking creation if notification fails
         
         # Send booking confirmation email if email is provided
         if booking.booking_email:

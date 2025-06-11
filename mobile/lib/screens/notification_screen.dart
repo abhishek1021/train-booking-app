@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:timeago/timeago.dart' as timeago;
+import '../config/api_config.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -95,8 +96,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     }
 
     try {
-      final baseUrl = 'http://localhost:8000'; // Replace with your API URL
-      final url = Uri.parse('$baseUrl/api/v1/notifications/user/$_userId');
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$_userId');
       
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
@@ -156,8 +156,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     });
 
     try {
-      final baseUrl = 'http://localhost:8000'; // Replace with your API URL
-      final url = Uri.parse('$baseUrl/api/v1/notifications/user/$_userId?last_evaluated_key=$_lastEvaluatedKey');
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$_userId?last_evaluated_key=$_lastEvaluatedKey');
       
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
@@ -202,8 +201,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   // Mark a notification as read
   Future<void> _markAsRead(String notificationId) async {
     try {
-      final baseUrl = 'http://localhost:8000'; // Replace with your API URL
-      final url = Uri.parse('$baseUrl/api/v1/notifications/$notificationId/read?user_id=$_userId');
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/$notificationId/read?user_id=$_userId');
       
       final response = await http.patch(url);
 
@@ -226,8 +224,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   // Mark all notifications as read
   Future<void> _markAllAsRead() async {
     try {
-      final baseUrl = 'http://localhost:8000'; // Replace with your API URL
-      final url = Uri.parse('$baseUrl/api/v1/notifications/user/$_userId/read-all');
+      final url = Uri.parse('${ApiConfig.baseUrl}/notifications/user/$_userId/read-all');
       
       final response = await http.patch(url);
 
