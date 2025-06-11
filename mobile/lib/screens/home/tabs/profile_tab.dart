@@ -236,7 +236,9 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   );
                 }),
-                _menuItem(Icons.notifications, 'Notification', onTap: () {}),
+                _menuItem(Icons.notifications, 'Notification', onTap: () {
+                  Navigator.of(context).pushNamed('/notifications');
+                }),
                 _menuItem(Icons.security, 'Security', onTap: () {}),
                 _menuItem(Icons.language, 'Language',
                     trailing: Container(

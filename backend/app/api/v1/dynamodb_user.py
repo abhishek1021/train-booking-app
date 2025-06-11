@@ -6,6 +6,16 @@ from datetime import datetime
 import boto3
 import os
 import bcrypt
+import uuid
+import asyncio
+
+# Import wallet schema and functions
+from app.schemas.wallet import WalletCreate, WalletStatus
+from app.api.v1.endpoints.wallet import wallet_table
+
+# Import notification utilities
+from app.schemas.notification import NotificationType
+from app.api.v1.utils.notification_utils import create_notification
 
 # Load .env variables (for local dev)
 
@@ -14,7 +24,8 @@ import bcrypt
 region_name = os.getenv("AWS_REGION", "ap-south-1")  # Change if needed
 dynamodb = boto3.resource("dynamodb", region_name=region_name)
 users_table = dynamodb.Table("users")
-
+WALLET_TABLE = 'wallet'
+wallet_table = dynamodb.Table(WALLET_TABLE)
 
 class OtherAttributes(BaseModel):
     FullName: str
@@ -219,6 +230,84 @@ def create_user(user: UserCreateRequest):
         except Exception as e:
             print(f"[TatkalPro][Email] Unexpected error: {e}")
         # --- End Welcome Email Logic ---
+        
+        # --- Create Wallet for User ---
+        try:
+            print("[TatkalPro][Wallet] Creating wallet for new user...")
+            # Create wallet for the user directly without making an HTTP request
+            wallet_id = str(uuid.uuid4())
+            now = datetime.utcnow().isoformat()
+            
+            # Create wallet item
+            wallet_item = {
+                'PK': f"WALLET#{wallet_id}",
+                'SK': "METADATA",
+                'wallet_id': wallet_id,
+                'user_id': item["UserID"],
+                'balance': "0.0",  # Store as string for DynamoDB
+                'status': WalletStatus.ACTIVE.value,
+                'created_at': now,
+                'updated_at': now
+            }
+            
+            # Check if user already has a wallet (using a simple query)
+            # This is a simplified version of get_wallet_by_user_id function
+            response = wallet_table.query(
+                IndexName='user_id-index',
+                KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(item["UserID"]),
+                Limit=1
+            )
+            
+            if response.get('Items', []):
+                print(f"[TatkalPro][Wallet] User {item['UserID']} already has a wallet")
+                wallet_id = response['Items'][0]['wallet_id']
+            else:
+                # Save to DynamoDB
+                wallet_table.put_item(Item=wallet_item)
+                print(f"[TatkalPro][Wallet] Wallet created successfully: {wallet_id}")
+            
+            # Update user with wallet ID
+            users_table.update_item(
+                Key={"PK": item["PK"], "SK": item["SK"]},
+                UpdateExpression="SET wallet_id = :wallet_id",
+                ExpressionAttributeValues={
+                    ":wallet_id": wallet_id
+                }
+            )
+            item["wallet_id"] = wallet_id
+            print(f"[TatkalPro][Wallet] User updated with wallet ID: {wallet_id}")
+        except Exception as wallet_err:
+            print(f"[TatkalPro][Wallet] Error creating wallet: {wallet_err}")
+            # Don't fail user creation if wallet creation fails
+            # We can handle this separately or retry later
+        # --- End Create Wallet for User ---
+        
+        # --- Send Welcome Notification ---
+        try:
+            print("[TatkalPro][Notification] Sending welcome notification...")
+            # Create welcome notification
+            notification_message = f"Welcome to TatkalPro! Your account has been created successfully. We're excited to have you on board."
+            
+            # Use asyncio to run the async function
+            notification_id = asyncio.run(create_notification(
+                user_id=item["UserID"],
+                title="Welcome to TatkalPro!",
+                message=notification_message,
+                notification_type=NotificationType.ACCOUNT,
+                reference_id=item["UserID"],
+                metadata={
+                    "event": "user_signup",
+                    "email": item.get("Email"),
+                    "username": item.get("Username")
+                }
+            ))
+            
+            print(f"[TatkalPro][Notification] Welcome notification sent: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error sending welcome notification: {notif_err}")
+            # Don't fail user creation if notification fails
+        # --- End Send Welcome Notification ---
+        
         return {"message": "User created", "user": item}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

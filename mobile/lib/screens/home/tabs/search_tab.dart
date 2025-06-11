@@ -209,7 +209,9 @@ class _SearchTabState extends State<SearchTab> {
             SearchHeader(
               greeting: _getGreeting() + _getGreetingEmoji(),
               username: _toCamelCase(username),
-              onNotificationTap: () {},
+              onNotificationTap: () {
+                Navigator.of(context).pushNamed('/notifications');
+              },
             ),
             // Overlapping search card
             Transform.translate(
