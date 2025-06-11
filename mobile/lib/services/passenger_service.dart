@@ -103,15 +103,21 @@ class PassengerService {
   // Delete a favorite passenger
   Future<void> deleteFavoritePassenger(String passengerId) async {
     try {
+      // Get the user ID - required by the API
+      final userId = _userId;
+      if (userId == null || userId.isEmpty) {
+        throw Exception('User ID not found');
+      }
+      
       final response = await http.delete(
-        Uri.parse('$_baseUrl/passengers/$passengerId'),
+        Uri.parse('$_baseUrl/passengers/$passengerId?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
         },
       );
 
-      if (response.statusCode != 204) {
-        throw Exception('Failed to delete favorite passenger');
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception('Failed to delete passenger: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error: $e');

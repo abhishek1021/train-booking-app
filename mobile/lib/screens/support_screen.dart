@@ -54,17 +54,30 @@ class _SupportScreenState extends State<SupportScreen> {
           context: context,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
-            title: const Row(
+            contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+            title: Column(
               children: [
-                Icon(Icons.check_circle, color: Color(0xFF7C3AED)),
-                SizedBox(width: 8),
-                Text(
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Color(0xFF7C3AED),
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
                   'Ticket Submitted',
                   style: TextStyle(
                     fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
+                    fontSize: 20,
                     color: Color(0xFF7C3AED),
                   ),
                 ),
@@ -72,46 +85,72 @@ class _SupportScreenState extends State<SupportScreen> {
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'Your support ticket has been submitted successfully. Our team will get back to you within 24 hours.',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'ProductSans',
                     fontSize: 16,
+                    height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Ticket ID: SUP${DateTime.now().millisecondsSinceEpoch.toString().substring(5, 13)}',
-                  style: const TextStyle(
-                    fontFamily: 'ProductSans',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3EEFF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Ticket ID: SUP${DateTime.now().millisecondsSinceEpoch.toString().substring(5, 13)}',
+                    style: const TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF7C3AED),
+                    ),
                   ),
                 ),
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Clear form fields
-                  _nameController.clear();
-                  _emailController.clear();
-                  _subjectController.clear();
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Clear form fields
+                    _nameController.clear();
+                    _emailController.clear();
+                    _subjectController.clear();
+                    _messageController.clear();
+                    setState(() {
+                      _selectedIssueType = null;
+                    });
                   _messageController.clear();
                   setState(() {
                     _selectedIssueType = null;
                   });
-                },
-                child: const Text(
-                  'OK',
-                  style: TextStyle(
-                    fontFamily: 'ProductSans',
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7C3AED),
-                    fontSize: 16,
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
@@ -125,19 +164,14 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+        backgroundColor: const Color(0xFF7C3AED),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.transparent,
         title: const Text(
           'Customer Support',
           style: TextStyle(
@@ -147,60 +181,72 @@ class _SupportScreenState extends State<SupportScreen> {
             fontSize: 20,
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                  height: 50), // Top padding as per design guidelines
-              _buildSupportOptions(),
-              const SizedBox(height: 24),
-              _buildContactForm(),
-              const SizedBox(height: 24),
-              _buildFAQSection(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _buildSupportOptions(),
+            _buildContactForm(),
+            _buildFAQSection(),
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildSupportOptions() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E2D),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Row(
               children: [
-                Icon(
-                  Icons.contact_support,
-                  color: Color(0xFF7C3AED),
-                  size: 24,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.contact_support,
+                    color: Color(0xFF7C3AED),
+                    size: 24,
+                  ),
                 ),
-                SizedBox(width: 8),
-                Text(
+                const SizedBox(width: 12),
+                const Text(
                   'How Can We Help You?',
                   style: TextStyle(
                     fontFamily: 'ProductSans',
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Color(0xFF7C3AED),
+                    color: Colors.white,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildQuickSupportOption(
@@ -217,7 +263,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   },
                 ),
                 _buildQuickSupportOption(
-                  icon: Icons.chat,
+                  icon: Icons.chat_bubble_outline,
                   label: 'Live Chat',
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -231,7 +277,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   },
                 ),
                 _buildQuickSupportOption(
-                  icon: Icons.email,
+                  icon: Icons.email_outlined,
                   label: 'Email',
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -245,8 +291,8 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -256,60 +302,81 @@ class _SupportScreenState extends State<SupportScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF7C3AED).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF7C3AED),
-              size: 28,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'ProductSans',
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Color(0xFF7C3AED),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 90,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A2A3A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: const Color(0xFF7C3AED),
+                size: 24,
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildContactForm() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(
-                    Icons.message,
-                    color: Color(0xFF7C3AED),
-                    size: 24,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.message_outlined,
+                      color: Color(0xFF7C3AED),
+                      size: 24,
+                    ),
                   ),
-                  SizedBox(width: 8),
-                  Text(
+                  const SizedBox(width: 12),
+                  const Text(
                     'Submit a Ticket',
                     style: TextStyle(
                       fontFamily: 'ProductSans',
@@ -320,7 +387,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               // Issue Type Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedIssueType,
@@ -329,9 +396,10 @@ class _SupportScreenState extends State<SupportScreen> {
                   labelStyle: const TextStyle(
                     fontFamily: 'ProductSans',
                     color: Colors.black54,
+                    fontSize: 15,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -340,9 +408,13 @@ class _SupportScreenState extends State<SupportScreen> {
                     horizontal: 16,
                     vertical: 16,
                   ),
-                  prefixIcon: const Icon(
-                    Icons.category,
-                    color: Color(0xFF7C3AED),
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(
+                      Icons.category_outlined,
+                      color: Color(0xFF7C3AED),
+                      size: 22,
+                    ),
                   ),
                 ),
                 items: _issueTypes.map((type) {
@@ -378,9 +450,10 @@ class _SupportScreenState extends State<SupportScreen> {
                   labelStyle: const TextStyle(
                     fontFamily: 'ProductSans',
                     color: Colors.black54,
+                    fontSize: 15,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -389,9 +462,13 @@ class _SupportScreenState extends State<SupportScreen> {
                     horizontal: 16,
                     vertical: 16,
                   ),
-                  prefixIcon: const Icon(
-                    Icons.person,
-                    color: Color(0xFF7C3AED),
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(
+                      Icons.person_outline,
+                      color: Color(0xFF7C3AED),
+                      size: 22,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -411,9 +488,10 @@ class _SupportScreenState extends State<SupportScreen> {
                   labelStyle: const TextStyle(
                     fontFamily: 'ProductSans',
                     color: Colors.black54,
+                    fontSize: 15,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -422,9 +500,13 @@ class _SupportScreenState extends State<SupportScreen> {
                     horizontal: 16,
                     vertical: 16,
                   ),
-                  prefixIcon: const Icon(
-                    Icons.email,
-                    color: Color(0xFF7C3AED),
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(
+                      Icons.email_outlined,
+                      color: Color(0xFF7C3AED),
+                      size: 22,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -446,9 +528,10 @@ class _SupportScreenState extends State<SupportScreen> {
                   labelStyle: const TextStyle(
                     fontFamily: 'ProductSans',
                     color: Colors.black54,
+                    fontSize: 15,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -457,9 +540,13 @@ class _SupportScreenState extends State<SupportScreen> {
                     horizontal: 16,
                     vertical: 16,
                   ),
-                  prefixIcon: const Icon(
-                    Icons.subject,
-                    color: Color(0xFF7C3AED),
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(
+                      Icons.subject,
+                      color: Color(0xFF7C3AED),
+                      size: 22,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -479,9 +566,10 @@ class _SupportScreenState extends State<SupportScreen> {
                   labelStyle: const TextStyle(
                     fontFamily: 'ProductSans',
                     color: Colors.black54,
+                    fontSize: 15,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -491,11 +579,12 @@ class _SupportScreenState extends State<SupportScreen> {
                     vertical: 16,
                   ),
                   alignLabelWithHint: true,
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(bottom: 80),
-                    child: Icon(
-                      Icons.message,
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 80),
+                    child: const Icon(
+                      Icons.message_outlined,
                       color: Color(0xFF7C3AED),
+                      size: 22,
                     ),
                   ),
                 ),
@@ -512,14 +601,16 @@ class _SupportScreenState extends State<SupportScreen> {
               const SizedBox(height: 24),
               // Submit Button
               SizedBox(
-                height: 50,
+                height: 52,
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitTicket,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isSubmitting
@@ -568,25 +659,41 @@ class _SupportScreenState extends State<SupportScreen> {
       },
     ];
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
-                  Icons.help_outline,
-                  color: Color(0xFF7C3AED),
-                  size: 24,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.help_outline,
+                    color: Color(0xFF7C3AED),
+                    size: 24,
+                  ),
                 ),
-                SizedBox(width: 8),
-                Text(
+                const SizedBox(width: 12),
+                const Text(
                   'Frequently Asked Questions',
                   style: TextStyle(
                     fontFamily: 'ProductSans',
@@ -597,7 +704,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ...faqs
                 .map((faq) => _buildFAQItem(faq['question']!, faq['answer']!))
                 .toList(),
@@ -608,31 +715,42 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Widget _buildFAQItem(String question, String answer) {
-    return ExpansionTile(
-      title: Text(
-        question,
-        style: const TextStyle(
-          fontFamily: 'ProductSans',
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Colors.black87,
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F7FF),
+        borderRadius: BorderRadius.circular(12),
       ),
-      iconColor: const Color(0xFF7C3AED),
-      collapsedIconColor: const Color(0xFF7C3AED),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            answer,
-            style: const TextStyle(
-              fontFamily: 'ProductSans',
-              fontSize: 14,
-              color: Colors.black54,
-            ),
+      child: ExpansionTile(
+        shape: const RoundedRectangleBorder(side: BorderSide.none),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        title: Text(
+          question,
+          style: const TextStyle(
+            fontFamily: 'ProductSans',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Colors.black87,
           ),
         ),
-      ],
+        iconColor: const Color(0xFF7C3AED),
+        collapsedIconColor: const Color(0xFF7C3AED),
+        childrenPadding: const EdgeInsets.only(bottom: 16),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              answer,
+              style: const TextStyle(
+                fontFamily: 'ProductSans',
+                fontSize: 15,
+                color: Colors.black54,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

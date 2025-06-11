@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:ui';
 import '../../profile/profile_screen.dart';
 import '../../saved_passengers_screen.dart';
+import '../../payment_methods_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -227,7 +228,14 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   );
                 }),
-                _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {}),
+                _menuItem(Icons.credit_card, 'Payment Methods', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaymentMethodsScreen(),
+                    ),
+                  );
+                }),
                 _menuItem(Icons.notifications, 'Notification', onTap: () {}),
                 _menuItem(Icons.security, 'Security', onTap: () {}),
                 _menuItem(Icons.language, 'Language',

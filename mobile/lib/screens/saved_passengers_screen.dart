@@ -565,6 +565,7 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.w500,
+                                color:Colors.black,
                               ),
                             ),
                           ],
@@ -584,6 +585,7 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                               style: TextStyle(
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.w500,
+                                color:Colors.black,
                               ),
                             ),
                           ],
@@ -738,30 +740,175 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
 
   // Show delete confirmation dialog
   void _showDeleteConfirmation(String passengerId) {
+    // Find passenger details to display in the dialog
+    final passenger = _passengers.firstWhere(
+      (p) => p['id'] == passengerId || p['_id'] == passengerId,
+      orElse: () => {'name': 'this passenger'},
+    );
+    final passengerName = passenger['name'] ?? 'this passenger';
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Passenger'),
-        content: const Text('Are you sure you want to delete this passenger? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _deletePassenger(passengerId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Delete'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with warning icon
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF0F0),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5252).withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.delete_forever_rounded,
+                        color: Color(0xFFFF5252),
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Column(
+                  children: [
+                    Text(
+                      'Delete Passenger',
+                      style: const TextStyle(
+                        fontFamily: 'ProductSans',
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontSize: 16,
+                          color: Colors.black87,
+                          height: 1.5,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Are you sure you want to delete '),
+                          TextSpan(
+                            text: passengerName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
+                          const TextSpan(
+                            text: '? This action cannot be undone.',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              
+              // Action buttons
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  children: [
+                    // Cancel button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Cancel'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Delete button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await _deletePassenger(passengerId);
+                        },
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: const Text('Delete'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFFFF5252),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1009,6 +1156,15 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a name';
                             }
+                            if (value.length < 3) {
+                              return 'Name must be at least 3 characters';
+                            }
+                            if (value.length > 50) {
+                              return 'Name cannot exceed 50 characters';
+                            }
+                            if (!RegExp(r'^[a-zA-Z\s\.]+$').hasMatch(value)) {
+                              return 'Name can only contain letters, spaces and dots';
+                            }
                             return null;
                           },
                         ),
@@ -1066,9 +1222,26 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter age';
                             }
+                            if (!RegExp(r'^\d+$').hasMatch(value)) {
+                              return 'Age must contain only digits';
+                            }
                             final age = int.tryParse(value);
-                            if (age == null || age <= 0 || age > 120) {
-                              return 'Please enter a valid age';
+                            if (age == null) {
+                              return 'Please enter a valid number';
+                            }
+                            if (age <= 0) {
+                              return 'Age must be greater than 0';
+                            }
+                            if (age > 120) {
+                              return 'Age cannot exceed 120 years';
+                            }
+                            // Auto-check senior citizen checkbox if age >= 60
+                            if (age >= 60 && !isSenior) {
+                              Future.delayed(Duration.zero, () {
+                                setState(() {
+                                  isSenior = true;
+                                });
+                              });
                             }
                             return null;
                           },
@@ -1248,6 +1421,34 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter ID number';
                             }
+                            // Validate based on ID type
+                            switch (idType) {
+                              case 'Aadhar':
+                                if (!RegExp(r'^[0-9]{12}$').hasMatch(value)) {
+                                  return 'Aadhar must be exactly 12 digits';
+                                }
+                                break;
+                              case 'PAN':
+                                if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(value)) {
+                                  return 'PAN must be in format: ABCDE1234F';
+                                }
+                                break;
+                              case 'Passport':
+                                if (!RegExp(r'^[A-Z]{1}[0-9]{7}$').hasMatch(value)) {
+                                  return 'Passport must be in format: A1234567';
+                                }
+                                break;
+                              case 'Driving License':
+                                if (value.length < 8 || value.length > 16) {
+                                  return 'Driving License must be 8-16 characters';
+                                }
+                                break;
+                              case 'Voter ID':
+                                if (!RegExp(r'^[A-Z]{3}[0-9]{7}$').hasMatch(value)) {
+                                  return 'Voter ID must be in format: ABC1234567';
+                                }
+                                break;
+                            }
                             return null;
                           },
                         ),
@@ -1383,10 +1584,8 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                               };
                               
                               if (isEditing) {
-                                // Update existing passenger
-                                // Since there's no direct update method, we'll delete and re-add
-                                await _passengerService.deleteFavoritePassenger(passengerId);
-                                await _passengerService.addFavoritePassenger(passengerData);
+                                // Update existing passenger using the proper update method
+                                await _passengerService.updateFavoritePassenger(passengerId, passengerData);
                               } else {
                                 // Add new passenger
                                 await _passengerService.addFavoritePassenger(passengerData);
