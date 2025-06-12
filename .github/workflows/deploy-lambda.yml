@@ -36,9 +36,18 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-south-1
 
-    - name: Upload Lambda code to AWS
+    - name: Upload Lambda code to S3 and update Lambda
       run: |
+        # Create a unique S3 object key with timestamp
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        S3_KEY="lambda-deployments/tatkalpro-backend-$TIMESTAMP.zip"
+        
+        # Upload the zip to S3
+        aws s3 cp backend/lambda.zip s3://${{ secrets.LAMBDA_DEPLOYMENT_BUCKET }}/$S3_KEY
+        
+        # Update the Lambda function code from S3
         aws lambda update-function-code \
           --function-name tatkalpro-backend \
-          --zip-file fileb://backend/lambda.zip \
+          --s3-bucket ${{ secrets.LAMBDA_DEPLOYMENT_BUCKET }} \
+          --s3-key $S3_KEY \
           --region ap-south-1
