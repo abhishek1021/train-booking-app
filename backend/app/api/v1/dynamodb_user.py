@@ -68,6 +68,10 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class MobileLoginRequest(BaseModel):
+    mobile: str
+
+
 class UserUpdateRequest(BaseModel):
     FullName: Optional[str] = None
     Phone: Optional[str] = None
@@ -362,6 +366,49 @@ def login_user(login: UserLoginRequest):
         )
         # Remove sensitive info before returning
         user.pop("PasswordHash", None)
+        return {"message": "Login successful", "user": user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/v1/mobile/login")
+def mobile_login(login: MobileLoginRequest):
+    """Login user with mobile number"""
+    try:
+        # Scan the table to find a user with the given mobile number
+        # Note: In a production environment, consider creating a GSI on Phone attribute for better performance
+        response = users_table.scan(
+            FilterExpression="Phone = :phone",
+            ExpressionAttributeValues={
+                ":phone": login.mobile
+            }
+        )
+        
+        items = response.get('Items', [])
+        
+        # If no user found with this mobile number
+        if not items:
+            raise HTTPException(status_code=401, detail="No account found with this mobile number")
+        
+        # Get the first user (should be only one with this mobile)
+        user = items[0]
+        
+        # Update LastLoginAt
+        from datetime import datetime
+        
+        users_table.update_item(
+            Key={"PK": user["PK"], "SK": "PROFILE"},
+            UpdateExpression="SET LastLoginAt = :now",
+            ExpressionAttributeValues={
+                ":now": datetime.utcnow().isoformat()
+            },
+        )
+        
+        # Remove sensitive info before returning
+        user.pop("PasswordHash", None)
+        
         return {"message": "Login successful", "user": user}
     except HTTPException:
         raise

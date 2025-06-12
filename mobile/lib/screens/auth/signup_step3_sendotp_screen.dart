@@ -7,6 +7,7 @@ import 'package:train_booking_app/screens/auth/dialogs_error.dart';
 import '../../api_constants.dart';
 import 'create_new_account_email_screen.dart';
 import 'google_sign_in_service.dart';
+import 'package:train_booking_app/widgets/success_animation_dialog.dart';
 
 SnackBar customPurpleSnackbar(String message) {
   return SnackBar(
@@ -44,15 +45,21 @@ class SignupStep3SendOtpScreen extends StatefulWidget {
 
 class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
   bool _fromGoogle = false;
+  bool _fromLogin = false;
   String? _googleEmail;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map && args['fromGoogle'] == true) {
-      _fromGoogle = true;
-      _googleEmail = args['email'] as String?;
+    if (args is Map) {
+      if (args['fromGoogle'] == true) {
+        _fromGoogle = true;
+        _googleEmail = args['email'] as String?;
+      }
+      if (args['fromLogin'] == true) {
+        _fromLogin = true;
+      }
     }
   }
 
@@ -219,7 +226,67 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
               ),
             );
           }
+        } else if (_fromLogin) {
+          // For login flow, we need to check if the user exists and log them in
+          try {
+            // Show loading indicator
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(child: CircularProgressIndicator()),
+            );
+            
+            // Call API to check if user exists and get their profile
+            final loginUrl = Uri.parse('${ApiConstants.baseUrl}/api/v1/mobile/login');
+            final loginResponse = await http.post(
+              loginUrl,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'mobile': mobile,
+              }),
+            );
+            
+            // Remove loading indicator
+            Navigator.of(context).pop();
+            
+            if (loginResponse.statusCode == 200) {
+              final responseData = jsonDecode(loginResponse.body);
+              
+              // Store user profile and token in SharedPreferences
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('user_profile', jsonEncode(responseData['user']));
+              if (responseData['token'] != null) {
+                await prefs.setString('auth_token', responseData['token']);
+              }
+              
+              // Show success animation before navigating
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => SuccessAnimationDialog(
+                  message: 'Login Successful',
+                  onAnimationComplete: () {
+                    // Navigate to home screen after animation
+                    Navigator.pushReplacementNamed(context, '/home');
+                  },
+                ),
+              );
+            } else {
+              // Show error dialog if login failed
+              final detail = jsonDecode(loginResponse.body)['detail']?.toString() ?? 'Login failed';
+              showDialog(
+                context: context,
+                builder: (context) => WrongOtpDialog(error: detail),
+              );
+            }
+          } catch (e) {
+            showDialog(
+              context: context,
+              builder: (context) => WrongOtpDialog(error: 'Login error: ${e.toString()}'),
+            );
+          }
         } else {
+          // Continue with the regular signup flow
           Navigator.pushReplacementNamed(
             context,
             '/signup_step3_password',
@@ -252,8 +319,11 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/create_new_account_email', (route) => false);
+        if (_fromLogin) {
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/create_new_account_email', (route) => false);
+        }
         return false;
       },
       child: Scaffold(
@@ -277,38 +347,49 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                               IconButton(
                                 icon: const Icon(Icons.arrow_back,
                                     color: Colors.black),
-                                onPressed: () =>
-                                    Navigator.pushNamedAndRemoveUntil(
-                                        context,
-                                        '/create_new_account_email',
-                                        (route) => false),
+                                onPressed: () {
+                                if (_fromLogin) {
+                                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                                } else {
+                                  Navigator.pushNamedAndRemoveUntil(context, '/create_new_account_email', (route) => false);
+                                }
+                              },
                               ),
                               const SizedBox(width: 8),
-                              const Text('Step 3/4',
-                                  style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      fontSize: 15,
-                                      color: Colors.deepPurple)),
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: _SignupProgressBar(
-                                      currentStep: 3, totalSteps: 4),
+                              if (!_fromLogin)
+                                const Text('Step 3/4',
+                                    style: TextStyle(
+                                        fontFamily: 'ProductSans',
+                                        fontSize: 15,
+                                        color: Colors.deepPurple)),
+                              if (!_fromLogin)
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _SignupProgressBar(
+                                        currentStep: 3, totalSteps: 4),
+                                  ),
                                 ),
-                              ),
+                              if (_fromLogin)
+                                Expanded(
+                                  child: Container(),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          const Text('Verify Your Mobile Number',
-                              style: TextStyle(
+                          Text(
+                              _fromLogin ? 'Log in with Phone' : 'Verify Your Mobile Number',
+                              style: const TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 26,
                                   color: Colors.black)),
                           const SizedBox(height: 12),
-                          const Text(
-                              'A 6-digit code will be sent to your mobile. Enter it below to verify.',
-                              style: TextStyle(
+                          Text(
+                              _fromLogin 
+                                ? 'Enter your phone number to receive a verification code and log in to your account.' 
+                                : 'A 6-digit code will be sent to your mobile. Enter it below to verify.',
+                              style: const TextStyle(
                                   fontFamily: 'ProductSans',
                                   fontSize: 16,
                                   color: Colors.black87)),
@@ -523,7 +604,9 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                                         : Text(
                                             _otpSent
                                                 ? 'Verify OTP'
-                                                : 'Send OTP',
+                                                : _fromLogin 
+                                                  ? 'Send Verification Code'
+                                                  : 'Send OTP',
                                             style: const TextStyle(
                                               fontFamily: 'ProductSans',
                                               fontWeight: FontWeight.bold,

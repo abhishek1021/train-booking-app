@@ -5,6 +5,9 @@ import 'dart:ui';
 import '../../profile/profile_screen.dart';
 import '../../saved_passengers_screen.dart';
 import '../../payment_methods_screen.dart';
+import '../../help_center_screen.dart';
+import '../../privacy_policy_screen.dart';
+import '../../about_tatkal_pro_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -249,20 +252,32 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                       child: Text('English (US)', style: _trailingStyle),
                     )),
-                _menuItem(Icons.remove_red_eye, 'Dark Mode',
-                    trailing: Switch(
-                      value: false,
-                      onChanged: (_) {},
-                      activeColor: const Color(0xFF7C3AED),
-                      activeTrackColor: const Color(0xFFD8CCFF),
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.grey[300],
-                    )),
                 const SizedBox(height: 12),
                 _sectionHeader('About'),
-                _menuItem(Icons.help_outline, 'Help Center', onTap: () {}),
-                _menuItem(Icons.privacy_tip, 'Privacy Policy', onTap: () {}),
-                _menuItem(Icons.info_outline, 'About TatkalPro', onTap: () {}),
+                _menuItem(Icons.help_outline, 'Help Center', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpCenterScreen(),
+                    ),
+                  );
+                }),
+                _menuItem(Icons.privacy_tip, 'Privacy Policy', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                }),
+                _menuItem(Icons.info_outline, 'About TatkalPro', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AboutTatkalProScreen(),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
                 Container(
                   margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
