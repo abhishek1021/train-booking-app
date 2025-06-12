@@ -1,21 +1,26 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tatkalpro/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
+// Conditionally import Firebase packages only when not on web
+// This prevents build errors with firebase_messaging_web
+import 'package:firebase_core/firebase_core.dart' if (dart.library.html) 'package:tatkalpro/services/firebase_stub.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' if (dart.library.html) 'package:tatkalpro/services/firebase_stub.dart';
+
 // Handle background messages
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    print("Handling a background message: ${message.messageId}");
+  }
 }
 
 class NotificationService {
@@ -34,6 +39,12 @@ class NotificationService {
 
   // Initialize notification service
   Future<void> initialize() async {
+    // Skip initialization on web platform
+    if (kIsWeb) {
+      print('NotificationService: Skipping initialization on web platform');
+      return;
+    }
+    
     // Initialize Firebase
     await Firebase.initializeApp();
 
@@ -41,7 +52,7 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Request permission for iOS devices
-    if (Platform.isIOS) {
+    if (!kIsWeb && io.Platform.isIOS) {
       await _firebaseMessaging.requestPermission(
         alert: true,
         badge: true,
@@ -92,6 +103,8 @@ class NotificationService {
 
   // Handle foreground message
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    if (kIsWeb) return; // Skip on web platform
+    
     print('Got a message whilst in the foreground!');
     print('Message data: ${message.data}');
 
@@ -106,16 +119,18 @@ class NotificationService {
       );
       
       // Add to stream for UI updates
-      _notificationStreamController.add({
-        ...message.data,
-        'title': message.notification!.title,
-        'message': message.notification!.body,
-      });
+      final Map<String, dynamic> notificationData = Map<String, dynamic>.from(message.data);
+      notificationData['title'] = message.notification!.title;
+      notificationData['message'] = message.notification!.body;
+      
+      _notificationStreamController.add(notificationData);
     }
   }
 
   // Handle notification tap from FCM
   void _handleNotificationTapped(RemoteMessage message) {
+    if (kIsWeb) return; // Skip on web platform
+    
     print('Notification tapped: ${message.data}');
     _notificationStreamController.add(message.data);
   }

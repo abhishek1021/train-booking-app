@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tatkalpro/screens/splash_screen.dart';
 import 'package:tatkalpro/screens/pre_splash_screen.dart';
 import 'package:tatkalpro/screens/auth/login_screen.dart';
@@ -14,20 +14,30 @@ import 'package:tatkalpro/screens/auth/signup_step2_verify_email_screen.dart';
 import 'package:tatkalpro/screens/auth/signup_step3_password_screen.dart';
 import 'package:tatkalpro/screens/wallet_screen.dart';
 import 'package:tatkalpro/screens/notification_screen.dart';
-import 'package:tatkalpro/services/notification_service.dart';
-import 'package:tatkalpro/services/firebase_options.dart';
+// Import appropriate notification service based on platform
+import 'package:tatkalpro/services/notification_service.dart' if (dart.library.html) 'package:tatkalpro/services/notification_service_web.dart';
+
+// Import Firebase packages
+import 'package:firebase_core/firebase_core.dart';
+
+// Import Firebase options
+import 'package:tatkalpro/firebase_options.dart' if (dart.library.html) 'package:tatkalpro/firebase_options_web.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Initialize notification service
-  await NotificationService().initialize();
+  // Initialize Firebase only on mobile platforms
+  if (!kIsWeb) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Initialize notification service only on mobile platforms
+    await NotificationService().initialize();
+  } else {
+    print('Running on web platform - Firebase initialization skipped');
+  }
   
   runApp(
     Theme(

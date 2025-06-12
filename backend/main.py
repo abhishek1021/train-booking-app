@@ -23,8 +23,8 @@ except Exception as e:
     raise
 
 app = FastAPI(
-    title="Train Booking API",
-    description="Backend API for the Train Booking mobile app with IRCTC integration",
+    title="TatkalPro API",
+    description="Backend API for the TatkalPro app with IRCTC integration",
     version="1.0.0",
 )
 print(">>> FastAPI app created")
@@ -58,7 +58,7 @@ def health_check():
 @app.get("/")
 def root():
     print(">>> Root endpoint called")
-    return {"message": "Welcome to Train Booking API"}
+    return {"message": "Welcome to TatkalPro API"}
 
 # Mangum integration for AWS Lambda
 try:

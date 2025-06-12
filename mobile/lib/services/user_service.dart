@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class UserService {
   // Base URL for API calls
@@ -109,7 +110,24 @@ class UserService {
   }
   
   // Register FCM token for push notifications
-  Future<Map<String, dynamic>> registerFcmToken(String token) async {
+  Future<Map<String, dynamic>> registerFcmToken(String? token) async {
+    // Skip FCM token registration on web platform
+    if (kIsWeb) {
+      print('UserService: Skipping FCM token registration on web platform');
+      return {
+        'success': true,
+        'message': 'FCM token registration skipped on web platform'
+      };
+    }
+    
+    // Skip if token is null
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'FCM token is null'
+      };
+    }
+    
     final prefs = await SharedPreferences.getInstance();
     final userProfile = await getUserProfile();
     final userId = userProfile['user_id'];

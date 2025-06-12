@@ -13,9 +13,10 @@ dependencies:
   # riverpod: ^2.0.0
   flutter_secure_storage: ^8.0.0
   firebase_core: ^2.24.2
-  firebase_messaging: ^14.7.10
+  # Use a specific version of firebase_messaging that's compatible with js package
+  firebase_messaging: ^14.6.7
   flutter_local_notifications: ^15.1.1
-  js: ^0.6.7
+  js: ^0.6.5
   hive: ^2.0.0
   hive_flutter: ^1.1.0
   intl: ^0.18.0
