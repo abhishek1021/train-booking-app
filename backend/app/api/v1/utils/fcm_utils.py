@@ -2,9 +2,12 @@ import boto3
 import os
 import json
 import logging
-import requests
+import base64
+import tempfile
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -13,11 +16,39 @@ logger = logging.getLogger(__name__)
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "ap-south-1"))
 users_table = dynamodb.Table('users')
 
-# Firebase Cloud Messaging API URL
-FCM_URL = "https://fcm.googleapis.com/fcm/send"
-
-# Get Firebase Server Key from environment variable
-FCM_SERVER_KEY = os.getenv("FCM_SERVER_KEY", "")
+# Initialize Firebase Admin SDK
+try:
+    if not firebase_admin._apps:
+        # First, try to get base64-encoded credentials (for Lambda)
+        firebase_creds_base64 = os.getenv("FIREBASE_CREDENTIALS_BASE64")
+        
+        if firebase_creds_base64:
+            # Decode base64 credentials
+            firebase_creds_json = base64.b64decode(firebase_creds_base64).decode('utf-8')
+            
+            # Create a temporary file to store the credentials
+            with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp_file:
+                temp_file.write(firebase_creds_json.encode('utf-8'))
+                temp_file_path = temp_file.name
+            
+            # Initialize with the temporary file
+            cred = credentials.Certificate(temp_file_path)
+            firebase_admin.initialize_app(cred)
+            
+            # Clean up the temporary file
+            os.unlink(temp_file_path)
+            
+            logger.info("Firebase Admin SDK initialized successfully with base64 credentials")
+        else:
+            # Fallback to file path for local development
+            firebase_creds_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "./tatkalpro-14fdd-firebase-adminsdk-fbsvc-fafbd477b9.json")
+            cred = credentials.Certificate(firebase_creds_path)
+            firebase_admin.initialize_app(cred)
+            logger.info("Firebase Admin SDK initialized successfully with credential file")
+    else:
+        logger.info("Firebase Admin SDK already initialized")
+except Exception as e:
+    logger.error(f"Error initializing Firebase Admin SDK: {str(e)}")
 
 async def register_fcm_token(user_id: str, token: str) -> bool:
     """
@@ -86,7 +117,7 @@ async def send_push_notification(
     data: Optional[Dict[str, Any]] = None
 ) -> bool:
     """
-    Send a push notification to a user's devices
+    Send a push notification to a user's devices using Firebase Admin SDK
     
     Args:
         user_id: The user ID
@@ -97,10 +128,6 @@ async def send_push_notification(
     Returns:
         bool: True if successful, False otherwise
     """
-    if not FCM_SERVER_KEY:
-        logger.warning("FCM_SERVER_KEY not set, skipping push notification")
-        return False
-        
     try:
         # Get user's FCM tokens
         tokens = await get_user_fcm_tokens(user_id)
@@ -108,48 +135,51 @@ async def send_push_notification(
         if not tokens:
             logger.info(f"No FCM tokens found for user {user_id}")
             return False
-            
-        # Prepare notification payload
-        payload = {
-            "notification": {
-                "title": title,
-                "body": body,
-                "sound": "default",
-                "badge": "1",
-                "color": "#7C3AED",  # Purple color
-                "icon": "notification_icon"
-            },
-            "data": data or {},
-            "priority": "high"
-        }
+        
+        # Create notification
+        notification = messaging.Notification(
+            title=title,
+            body=body
+        )
+        
+        # Set Android-specific options
+        android_config = messaging.AndroidConfig(
+            notification=messaging.AndroidNotification(
+                icon="notification_icon",
+                color="#7C3AED",  # Purple color
+                sound="default"
+            ),
+            priority="high"
+        )
+        
+        # Set Apple-specific options
+        apns_config = messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    badge=1,
+                    sound="default"
+                )
+            )
+        )
         
         # Send to each token
         success = False
         for token in tokens:
-            fcm_payload = {
-                "to": token,
-                **payload
-            }
-            
-            response = requests.post(
-                FCM_URL,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"key={FCM_SERVER_KEY}"
-                },
-                data=json.dumps(fcm_payload)
+            message = messaging.Message(
+                notification=notification,
+                android=android_config,
+                apns=apns_config,
+                data=data or {},
+                token=token
             )
             
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('success', 0) > 0:
-                    success = True
-                    logger.info(f"Successfully sent push notification to user {user_id}")
-                else:
-                    logger.warning(f"FCM returned success but no messages were sent: {result}")
-            else:
-                logger.error(f"Error sending push notification: {response.text}")
-                
+            try:
+                response = messaging.send(message)
+                success = True
+                logger.info(f"Successfully sent push notification to user {user_id}, message ID: {response}")
+            except Exception as e:
+                logger.error(f"Error sending push notification to token {token}: {str(e)}")
+        
         return success
     except Exception as e:
         logger.error(f"Error sending push notification to user {user_id}: {str(e)}")
