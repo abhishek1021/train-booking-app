@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "649375767812",
+    "project_id": "tatkalpro-14fdd",
+    "storage_bucket": "tatkalpro-14fdd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:649375767812:android:d8a2602f8f8ad562ad4451",
+        "android_client_info": {
+          "package_name": "com.example.tatkalpro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEhpQCZri5FitW5jvrplfLcp5T1C2Hbg8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,34 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
-import 'package:train_booking_app/screens/splash_screen.dart';
-import 'package:train_booking_app/screens/pre_splash_screen.dart';
-import 'package:train_booking_app/screens/auth/login_screen.dart';
-import 'package:train_booking_app/screens/home/home_screen.dart';
-import 'package:train_booking_app/screens/welcome_screen.dart';
-import 'package:train_booking_app/screens/auth/login_with_email_screen.dart';
-import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
-import 'package:train_booking_app/screens/auth/signup_step1_email_screen.dart';
-import 'package:train_booking_app/screens/auth/signup_step3_sendotp_screen.dart';
-import 'package:train_booking_app/screens/auth/signup_step2_verify_email_screen.dart';
-import 'package:train_booking_app/screens/auth/signup_step3_password_screen.dart';
-import 'package:train_booking_app/screens/wallet_screen.dart';
-import 'package:train_booking_app/screens/notification_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:tatkalpro/screens/splash_screen.dart';
+import 'package:tatkalpro/screens/pre_splash_screen.dart';
+import 'package:tatkalpro/screens/auth/login_screen.dart';
+import 'package:tatkalpro/screens/home/home_screen.dart';
+import 'package:tatkalpro/screens/welcome_screen.dart';
+import 'package:tatkalpro/screens/auth/login_with_email_screen.dart';
+import 'package:tatkalpro/screens/auth/create_new_account_email_screen.dart';
+import 'package:tatkalpro/screens/auth/signup_step1_email_screen.dart';
+import 'package:tatkalpro/screens/auth/signup_step3_sendotp_screen.dart';
+import 'package:tatkalpro/screens/auth/signup_step2_verify_email_screen.dart';
+import 'package:tatkalpro/screens/auth/signup_step3_password_screen.dart';
+import 'package:tatkalpro/screens/wallet_screen.dart';
+import 'package:tatkalpro/screens/notification_screen.dart';
+import 'package:tatkalpro/services/notification_service.dart';
+import 'package:tatkalpro/services/firebase_options.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Initialize notification service
+  await NotificationService().initialize();
+  
   runApp(
     Theme(
       data: ThemeData(fontFamily: 'ProductSans'),
-      child: TrainBookingApp(),
+      child: TatkalProApp(),
     ),
   );
 }
 
-class TrainBookingApp extends StatefulWidget {
+class TatkalProApp extends StatefulWidget {
   @override
-  State<TrainBookingApp> createState() => _TrainBookingAppState();
+  State<TatkalProApp> createState() => _TatkalProAppState();
 }
 
-class _TrainBookingAppState extends State<TrainBookingApp> {
+class _TatkalProAppState extends State<TatkalProApp> {
   bool _isLoading = true;
 
   @override
@@ -38,8 +52,42 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
   }
 
   Future<void> _initializeApp() async {
-    // Simulate loading resources, auth, etc.
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Simulate loading resources, auth, etc.
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Listen for notification events
+      NotificationService().notificationStream.listen((notificationData) {
+        // Handle notification tap
+        print('Notification tapped: $notificationData');
+        
+        // Navigate to appropriate screen based on notification type
+        if (notificationData.containsKey('notification_type')) {
+          String type = notificationData['notification_type'];
+          switch (type) {
+            case 'booking':
+              if (notificationData.containsKey('reference_id')) {
+                // Navigate to booking details
+                // Navigator.of(context).pushNamed('/booking-details', arguments: notificationData['reference_id']);
+              } else {
+                Navigator.of(context).pushNamed('/notifications');
+              }
+              break;
+            case 'wallet':
+              Navigator.of(context).pushNamed('/wallet');
+              break;
+            default:
+              Navigator.of(context).pushNamed('/notifications');
+              break;
+          }
+        } else {
+          Navigator.of(context).pushNamed('/notifications');
+        }
+      });
+    } catch (e) {
+      print('Error initializing app: $e');
+    }
+    
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -51,7 +99,7 @@ class _TrainBookingAppState extends State<TrainBookingApp> {
   Widget build(BuildContext context) {
     return NeumorphicApp(
       debugShowCheckedModeBanner: false,
-      title: 'Train Booking App',
+      title: 'TatkalPro',
       theme: const NeumorphicThemeData(
         baseColor: Color(0xFF6C3DD8), // purple base
         accentColor: Color(0xFF9C27B0), // purple accent

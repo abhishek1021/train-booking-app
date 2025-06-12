@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'google_sign_in_service.dart';
-import 'package:train_booking_app/screens/auth/dialogs_error.dart';
-import 'package:train_booking_app/widgets/success_animation_dialog.dart';
+import 'package:tatkalpro/screens/auth/dialogs_error.dart';
+import 'package:tatkalpro/widgets/success_animation_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);

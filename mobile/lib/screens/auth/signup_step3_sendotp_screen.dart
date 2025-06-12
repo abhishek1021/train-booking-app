@@ -3,11 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:country_picker/country_picker.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:train_booking_app/screens/auth/dialogs_error.dart';
+import 'package:tatkalpro/screens/auth/dialogs_error.dart';
 import '../../api_constants.dart';
 import 'create_new_account_email_screen.dart';
 import 'google_sign_in_service.dart';
-import 'package:train_booking_app/widgets/success_animation_dialog.dart';
+import 'package:tatkalpro/widgets/success_animation_dialog.dart';
 
 SnackBar customPurpleSnackbar(String message) {
   return SnackBar(

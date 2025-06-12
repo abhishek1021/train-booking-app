@@ -100,7 +100,57 @@ class UserService {
         };
       }
     } catch (e) {
-      throw Exception('Error updating profile: $e');
+      print('Error updating profile: $e');
+      return {
+        'success': false,
+        'message': 'Error updating profile: $e'
+      };
+    }
+  }
+  
+  // Register FCM token for push notifications
+  Future<Map<String, dynamic>> registerFcmToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userProfile = await getUserProfile();
+    final userId = userProfile['user_id'];
+    
+    if (userId == null) {
+      return {
+        'success': false,
+        'message': 'User ID not found'
+      };
+    }
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/$userId/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'token': token
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        print('FCM token registered successfully');
+        return {
+          'success': true,
+          'message': 'FCM token registered successfully'
+        };
+      } else {
+        print('Failed to register FCM token: ${response.statusCode} - ${response.body}');
+        return {
+          'success': false,
+          'message': 'Failed to register FCM token: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      print('Error registering FCM token: $e');
+      return {
+        'success': false,
+        'message': 'Error registering FCM token: $e'
+      };
     }
   }
 }

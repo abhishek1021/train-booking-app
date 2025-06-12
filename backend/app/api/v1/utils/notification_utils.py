@@ -1,11 +1,18 @@
 import boto3
 import os
 import uuid
+import logging
+from typing import Dict, Any, Optional, List
 from datetime import datetime
-from typing import Optional, Dict, Any
 
-# Import notification schemas
+# Import schemas
 from app.schemas.notification import NotificationType, NotificationStatus
+
+# Import FCM utilities
+from app.api.v1.utils.fcm_utils import send_push_notification
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # DynamoDB resource
 region_name = os.getenv("AWS_REGION", "ap-south-1")
@@ -19,7 +26,8 @@ async def create_notification(
     message: str,
     notification_type: NotificationType,
     reference_id: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
+    send_push: bool = True
 ) -> str:
     """
     Create a notification for a user
@@ -31,6 +39,7 @@ async def create_notification(
         notification_type: Type of notification (account, booking, wallet, system, promotion)
         reference_id: Optional ID of related entity (booking_id, wallet_transaction_id, etc.)
         metadata: Optional additional data related to the notification
+        send_push: Whether to send a push notification (default: True)
         
     Returns:
         notification_id: ID of the created notification
@@ -62,10 +71,37 @@ async def create_notification(
     try:
         # Save to DynamoDB
         notifications_table.put_item(Item=notification_item)
-        print(f"[Notification] Created notification {notification_id} for user {user_id}")
+        logger.info(f"Created notification {notification_id} for user {user_id}")
+        
+        # Send push notification if requested
+        if send_push:
+            # Prepare data payload for FCM
+            push_data = {
+                'notification_id': notification_id,
+                'notification_type': notification_type.value,
+                'created_at': now
+            }
+            
+            # Add reference_id if available
+            if reference_id:
+                push_data['reference_id'] = reference_id
+                
+            # Send the push notification
+            push_sent = await send_push_notification(
+                user_id=user_id,
+                title=title,
+                body=message,
+                data=push_data
+            )
+            
+            if push_sent:
+                logger.info(f"Push notification sent for notification {notification_id}")
+            else:
+                logger.warning(f"Failed to send push notification for notification {notification_id}")
+        
         return notification_id
     except Exception as e:
-        print(f"[Notification] Error creating notification: {str(e)}")
+        logger.error(f"Error creating notification: {str(e)}")
         raise e
 
 

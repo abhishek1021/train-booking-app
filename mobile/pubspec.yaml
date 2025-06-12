@@ -1,6 +1,6 @@
-name: train_booking_app
+name: tatkalpro
 version: 1.0.0+1
-description: Indian Railways ticket booking app (IRCTC integration)
+description: TatkalPro - Indian Railways ticket booking app (IRCTC integration)
 environment:
   sdk: ">=3.0.0 <4.0.0"
 dependencies:
@@ -12,8 +12,10 @@ dependencies:
   flutter_svg: ^2.0.0
   # riverpod: ^2.0.0
   flutter_secure_storage: ^8.0.0
-  # firebase_core: ^2.0.0
-  # firebase_messaging: ^14.0.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^15.1.1
+  js: ^0.6.7
   hive: ^2.0.0
   hive_flutter: ^1.1.0
   intl: ^0.18.0

@@ -1,4 +1,4 @@
-# Train Booking App — Mobile (Flutter)
+# TatkalPro — Mobile (Flutter)
 
 A cross-platform Flutter app for searching, booking, and managing Indian Railways tickets via IRCTC API.
 

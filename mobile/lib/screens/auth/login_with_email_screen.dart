@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'dialogs_error.dart';
-import 'package:train_booking_app/widgets/success_animation_dialog.dart';
+import 'package:tatkalpro/widgets/success_animation_dialog.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
   const LoginWithEmailScreen({Key? key}) : super(key: key);

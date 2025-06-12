@@ -9,11 +9,11 @@ import '../../../screens/language_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:train_booking_app/api_constants.dart';
-import 'package:train_booking_app/screens/city_search_screen.dart';
-import 'package:train_booking_app/screens/train_search_results_screen.dart';
-import 'package:train_booking_app/screens/tatkal_mode_screen.dart';
-import 'package:train_booking_app/screens/tatkal_jobs_screen.dart';
+import 'package:tatkalpro/api_constants.dart';
+import 'package:tatkalpro/screens/city_search_screen.dart';
+import 'package:tatkalpro/screens/train_search_results_screen.dart';
+import 'package:tatkalpro/screens/tatkal_mode_screen.dart';
+import 'package:tatkalpro/screens/tatkal_jobs_screen.dart';
 import 'search_tab/search_header.dart';
 import 'search_tab/search_card.dart';
 import 'search_tab/quick_actions.dart';
@@ -1660,7 +1660,7 @@ class _SearchTabState extends State<SearchTab> {
           ),
           const SizedBox(height: 12),
           const Text(
-            '© 2025 Train Booking App. All rights reserved.',
+            '© 2025 TatkalPro. All rights reserved.',
             style: TextStyle(
               fontFamily: 'ProductSans',
               fontSize: 12,

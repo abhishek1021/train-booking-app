@@ -1,11 +1,11 @@
-# Train Booking App - Manual Test Script
+# TatkalPro - Manual Test Script
 
 ## Test Scenario: Book a train from SWV to MAO on May 28th
 
 This script provides step-by-step instructions to manually test the train booking flow with predefined inputs.
 
 ### Prerequisites
-- The Train Booking App should be running in Chrome or on a device
+- The TatkalPro app should be running in Chrome or on a device
 - You should have valid login credentials if required
 
 ### Test Steps

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:train_booking_app/utils/validators.dart';
+import 'package:tatkalpro/utils/validators.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
-import 'package:train_booking_app/screens/auth/create_new_account_email_screen.dart';
+import 'package:tatkalpro/screens/auth/create_new_account_email_screen.dart';
 
 class SignupStep3PasswordScreen extends StatefulWidget {
   const SignupStep3PasswordScreen({Key? key}) : super(key: key);

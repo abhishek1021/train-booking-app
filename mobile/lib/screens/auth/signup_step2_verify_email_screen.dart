@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:train_booking_app/utils/validators.dart';
-import 'package:train_booking_app/screens/auth/dialogs_error.dart';
+import 'package:tatkalpro/utils/validators.dart';
+import 'package:tatkalpro/screens/auth/dialogs_error.dart';
 import '../../api_constants.dart';
 
 SnackBar customPurpleSnackbar(String message) {

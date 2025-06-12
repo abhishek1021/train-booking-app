@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                   const SizedBox(height: 16),
                   NeumorphicText(
-                    'Train Booking App',
+                    'TatkalPro',
                     style: const NeumorphicStyle(
                       depth: 4,
                       color: Color(0xFF222831),

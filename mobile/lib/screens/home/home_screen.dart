@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:train_booking_app/screens/home/tabs/search_tab.dart';
-import 'package:train_booking_app/screens/home/tabs/my_bookings_screen.dart';
-import 'package:train_booking_app/screens/home/tabs/profile_tab.dart';
-import 'package:train_booking_app/screens/wallet_screen.dart';
+import 'package:tatkalpro/screens/home/tabs/search_tab.dart';
+import 'package:tatkalpro/screens/home/tabs/my_bookings_screen.dart';
+import 'package:tatkalpro/screens/home/tabs/profile_tab.dart';
+import 'package:tatkalpro/screens/wallet_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
