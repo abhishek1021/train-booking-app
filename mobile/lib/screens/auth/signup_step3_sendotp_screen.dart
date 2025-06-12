@@ -282,7 +282,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
           } catch (e) {
             showDialog(
               context: context,
-              builder: (context) => WrongOtpDialog(error: 'Login error: ${e.toString()}'),
+              builder: (context) => SignInFailedDialog(error: 'Login error: ${e.toString()}'),
             );
           }
         } else {

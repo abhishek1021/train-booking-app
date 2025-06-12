@@ -373,7 +373,7 @@ def login_user(login: UserLoginRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/v1/mobile/login")
+@router.post("/mobile/login")
 def mobile_login(login: MobileLoginRequest):
     """Login user with mobile number"""
     try:
