@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:marquee/marquee.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/passenger_service.dart';
@@ -7,6 +8,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../api_constants.dart';
 import 'package:country_picker/country_picker.dart';
+import 'terms_of_service_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -2066,8 +2069,17 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   fontWeight: FontWeight.bold,
                                   decoration: TextDecoration.underline,
                                 ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const TermsOfServiceScreen(),
+                                      ),
+                                    );
+                                  },
                               ),
-                              TextSpan(text: ', '),
+                              TextSpan(text: ' and '),
                               TextSpan(
                                 text: 'Privacy Policy',
                                 style: TextStyle(
@@ -2075,15 +2087,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
                                   fontWeight: FontWeight.bold,
                                   decoration: TextDecoration.underline,
                                 ),
-                              ),
-                              TextSpan(text: ', and '),
-                              TextSpan(
-                                text: 'Refund Policy',
-                                style: TextStyle(
-                                  color: Color(0xFF7C3AED),
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const PrivacyPolicyScreen(),
+                                      ),
+                                    );
+                                  },
                               ),
                               TextSpan(text: ' of TatkalPro.'),
                             ],

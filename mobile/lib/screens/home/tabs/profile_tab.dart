@@ -8,6 +8,7 @@ import '../../payment_methods_screen.dart';
 import '../../help_center_screen.dart';
 import '../../privacy_policy_screen.dart';
 import '../../about_tatkal_pro_screen.dart';
+import '../../terms_of_service_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -267,6 +268,14 @@ class _ProfileTabState extends State<ProfileTab> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                }),
+                _menuItem(Icons.gavel_rounded, 'Terms of Service', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TermsOfServiceScreen(),
                     ),
                   );
                 }),

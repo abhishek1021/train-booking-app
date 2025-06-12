@@ -89,8 +89,8 @@ class TransactionDetailsScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Simply pop back to previous screen
-            Navigator.of(context).pop();
+            // Always navigate to home screen
+            Navigator.of(context).pushReplacementNamed('/home');
           },
         ),
         title: const Text(

@@ -112,9 +112,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
               _buildParagraph(
                 'To ask questions or comment about this privacy policy and our privacy practices, contact us at:',
               ),
-              _buildContactInfo('Email: privacy@tatkalpro.com'),
-              _buildContactInfo('Phone: +91 1800-123-4567'),
-              _buildContactInfo('Address: 123 Tech Park, Bengaluru, Karnataka, India - 560001'),
+              _buildContactInfo('Email: privacy@tatkalpro.in'),
+              _buildContactInfo('Phone: +91 9326808458'),
+              _buildContactInfo('Address: Tatkal Pro Services. Green Life Pune Maharashtra 411057'),
               const SizedBox(height: 30),
             ],
           ),

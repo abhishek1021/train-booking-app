@@ -49,7 +49,14 @@ class _HomeScreenState extends State<HomeScreen> {
               '';
         } catch (e) {
           print('Error parsing user profile: $e');
+          // Redirect to welcome screen if profile can't be parsed
+          _redirectToWelcomeScreen();
+          return;
         }
+      } else {
+        // If user_profile doesn't exist, redirect to welcome screen
+        _redirectToWelcomeScreen();
+        return;
       }
 
       // If not found in profile, try other keys
@@ -69,6 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('Error loading user ID: $e');
     }
+  }
+
+  // Redirect to welcome screen if user is not logged in
+  void _redirectToWelcomeScreen() {
+    // Use Future.delayed to avoid calling setState during build
+    Future.delayed(Duration.zero, () {
+      Navigator.of(context).pushReplacementNamed('/welcome');
+    });
   }
 
   @override

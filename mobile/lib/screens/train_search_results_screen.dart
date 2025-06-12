@@ -48,6 +48,7 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
   Map<int, Map<String, int>> backendSeatCountsByCard = {};
   Map<int, Map<String, int>> backendPricesByCard = {};
   Map<int, GlobalKey<PriceBounceState>> priceKeys = {};
+  Map<int, bool> isBookingLoading = {}; // Track loading state for each train card
   ScrollController dateScrollController = ScrollController();
   Map<int, ScrollController> classScrollControllers = {};
   Map<int, bool> showLeftArrow = {};
@@ -601,6 +602,12 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                           setState(() {
                             expandedCardIdx =
                                 expandedCardIdx == idx ? null : idx;
+                            
+                            // Initialize loading state when accordion is expanded
+                            if (expandedCardIdx == idx) {
+                              isBookingLoading[idx] = false;
+                            }
+                            
                             print('Accordion tapped. expandedCardIdx: '
                                 '\x1B[32m$expandedCardIdx\x1B[0m'); // Debug print, shows in green in console
                           });
@@ -1098,57 +1105,80 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
                                                                   idx]] ??
                                                           0) >
                                                       0
-                                                  ? () {
-                                                      // Navigate to passenger details screen
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              PassengerDetailsScreen(
-                                                            train: train,
-                                                            origin: origin,
-                                                            destination:
-                                                                destination,
-                                                            originName:
-                                                                originName,
-                                                            destinationName:
-                                                                destinationName,
-                                                            date: selectedDate
-                                                                .toString()
-                                                                .split(' ')[0],
-                                                            selectedClass:
-                                                                selectedClassByCard[
-                                                                        idx] ??
-                                                                    '',
-                                                            price: train[
-                                                                        'class_prices']
-                                                                    ?[
-                                                                    selectedClassByCard[
-                                                                        idx]] ??
-                                                                0,
-                                                            seatCount: train[
-                                                                        'seat_availability']
-                                                                    ?[
-                                                                    selectedClassByCard[
-                                                                        idx]] ??
-                                                                0,
-                                                            passengers: widget
-                                                                .passengers,
+                                                  ? () async {
+                                                      // Set loading state
+                                                      setState(() {
+                                                        isBookingLoading[idx] = true;
+                                                      });
+                                                      
+                                                      try {
+                                                        // Navigate to passenger details screen
+                                                        await Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                PassengerDetailsScreen(
+                                                              train: train,
+                                                              origin: origin,
+                                                              destination:
+                                                                  destination,
+                                                              originName:
+                                                                  originName,
+                                                              destinationName:
+                                                                  destinationName,
+                                                              date: selectedDate
+                                                                  .toString()
+                                                                  .split(' ')[0],
+                                                              selectedClass:
+                                                                  selectedClassByCard[
+                                                                          idx] ??
+                                                                      '',
+                                                              price: train[
+                                                                          'class_prices']
+                                                                      ?[
+                                                                      selectedClassByCard[
+                                                                          idx]] ??
+                                                                  0,
+                                                              seatCount: train[
+                                                                          'seat_availability']
+                                                                      ?[
+                                                                      selectedClassByCard[
+                                                                          idx]] ??
+                                                                  0,
+                                                              passengers: widget
+                                                                  .passengers,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
-                                                    }
+                                                        );
+                                                      } finally {
+                                                        // Reset loading state if the widget is still mounted
+                                                        if (mounted) {
+                                                          setState(() {
+                                                            isBookingLoading[idx] = false;
+                                                          });
+                                                        }
+                                                      }
+                                                  }
                                                   : null,
                                               child: Center(
-                                                child: Text(
-                                                  'Book Now',
-                                                  style: TextStyle(
-                                                    fontFamily: 'ProductSans',
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
+                                                child: isBookingLoading[idx] == true
+                                                    ? SizedBox(
+                                                        height: 24,
+                                                        width: 24,
+                                                        child: CircularProgressIndicator(
+                                                          color: Colors.white,
+                                                          strokeWidth: 2.5,
+                                                        ),
+                                                      )
+                                                    : Text(
+                                                        'Book Now',
+                                                        style: TextStyle(
+                                                          fontFamily: 'ProductSans',
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
                                               ),
                                             ),
                                           ),
