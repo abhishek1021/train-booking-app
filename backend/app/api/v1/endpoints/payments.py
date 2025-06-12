@@ -64,7 +64,7 @@ async def create_payment(payment: PaymentCreate):
             notification_message = f"A payment of ₹{payment.amount} has been initiated using {payment_method_display}. Payment ID: {payment_id}"
             
             # Create notification with payment details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=payment.user_id,
                 title=notification_title,
                 message=notification_message,
@@ -78,7 +78,7 @@ async def create_payment(payment: PaymentCreate):
                     "payment_method": payment.payment_method.value,
                     "payment_status": PaymentStatus.PENDING.value
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Payment notification created: {notification_id}")
         except Exception as notif_err:

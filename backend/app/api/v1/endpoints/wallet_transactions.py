@@ -8,6 +8,10 @@ import uuid
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
+# Import notification utilities
+from app.api.v1.utils.notification_utils import create_notification
+from app.schemas.notification import NotificationType
+
 # Import schemas
 from app.schemas.wallet_transaction import (
     WalletTransactionBase, WalletTransactionCreate, WalletTransactionUpdate, 
@@ -178,6 +182,62 @@ async def create_transaction(transaction: WalletTransactionCreate):
             except Exception as e:
                 # Log the error but don't fail the transaction
                 print(f"Error updating payment after wallet transaction: {str(e)}")
+        
+        # Create wallet transaction notification
+        try:
+            print(f"[TatkalPro][Notification] Creating wallet transaction notification for user {transaction.user_id}")
+            
+            # Format transaction type and source for notification
+            transaction_type_display = {
+                TransactionType.CREDIT.value: "Credit",
+                TransactionType.DEBIT.value: "Debit"
+            }.get(transaction.type.value, "Transaction")
+            
+            transaction_source_display = {
+                TransactionSource.BOOKING.value: "Booking Payment",
+                TransactionSource.REFUND.value: "Refund",
+                TransactionSource.WALLET_TOPUP.value: "Wallet Top-up",
+                TransactionSource.ADMIN.value: "Admin Adjustment"
+            }.get(transaction.source.value, "Transaction")
+            
+            # Format amount with currency symbol
+            amount_display = f"₹{transaction.amount}"
+            
+            # Create notification message based on transaction type
+            if transaction.type == TransactionType.CREDIT:
+                notification_title = f"Wallet Credited"
+                notification_message = f"Your wallet has been credited with {amount_display}. Source: {transaction_source_display}."
+                if transaction.notes:
+                    notification_message += f" Note: {transaction.notes}"
+            else:  # DEBIT
+                notification_title = f"Wallet Debited"
+                notification_message = f"Your wallet has been debited with {amount_display}. Purpose: {transaction_source_display}."
+                if transaction.notes:
+                    notification_message += f" Note: {transaction.notes}"
+            
+            # Create notification with transaction details
+            notification_id = await create_notification(
+                user_id=transaction.user_id,
+                title=notification_title,
+                message=notification_message,
+                notification_type=NotificationType.WALLET,
+                reference_id=txn_id,
+                metadata={
+                    "event": "wallet_transaction",
+                    "txn_id": txn_id,
+                    "wallet_id": transaction.wallet_id,
+                    "transaction_type": transaction.type.value,
+                    "transaction_source": transaction.source.value,
+                    "amount": str(transaction.amount),
+                    "reference_id": transaction.reference_id,
+                    "new_balance": str(new_balance)
+                }
+            )
+            
+            print(f"[TatkalPro][Notification] Wallet transaction notification created: {notification_id}")
+        except Exception as notif_err:
+            print(f"[TatkalPro][Notification] Error creating wallet transaction notification: {notif_err}")
+            # Don't fail transaction if notification fails
         
         # Convert to response model
         response = {**transaction.dict(), 

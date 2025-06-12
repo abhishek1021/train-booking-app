@@ -88,7 +88,7 @@ async def create_passenger(
                 event_type = "passenger_created"
             
             # Create notification with passenger details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=passenger.user_id,
                 title=notification_title,
                 message=notification_message,
@@ -102,7 +102,7 @@ async def create_passenger(
                     "passenger_gender": passenger.gender,
                     "is_senior": passenger.is_senior
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Passenger notification created: {notification_id}")
         except Exception as notif_err:
@@ -162,7 +162,7 @@ async def delete_passenger(
             notification_message = f"Passenger {passenger_name} has been removed from your account."
             
             # Create notification with passenger details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=user_id,
                 title=notification_title,
                 message=notification_message,
@@ -173,7 +173,7 @@ async def delete_passenger(
                     "passenger_id": passenger_id,
                     "passenger_name": passenger_name
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Passenger deletion notification created: {notification_id}")
         except Exception as notif_err:

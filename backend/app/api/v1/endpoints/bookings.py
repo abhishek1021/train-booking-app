@@ -275,7 +275,7 @@ async def create_booking(booking: BookingCreate):
             notification_message = f"Your booking for {train_name} ({train_number}) from {origin} to {destination} on {booking.journey_date} has been confirmed. PNR: {pnr}"
             
             # Create notification with booking details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=booking.user_id,
                 title=notification_title,
                 message=notification_message,
@@ -291,7 +291,7 @@ async def create_booking(booking: BookingCreate):
                     "travel_class": booking.travel_class,
                     "passenger_count": len(booking.passengers) if booking.passengers else 0
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Booking notification created: {notification_id}")
         except Exception as notif_err:

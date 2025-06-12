@@ -136,7 +136,7 @@ async def create_job(job: JobCreate):
             notification_message = f"Your {job_type_display} booking job from {job.origin_station_code} to {job.destination_station_code} for {job.journey_date} has been scheduled."
             
             # Create notification with job details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=job.user_id,
                 title=notification_title,
                 message=notification_message,
@@ -152,7 +152,7 @@ async def create_job(job: JobCreate):
                     "travel_class": job.travel_class,
                     "passenger_count": len(job.passengers) if job.passengers else 0
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Job notification created: {notification_id}")
         except Exception as notif_err:
@@ -588,7 +588,7 @@ async def update_job(job_id: str, job_update: JobUpdate):
                 notification_message = f"Your {job_type_display} booking job ({job_id}) has been updated. Changes: {', '.join(notification_details)}"
                 
                 # Create notification with job details
-                notification_id = asyncio.run(create_notification(
+                notification_id = await create_notification(
                     user_id=updated_item['user_id'],
                     title=notification_title,
                     message=notification_message,
@@ -600,7 +600,7 @@ async def update_job(job_id: str, job_update: JobUpdate):
                         "job_type": updated_item.get('job_type'),
                         "updated_fields": [field for field in job_update.__dict__ if job_update.__dict__[field] is not None]
                     }
-                ))
+                )
                 
                 print(f"[TatkalPro][Notification] Job update notification created: {notification_id}")
         except Exception as notif_err:
@@ -729,7 +729,7 @@ async def cancel_job(job_id: str):
             notification_message = f"Your {job_type_display} booking job from {origin} to {destination} for {journey_date} has been cancelled."
             
             # Create notification with job details
-            notification_id = asyncio.run(create_notification(
+            notification_id = await create_notification(
                 user_id=existing_job['user_id'],
                 title=notification_title,
                 message=notification_message,
@@ -743,7 +743,7 @@ async def cancel_job(job_id: str):
                     "origin": origin,
                     "destination": destination
                 }
-            ))
+            )
             
             print(f"[TatkalPro][Notification] Job cancellation notification created: {notification_id}")
         except Exception as notif_err:
