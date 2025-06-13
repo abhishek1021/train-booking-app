@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'dart:convert';
 import '../models/passenger.dart';
+import '../services/booking_service.dart';
+import '../widgets/success_animation_dialog.dart';
+import '../widgets/failure_animation_dialog.dart';
 
-class TransactionDetailsScreen extends StatelessWidget {
+class TransactionDetailsScreen extends StatefulWidget {
   // ... fields as before ...
 
   // Helper to build the QR data as JSON
@@ -69,7 +72,45 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.paymentMethod,
     required this.passengers,
   }) : super(key: key);
+  
+  @override
+  State<TransactionDetailsScreen> createState() => _TransactionDetailsScreenState();
 
+}
+
+class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
+  final BookingService _bookingService = BookingService();
+  bool _isLoading = false;
+  bool _isCancelled = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Check if the booking is already cancelled
+    _isCancelled = widget.status.toLowerCase() == 'cancelled';
+  }
+  
+  // Helper to build the QR data as JSON
+  String _buildQrData() {
+    // Use a compact, flat string for QR code reliability
+    final passengerNames = widget.passengers
+        .map((p) => p.fullName.isNotEmpty ? p.fullName : 'Passenger')
+        .join('|');
+    final passengerSeats =
+        widget.passengers.map((p) => p.seat.isNotEmpty ? p.seat : 'B2-34').join('|');
+    // Compose a compact string (pipe-separated)
+    return [
+      widget.bookingId,
+      widget.trainName,
+      widget.trainClass,
+      widget.departureStation,
+      widget.arrivalStation,
+      widget.departureDate,
+      passengerNames,
+      passengerSeats
+    ].join(';');
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +164,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    bookingId,
+                    widget.bookingId,
                     style: const TextStyle(
                       fontFamily: 'ProductSans',
                       fontWeight: FontWeight.bold,
@@ -197,7 +238,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              trainName,
+                              widget.trainName,
                               style: const TextStyle(
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.bold,
@@ -207,7 +248,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Class: $trainClass',
+                              'Class: ${widget.trainClass}',
                               style: const TextStyle(
                                 fontFamily: 'ProductSans',
                                 fontWeight: FontWeight.w500,
@@ -228,7 +269,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            departureStation,
+                            widget.departureStation,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
@@ -238,7 +279,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            departureTime,
+                            widget.departureTime,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
@@ -247,7 +288,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            departureDate,
+                            widget.departureDate,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontSize: 12,
@@ -260,7 +301,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                         children: [
                           const Icon(Icons.train, color: Color(0xFF7C3AED)),
                           Text(
-                            duration,
+                            widget.duration,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontSize: 12,
@@ -273,7 +314,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            arrivalStation,
+                            widget.arrivalStation,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
@@ -283,7 +324,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            arrivalTime,
+                            widget.arrivalTime,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontWeight: FontWeight.bold,
@@ -292,7 +333,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            arrivalDate,
+                            widget.arrivalDate,
                             style: const TextStyle(
                               fontFamily: 'ProductSans',
                               fontSize: 12,
@@ -319,13 +360,13 @@ class TransactionDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _paymentRow('Price (Adult x 1)', price),
-                  _paymentRow('Tax', tax),
+                  _paymentRow('Price (Adult x 1)', widget.price),
+                  _paymentRow('Tax', widget.tax),
                   const Divider(),
-                  _paymentRow('Total Price', totalPrice, bold: true),
+                  _paymentRow('Total Price', widget.totalPrice, bold: true),
                   const SizedBox(height: 12),
-                  _statusRow(status),
-                  _infoRow('Payment Method', paymentMethod),
+                  _statusRow(widget.status),
+                  _infoRow('Payment Method', widget.paymentMethod),
                 ],
               ),
             ),
@@ -341,7 +382,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (int i = 0; i < passengers.length; i++) ...[
+                  for (int i = 0; i < widget.passengers.length; i++) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(10),
@@ -371,20 +412,20 @@ class TransactionDetailsScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           _infoRow(
                               'Full Name',
-                              (passengers[i].fullName.isNotEmpty
-                                  ? passengers[i].fullName
+                              (widget.passengers[i].fullName.isNotEmpty
+                                  ? widget.passengers[i].fullName
                                   : 'Passenger ${i + 1}')),
-                          _infoRow('ID Type', passengers[i].idType),
-                          _infoRow('ID Number', passengers[i].idNumber),
+                          _infoRow('ID Type', widget.passengers[i].idType),
+                          _infoRow('ID Number', widget.passengers[i].idNumber),
                           _infoRow(
                               'Passenger Type',
-                              (passengers[i].passengerType.isNotEmpty
-                                  ? passengers[i].passengerType
+                              (widget.passengers[i].passengerType.isNotEmpty
+                                  ? widget.passengers[i].passengerType
                                   : 'Adult')),
                           _infoRow(
                               'Seat',
-                              (passengers[i].seat.isNotEmpty
-                                  ? passengers[i].seat
+                              (widget.passengers[i].seat.isNotEmpty
+                                  ? widget.passengers[i].seat
                                   : 'B2-${34 + i}')),
                         ],
                       ),
@@ -394,11 +435,19 @@ class TransactionDetailsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _actionButton(context, 'Order Train Food', Icons.fastfood),
-            const SizedBox(height: 8),
-            _actionButton(context, 'Re-Schedule Ticket', Icons.schedule),
-            const SizedBox(height: 8),
-            _actionButton(context, 'Cancel Ticket', Icons.cancel),
+            // Only showing the cancel button
+
+            // Only show cancel button if the journey date hasn't passed and booking isn't already cancelled
+            _actionButton(
+              context, 
+              'Cancel Ticket', 
+              Icons.cancel, 
+              isDestructive: true,
+              isDisabled: _isJourneyDatePassed() || _isCancelled,
+              onPressed: _isJourneyDatePassed() || _isCancelled ? null : () {
+                _showCancelConfirmationDialog();
+              }
+            ),
           ],
         ),
       ),
@@ -474,6 +523,119 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
+  bool _isJourneyDatePassed() {
+    try {
+      final journeyDate = DateTime.parse(widget.departureDate);
+      final now = DateTime.now();
+      return journeyDate.isBefore(now);
+    } catch (e) {
+      print('Error parsing journey date: $e');
+      return false;
+    }
+  }
+  
+  void _showCancelConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Booking'),
+          content: const Text('Are you sure you want to cancel this booking? The refund will be credited to your wallet.'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No', style: TextStyle(color: Colors.black87)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _cancelBooking();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Future<void> _cancelBooking() async {
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+          ),
+        );
+      },
+    );
+    
+    try {
+      // Call the cancel booking API
+      final result = await _bookingService.cancelBooking(widget.bookingId);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Update state to reflect cancellation
+      setState(() {
+        _isLoading = false;
+        _isCancelled = true;
+      });
+      
+      // Show success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return SuccessAnimationDialog(
+            message: 'Booking cancelled successfully! ₹${result['refund_amount']} has been credited to your wallet.',
+            onAnimationComplete: () {
+              // Navigate back to refresh the booking list
+              Navigator.of(context).pop();
+            },
+          );
+        },
+      );
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Reset loading state
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Show error dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return FailureAnimationDialog(
+            message: 'Failed to cancel booking. Please try again later.',
+            onAnimationComplete: () {},
+          );
+        },
+      );
+      
+      print('Error cancelling booking: $e');
+    }
+  }
+  
   Widget _infoRow(String label, String value, {bool copyable = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -518,19 +680,27 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(BuildContext context, String label, IconData icon) {
+  Widget _actionButton(BuildContext context, String label, IconData icon, {VoidCallback? onPressed, bool isDestructive = false, bool isDisabled = false}) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-          ),
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+        decoration: BoxDecoration(
+          gradient: isDisabled
+              ? const LinearGradient(
+                  colors: [Colors.grey, Colors.grey],
+                )
+              : isDestructive
+                  ? const LinearGradient(
+                      colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                    ),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
         ),
         child: ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: isDisabled ? null : onPressed,
           style: ElevatedButton.styleFrom(
             elevation: 0,
             backgroundColor: Colors.transparent,

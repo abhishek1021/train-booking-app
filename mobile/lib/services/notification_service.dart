@@ -32,8 +32,11 @@ class NotificationService {
   final StreamController<Map<String, dynamic>> _notificationStreamController =
       StreamController<Map<String, dynamic>>.broadcast();
 
-  Stream<Map<String, dynamic>> get notificationStream => 
-      _notificationStreamController.stream;
+  // Access to the notification stream
+  Stream<Map<String, dynamic>> get notificationStream => _notificationStreamController.stream;
+
+  // Global key for accessing scaffold messenger for in-app notifications
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   // Initialize notification service
   Future<void> initialize() async {
@@ -57,6 +60,15 @@ class NotificationService {
         sound: true,
       );
     }
+    
+    // Request permission for Android devices (Android 13+)
+    if (!kIsWeb && io.Platform.isAndroid) {
+      await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
 
     // Configure FCM message handling
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -64,6 +76,13 @@ class NotificationService {
 
     // Register FCM token
     await _registerToken();
+    
+    // Show a test notification after a short delay in debug mode
+    if (kDebugMode) {
+      Future.delayed(const Duration(seconds: 3), () {
+        showTestNotification();
+      });
+    }
   }
 
 
@@ -83,6 +102,22 @@ class NotificationService {
       notificationData['message'] = message.notification!.body;
       
       _notificationStreamController.add(notificationData);
+      
+      // Display notification using our custom method
+      if (!kIsWeb) {
+        try {
+          print('NOTIFICATION: ${message.notification!.title} - ${message.notification!.body}');
+          
+          // Show notification using custom method
+          await showNotification(
+            title: message.notification!.title ?? 'New Notification',
+            body: message.notification!.body ?? '',
+            data: message.data,
+          );
+        } catch (e) {
+          print('Error showing notification: $e');
+        }
+      }
     }
   }
 
@@ -92,6 +127,12 @@ class NotificationService {
     
     print('Notification tapped: ${message.data}');
     _notificationStreamController.add(message.data);
+  }
+  
+  // Handle tapped notification from UI
+  void handleTappedNotification(Map<String, dynamic> notification) {
+    print('Notification tapped from UI: $notification');
+    _notificationStreamController.add(notification);
   }
 
 
@@ -144,14 +185,14 @@ class NotificationService {
       final userProfile = json.decode(userProfileJson);
       
       // First try to get email as the primary identifier (based on your DynamoDB structure)
-      String? userId = userProfile['Email'] ?? '';
+      String userId = userProfile['Email'] as String? ?? '';
       
       // If email not found, fall back to UserID
       if (userId.isEmpty) {
-        userId = userProfile['UserID'] ?? 
-                userProfile['userId'] ?? 
-                userProfile['user_id'] ?? 
-                userProfile['id'] ?? 
+        userId = userProfile['UserID'] as String? ?? 
+                userProfile['userId'] as String? ?? 
+                userProfile['user_id'] as String? ?? 
+                userProfile['id'] as String? ?? 
                 '';
         
         // Check if the ID has a USER# prefix and remove it for the API call
@@ -176,12 +217,12 @@ class NotificationService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'token': token,
-          // Include additional info to help with debugging
-          'device_info': {
+          // Include additional info as a string to avoid type errors
+          'device_info': jsonEncode({
             'platform': kIsWeb ? 'web' : io.Platform.operatingSystem,
             'app_version': '1.0.0',
             'timestamp': DateTime.now().toIso8601String(),
-          }
+          })
         }),
       );
       
@@ -199,9 +240,10 @@ class NotificationService {
         await prefs.setString('pending_fcm_token', token);
         
         // Try with UUID as fallback if we used email first
-        if (userId != userProfile['UserID'] && userProfile['UserID'] != null) {
+        final userUUID = userProfile['UserID'] as String?;
+        if (userId != userUUID && userUUID != null) {
           print('DEBUG: Trying fallback with UserID instead of Email');
-          final fallbackUrl = Uri.parse('${ApiConfig.baseUrl}/users/${userProfile['UserID']}/fcm-token');
+          final fallbackUrl = Uri.parse('${ApiConfig.baseUrl}/users/$userUUID/fcm-token');
           
           final fallbackResponse = await http.post(
             fallbackUrl,
@@ -231,18 +273,115 @@ class NotificationService {
   }) async {
     if (kIsWeb) return; // Skip on web platform
     
-    // We can't directly show notifications without flutter_local_notifications
-    // Instead, we'll add to the stream for UI components to handle
+    // Create notification data for the stream
     final Map<String, dynamic> notificationData = data ?? {};
     notificationData['title'] = title;
     notificationData['message'] = body;
+    notificationData['timestamp'] = DateTime.now().millisecondsSinceEpoch;
     
+    // Add to stream for UI components to handle
     _notificationStreamController.add(notificationData);
     print('Notification added to stream: $title - $body');
+    
+    // If scaffoldMessengerKey has a current state, show a snackbar
+    if (scaffoldMessengerKey.currentState != null) {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                body,
+                style: const TextStyle(color: Colors.white),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF7C3AED), // Purple color to match app theme
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'VIEW',
+            textColor: Colors.white,
+            onPressed: () {
+              // Handle notification tap
+              _notificationStreamController.add({
+                ...notificationData,
+                'tapped': true,
+              });
+            },
+          ),
+        ),
+      );
+    }
   }
 
   // Dispose resources
   void dispose() {
     _notificationStreamController.close();
+  }
+  
+  // Show a test notification for debugging purposes
+  Future<void> showTestNotification() async {
+    print('DEBUG: Showing test notification');
+    await showNotification(
+      title: 'Test Notification',
+      body: 'This is a test notification to verify that foreground notifications are working properly.',
+      data: {
+        'notification_type': 'test',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'test_id': 'debug-${math.Random().nextInt(10000)}'
+      },
+    );
+  }
+  
+  // Trigger a test notification with a specific type for debugging
+  Future<void> triggerTestNotification(String type) async {
+    print('DEBUG: Triggering test notification of type: $type');
+    
+    String title;
+    String body;
+    Map<String, dynamic> data = {
+      'notification_type': type,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'test_id': 'manual-${math.Random().nextInt(10000)}'
+    };
+    
+    switch (type) {
+      case 'booking':
+        title = 'Booking Confirmed';
+        body = 'Your train booking has been confirmed. Tap to view details.';
+        data['reference_id'] = 'PNR${math.Random().nextInt(10000000)}';
+        break;
+      case 'wallet':
+        title = 'Wallet Updated';
+        body = 'Your wallet has been credited with ₹500. Tap to check balance.';
+        data['amount'] = 500;
+        break;
+      case 'alert':
+        title = 'Price Alert';
+        body = 'Prices for your saved route have dropped. Book now!';
+        data['route'] = 'Delhi to Mumbai';
+        break;
+      default:
+        title = 'Test Notification';
+        body = 'This is a test notification of type: $type';
+    }
+    
+    await showNotification(
+      title: title,
+      body: body,
+      data: data,
+    );
   }
 }

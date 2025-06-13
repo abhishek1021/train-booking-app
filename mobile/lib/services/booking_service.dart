@@ -376,6 +376,34 @@ class BookingService {
     }
   }
   
+  // Cancel a booking
+  Future<Map<String, dynamic>> cancelBooking(String bookingId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl${ApiConfig.bookingEndpoint}/$bookingId/cancel'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (kDebugMode) {
+        print('Cancel Booking API Response Status: ${response.statusCode}');
+        print('Cancel Booking API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to cancel booking: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error cancelling booking: $e');
+      }
+      throw Exception('Failed to cancel booking: $e');
+    }
+  }
+
   // Calculate price details including breakdown by passenger type
   Map<String, dynamic> _calculatePriceDetails(List<Passenger> passengers, double baseFare, double tax, double totalAmount) {
     // Count passengers by type

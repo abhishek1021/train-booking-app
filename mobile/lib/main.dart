@@ -16,6 +16,7 @@ import 'package:tatkalpro/screens/wallet_screen.dart';
 import 'package:tatkalpro/screens/notification_screen.dart';
 // Import appropriate notification service based on platform
 import 'package:tatkalpro/services/notification_service.dart' if (dart.library.html) 'package:tatkalpro/services/notification_service_web.dart';
+import 'package:tatkalpro/widgets/notification_overlay.dart';
 
 // Import Firebase packages
 import 'package:firebase_core/firebase_core.dart';
@@ -61,6 +62,9 @@ class _TatkalProAppState extends State<TatkalProApp> {
     _initializeApp();
   }
 
+  // Global navigator key for navigation from anywhere
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  
   Future<void> _initializeApp() async {
     try {
       // Simulate loading resources, auth, etc.
@@ -71,27 +75,30 @@ class _TatkalProAppState extends State<TatkalProApp> {
         // Handle notification tap
         print('Notification tapped: $notificationData');
         
-        // Navigate to appropriate screen based on notification type
-        if (notificationData.containsKey('notification_type')) {
-          String type = notificationData['notification_type'];
-          switch (type) {
-            case 'booking':
-              if (notificationData.containsKey('reference_id')) {
-                // Navigate to booking details
-                // Navigator.of(context).pushNamed('/booking-details', arguments: notificationData['reference_id']);
-              } else {
-                Navigator.of(context).pushNamed('/notifications');
-              }
-              break;
-            case 'wallet':
-              Navigator.of(context).pushNamed('/wallet');
-              break;
-            default:
-              Navigator.of(context).pushNamed('/notifications');
-              break;
+        // Only handle navigation if the notification was tapped
+        if (notificationData.containsKey('tapped') && notificationData['tapped'] == true) {
+          // Navigate to appropriate screen based on notification type
+          if (notificationData.containsKey('notification_type')) {
+            String type = notificationData['notification_type'];
+            switch (type) {
+              case 'booking':
+                if (notificationData.containsKey('reference_id')) {
+                  // Navigate to booking details
+                  _navigatorKey.currentState?.pushNamed('/notifications');
+                } else {
+                  _navigatorKey.currentState?.pushNamed('/notifications');
+                }
+                break;
+              case 'wallet':
+                _navigatorKey.currentState?.pushNamed('/wallet');
+                break;
+              default:
+                _navigatorKey.currentState?.pushNamed('/notifications');
+                break;
+            }
+          } else {
+            _navigatorKey.currentState?.pushNamed('/notifications');
           }
-        } else {
-          Navigator.of(context).pushNamed('/notifications');
         }
       });
     } catch (e) {
@@ -107,25 +114,40 @@ class _TatkalProAppState extends State<TatkalProApp> {
 
   @override
   Widget build(BuildContext context) {
-    return NeumorphicApp(
+    final notificationService = NotificationService();
+    
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TatkalPro',
-      theme: const NeumorphicThemeData(
-        baseColor: Color(0xFF6C3DD8), // purple base
-        accentColor: Color(0xFF9C27B0), // purple accent
-        variantColor: Colors.white,
-        lightSource: LightSource.topLeft,
-        depth: 10,
+      navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: notificationService.scaffoldMessengerKey,
+      theme: ThemeData(
+        primaryColor: const Color(0xFF7C3AED),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7C3AED),
+          primary: const Color(0xFF7C3AED),
+          secondary: const Color(0xFF9F7AEA),
+        ),
+        fontFamily: 'ProductSans',
+        scaffoldBackgroundColor: Colors.white,
       ),
-      darkTheme: const NeumorphicThemeData(
-        baseColor: Color(0xFF2D1457),
-        accentColor: Color(0xFF9C27B0),
-        variantColor: Colors.white,
-        lightSource: LightSource.topLeft,
-        depth: 6,
+      darkTheme: ThemeData(
+        primaryColor: const Color(0xFF2D1457),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2D1457),
+          primary: const Color(0xFF2D1457),
+          secondary: const Color(0xFF9C27B0),
+          brightness: Brightness.dark,
+        ),
+        fontFamily: 'ProductSans',
       ),
       themeMode: ThemeMode.system,
-      home: _isLoading ? const PreSplashScreen() : const WelcomeScreen(),
+      home: _isLoading 
+        ? const PreSplashScreen() 
+        : NotificationOverlay(child: const WelcomeScreen()),
+      builder: (context, child) {
+        return NotificationOverlay(child: child!);
+      },
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/welcome': (context) => const WelcomeScreen(),

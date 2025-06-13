@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../services/booking_service.dart';
+import '../widgets/success_animation_dialog.dart';
+import '../widgets/failure_animation_dialog.dart';
 
 class BookingDetailsScreen extends StatefulWidget {
   final String bookingId;
@@ -510,6 +512,18 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   }
 
   Widget _buildActionButtons() {
+    // Check if journey date has passed
+    bool isJourneyDatePassed = false;
+    if (_bookingDetails['journey_date'] != null) {
+      try {
+        final journeyDate = DateTime.parse(_bookingDetails['journey_date']);
+        final now = DateTime.now();
+        isJourneyDatePassed = journeyDate.isBefore(now);
+      } catch (e) {
+        print('Error parsing journey date: $e');
+      }
+    }
+    
     return Column(
       children: [
         _buildActionButton(
@@ -519,17 +533,106 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
             // Download ticket logic
           },
         ),
-        const SizedBox(height: 12),
-        _buildActionButton(
-          'Cancel Booking',
-          Icons.cancel_outlined,
-          onPressed: () {
-            // Cancel booking logic
-          },
-          isDestructive: true,
-        ),
+        if (!isJourneyDatePassed) ...[  // Only show cancel button for future journeys
+          const SizedBox(height: 12),
+          _buildActionButton(
+            'Cancel Booking',
+            Icons.cancel_outlined,
+            onPressed: () {
+              _showCancelConfirmationDialog();
+            },
+            isDestructive: true,
+          ),
+        ],
       ],
     );
+  }
+  
+  void _showCancelConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Booking'),
+          content: const Text('Are you sure you want to cancel this booking? The refund will be credited to your wallet.'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No', style: TextStyle(color: Colors.black87)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _cancelBooking();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Future<void> _cancelBooking() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+          ),
+        );
+      },
+    );
+    
+    try {
+      // Call the cancel booking API
+      final result = await _bookingService.cancelBooking(widget.bookingId);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return SuccessAnimationDialog(
+            message: 'Booking cancelled successfully! ₹${result['refund_amount']} has been credited to your wallet.',
+            onAnimationComplete: () {
+              // Refresh booking details to show updated status
+              _fetchBookingDetails();
+            },
+          );
+        },
+      );
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return FailureAnimationDialog(
+            message: 'Failed to cancel booking. Please try again later.',
+            onAnimationComplete: () {},
+          );
+        },
+      );
+      
+      print('Error cancelling booking: $e');
+    }
   }
 
   Widget _buildSectionCard({

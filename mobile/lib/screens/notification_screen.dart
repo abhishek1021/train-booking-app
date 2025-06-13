@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:timeago/timeago.dart' as timeago;
 import '../config/api_config.dart';
+import '../services/notification_service.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -253,21 +255,33 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   // Format the date for display
   String _formatDate(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
+      // Parse the UTC date from the string
+      final dateUtc = DateTime.parse(dateString);
       
-      if (difference.inDays < 1) {
-        // Use timeago for recent notifications
-        return timeago.format(date);
+      // Convert to IST (UTC+5:30)
+      final dateIst = dateUtc.add(const Duration(hours: 5, minutes: 30));
+      
+      // Get current time in IST
+      final now = DateTime.now();
+      final nowIst = now.add(const Duration(hours: 5, minutes: 30));
+      
+      final difference = nowIst.difference(dateIst);
+      
+      if (difference.inMinutes < 1) {
+        return 'Just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
       } else if (difference.inDays < 7) {
         // Show day of week for notifications within a week
-        return DateFormat('EEEE').format(date);
+        return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
       } else {
         // Show full date for older notifications
-        return DateFormat('MMM d, yyyy').format(date);
+        return DateFormat('dd MMM yyyy, hh:mm a').format(dateIst);
       }
     } catch (e) {
+      print('Error formatting date: $e');
       return 'Unknown date';
     }
   }
@@ -344,6 +358,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               icon: const Icon(Icons.done_all, color: Colors.white),
               onPressed: _markAllAsRead,
               tooltip: 'Mark all as read',
+            ),
+          // Debug menu in debug mode
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report, color: Colors.white),
+              onPressed: _showDebugOptions,
+              tooltip: 'Test Notifications',
             ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -638,6 +659,95 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             ),
           ),
         ],
+      ),
+    );
+  }
+  
+  // Show debug options for testing notifications
+  void _showDebugOptions() {
+    final notificationService = NotificationService();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Test Notifications', 
+          style: TextStyle(color: Color(0xFF7C3AED)),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Send a test notification to verify that the notification system is working properly.'),
+              const SizedBox(height: 16),
+              const Text('Choose notification type:', 
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildDebugButton(
+                context: context,
+                label: 'General Test',
+                onPressed: () {
+                  notificationService.showTestNotification();
+                  Navigator.pop(context);
+                },
+              ),
+              _buildDebugButton(
+                context: context,
+                label: 'Booking Confirmation',
+                onPressed: () {
+                  notificationService.triggerTestNotification('booking');
+                  Navigator.pop(context);
+                },
+              ),
+              _buildDebugButton(
+                context: context,
+                label: 'Wallet Update',
+                onPressed: () {
+                  notificationService.triggerTestNotification('wallet');
+                  Navigator.pop(context);
+                },
+              ),
+              _buildDebugButton(
+                context: context,
+                label: 'Price Alert',
+                onPressed: () {
+                  notificationService.triggerTestNotification('alert');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close', style: TextStyle(color: Color(0xFF7C3AED))),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Helper method to build consistent debug buttons
+  Widget _buildDebugButton({
+    required BuildContext context,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF7C3AED),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 44),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(label),
       ),
     );
   }

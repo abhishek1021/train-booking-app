@@ -1565,8 +1565,24 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           if (formKey.currentState!.validate()) {
+                            // Store form data before closing dialog
+                            final Map<String, dynamic> passengerData = {
+                              'name': nameController.text,
+                              'age': int.parse(ageController.text),
+                              'gender': gender,
+                              'id_type': idType,
+                              'id_number': idNumberController.text,
+                              'is_senior': isSenior,
+                            };
+                            
+                            // Store whether we're editing or adding
+                            final bool isEditingOperation = isEditing;
+                            final String passengerIdToUpdate = passengerId;
+                            
+                            // Close the dialog first
                             Navigator.pop(context);
                             
+                            // Now perform the operations
                             setState(() {
                               _isLoading = true;
                               _hasError = false;
@@ -1574,34 +1590,31 @@ class _SavedPassengersScreenState extends State<SavedPassengersScreen> {
                             });
                             
                             try {
-                              final Map<String, dynamic> passengerData = {
-                                'name': nameController.text,
-                                'age': int.parse(ageController.text),
-                                'gender': gender,
-                                'id_type': idType,
-                                'id_number': idNumberController.text,
-                                'is_senior': isSenior,
-                              };
-                              
-                              if (isEditing) {
-                                // Update existing passenger using the proper update method
-                                await _passengerService.updateFavoritePassenger(passengerId, passengerData);
+                              if (isEditingOperation) {
+                                // Update existing passenger
+                                await _passengerService.updateFavoritePassenger(passengerIdToUpdate, passengerData);
                               } else {
                                 // Add new passenger
                                 await _passengerService.addFavoritePassenger(passengerData);
                               }
                               
                               // Reload passengers list
-                              _loadPassengers();
+                              if (mounted) {
+                                _loadPassengers();
+                              }
                             } catch (e) {
-                              setState(() {
-                                _hasError = true;
-                                _errorMessage = 'Error: ${e.toString()}';
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  _hasError = true;
+                                  _errorMessage = 'Error: ${e.toString()}';
+                                });
+                              }
                             } finally {
-                              setState(() {
-                                _isLoading = false;
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
                             }
                           }
                         },

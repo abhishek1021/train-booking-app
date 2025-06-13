@@ -18,6 +18,11 @@ from typing import List, Dict, Any
 from app.api.v1.utils.notification_utils import create_notification
 from app.schemas.notification import NotificationType
 
+# Import wallet and transaction schemas and functions
+from app.schemas.wallet_transaction import WalletTransactionCreate, TransactionType, TransactionSource, TransactionStatus
+from app.api.v1.endpoints.wallet import get_wallet_by_user_id, update_wallet
+from app.api.v1.endpoints.wallet_transactions import create_transaction
+from app.schemas.wallet import WalletUpdate
 
 # Import schemas
 from app.schemas.booking import Booking, BookingCreate, BookingUpdate, BookingStatus
@@ -498,57 +503,197 @@ async def get_user_bookings(user_id: str, limit: int = 10):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving user bookings: {str(e)}"
+            detail=f"Error retrieving bookings: {str(e)}"
         )
 
-@router.get("/pnr/{pnr}", response_model=Booking)
-async def get_booking_by_pnr(pnr: str):
-    """Get booking details by PNR"""
+@router.post("/{booking_id}/cancel", status_code=status.HTTP_200_OK)
+async def cancel_booking(booking_id: str):
+    """Cancel a booking and refund the amount to user's wallet"""
     try:
-        response = bookings_table.query(
-            IndexName='pnr-index',
-            KeyConditionExpression=Key('pnr').eq(pnr),
-            Limit=1
+        # Get the booking details
+        response = bookings_table.get_item(
+            Key={
+                'PK': f"BOOKING#{booking_id}",
+                'SK': "METADATA"
+            }
         )
         
-        items = response.get('Items', [])
-        if not items:
+        if 'Item' not in response:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Booking with PNR {pnr} not found"
+                detail=f"Booking with ID {booking_id} not found"
             )
             
-        item = items[0]
+        booking_item = response['Item']
         
-        # Convert DynamoDB item to Booking model
-        booking_data = {
-            'booking_id': item['booking_id'],
-            'user_id': item['user_id'],
-            'train_id': item['train_id'],
-            'pnr': item['pnr'],
-            'booking_status': item['booking_status'],
-            'journey_date': item['journey_date'],
-            'origin_station_code': item['origin_station_code'],
-            'destination_station_code': item['destination_station_code'],
-            'travel_class': item['class'],
-            'fare': item['fare'],
-            'passengers': item['passengers'],
-            'payment_id': item.get('payment_id'),
-            'booking_email': item.get('booking_email'),
-            'booking_phone': item.get('booking_phone'),
-            'created_at': datetime.fromisoformat(item['created_at']),
-            'updated_at': datetime.fromisoformat(item['updated_at']),
-            'cancellation_details': item.get('cancellation_details'),
-            'refund_status': item.get('refund_status')
+        # Check if booking is already cancelled
+        if booking_item.get('booking_status') == BookingStatus.CANCELLED.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Booking is already cancelled"
+            )
+            
+        # Check if booking is already refunded
+        if booking_item.get('booking_status') == BookingStatus.REFUNDED.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Booking is already refunded"
+            )
+            
+        # Check if journey date has passed
+        try:
+            journey_date = datetime.strptime(booking_item.get('journey_date'), '%Y-%m-%d')
+            current_date = datetime.now()
+            
+            if journey_date.date() < current_date.date():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot cancel booking for past journey date"
+                )
+        except ValueError:
+            # If date parsing fails, continue with cancellation
+            pass
+        
+        # Get user ID from booking
+        user_id = booking_item.get('user_id')
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User ID not found in booking"
+            )
+            
+        # Get refund amount from booking
+        refund_amount = Decimal(booking_item.get('total_amount', booking_item.get('fare', '0')))
+        if refund_amount <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid refund amount: {refund_amount}"
+            )
+            
+        # Get user's wallet
+        try:
+            wallet = await get_wallet_by_user_id(user_id)
+            wallet_id = wallet.get('wallet_id')
+        except HTTPException as e:
+            if e.status_code == status.HTTP_404_NOT_FOUND:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Wallet not found for user {user_id}"
+                )
+            raise e
+            
+        # Update booking status to cancelled
+        now = datetime.utcnow().isoformat()
+        cancellation_details = {
+            'cancelled_at': now,
+            'refund_amount': str(refund_amount),
+            'refund_status': 'processed'
         }
         
-        return booking_data
+        # Update the booking
+        bookings_table.update_item(
+            Key={
+                'PK': f"BOOKING#{booking_id}",
+                'SK': "METADATA"
+            },
+            UpdateExpression="SET booking_status = :status, updated_at = :updated_at, cancellation_details = :cancellation_details",
+            ExpressionAttributeValues={
+                ':status': BookingStatus.CANCELLED.value,
+                ':updated_at': now,
+                ':cancellation_details': cancellation_details
+            }
+        )
+        
+        # Create wallet transaction for refund
+        transaction = WalletTransactionCreate(
+            wallet_id=wallet_id,
+            user_id=user_id,
+            type=TransactionType.CREDIT,
+            amount=refund_amount,
+            source=TransactionSource.REFUND,
+            reference_id=booking_id,
+            notes=f"Refund for cancelled booking {booking_id}"
+        )
+        
+        # Process the transaction
+        try:
+            transaction_result = await create_transaction(transaction)
+            
+            # Create notification for user
+            try:
+                # Format origin and destination for notification
+                origin = booking_item.get('origin_station_code', 'N/A')
+                destination = booking_item.get('destination_station_code', 'N/A')
+                train_name = booking_item.get('train_name', 'N/A')
+                train_number = booking_item.get('train_number', 'N/A')
+                journey_date = booking_item.get('journey_date', 'N/A')
+                pnr = booking_item.get('pnr', 'N/A')
+                
+                # Create notification message
+                notification_title = f"Booking Cancelled: {origin} to {destination}"
+                notification_message = f"Your booking for {train_name} ({train_number}) from {origin} to {destination} on {journey_date} has been cancelled. Refund of ₹{refund_amount} has been credited to your wallet. PNR: {pnr}"
+                
+                # Create notification with cancellation details
+                notification_id = await create_notification(
+                    user_id=user_id,
+                    title=notification_title,
+                    message=notification_message,
+                    notification_type=NotificationType.BOOKING,
+                    reference_id=booking_id,
+                    metadata={
+                        "event": "booking_cancelled",
+                        "pnr": pnr,
+                        "train_number": train_number,
+                        "journey_date": journey_date,
+                        "origin": origin,
+                        "destination": destination,
+                        "refund_amount": str(refund_amount)
+                    }
+                )
+                
+                print(f"[TatkalPro][Notification] Booking cancellation notification created: {notification_id}")
+            except Exception as notif_err:
+                print(f"[TatkalPro][Notification] Error creating cancellation notification: {notif_err}")
+                # Don't fail cancellation if notification fails
+            
+            return {
+                "status": "success",
+                "message": "Booking cancelled successfully",
+                "booking_id": booking_id,
+                "refund_amount": str(refund_amount),
+                "transaction_id": transaction_result.get('txn_id')
+            }
+            
+        except Exception as e:
+            # Revert booking status if transaction fails
+            bookings_table.update_item(
+                Key={
+                    'PK': f"BOOKING#{booking_id}",
+                    'SK': "METADATA"
+                },
+                UpdateExpression="SET booking_status = :status, updated_at = :updated_at, cancellation_details = :cancellation_details",
+                ExpressionAttributeValues={
+                    ':status': booking_item.get('booking_status', BookingStatus.CONFIRMED.value),
+                    ':updated_at': now,
+                    ':cancellation_details': {
+                        'cancelled_at': now,
+                        'refund_amount': str(refund_amount),
+                        'refund_status': 'failed',
+                        'failure_reason': str(e)
+                    }
+                }
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error processing refund: {str(e)}"
+            )
+            
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving booking by PNR: {str(e)}"
+            detail=f"Error cancelling booking: {str(e)}"
         )
 
 @router.patch("/{booking_id}", response_model=Booking)
