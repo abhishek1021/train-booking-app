@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tatkalpro/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,8 +28,6 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final StreamController<Map<String, dynamic>> _notificationStreamController =
       StreamController<Map<String, dynamic>>.broadcast();
@@ -60,27 +58,6 @@ class NotificationService {
       );
     }
 
-    // Configure local notifications
-    const AndroidInitializationSettings androidInitializationSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const DarwinInitializationSettings iosInitializationSettings =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: androidInitializationSettings,
-      iOS: iosInitializationSettings,
-    );
-    
-    await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
-
     // Configure FCM message handling
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTapped);
@@ -89,17 +66,6 @@ class NotificationService {
     await _registerToken();
   }
 
-  // Handle notification tap
-  void _onNotificationTapped(NotificationResponse response) {
-    if (response.payload != null) {
-      try {
-        final payload = json.decode(response.payload!);
-        _notificationStreamController.add(payload);
-      } catch (e) {
-        print('Error parsing notification payload: $e');
-      }
-    }
-  }
 
   // Handle foreground message
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -110,13 +76,6 @@ class NotificationService {
 
     if (message.notification != null) {
       print('Message also contained a notification: ${message.notification}');
-      
-      // Show local notification
-      await _showLocalNotification(
-        title: message.notification!.title ?? 'New Notification',
-        body: message.notification!.body ?? '',
-        payload: json.encode(message.data),
-      );
       
       // Add to stream for UI updates
       final Map<String, dynamic> notificationData = Map<String, dynamic>.from(message.data);
@@ -135,43 +94,7 @@ class NotificationService {
     _notificationStreamController.add(message.data);
   }
 
-  // Show local notification
-  Future<void> _showLocalNotification({
-    required String title,
-    required String body,
-    String? payload,
-  }) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'train_booking_channel',
-      'Train Booking Notifications',
-      channelDescription: 'Notifications for TatkalPro app',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-      color: Color(0xFF7C3AED),
-    );
-    
-    const DarwinNotificationDetails iosPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iosPlatformChannelSpecifics,
-    );
-    
-    await _flutterLocalNotificationsPlugin.show(
-      DateTime.now().millisecond,
-      title,
-      body,
-      platformChannelSpecifics,
-      payload: payload,
-    );
-  }
+
 
   // Register FCM token
   Future<void> _registerToken() async {
@@ -179,15 +102,19 @@ class NotificationService {
       final token = await _firebaseMessaging.getToken();
       if (token != null) {
         print('FCM Token: $token');
+        // Save token locally
+        await _saveFcmTokenLocally(token);
         // Send token to backend
-        await UserService().registerFcmToken(token);
+        await _sendFcmTokenToServer(token);
       }
       
       // Listen for token refresh
       _firebaseMessaging.onTokenRefresh.listen((newToken) async {
         print('FCM Token refreshed: $newToken');
+        // Save refreshed token locally
+        await _saveFcmTokenLocally(newToken);
         // Send refreshed token to backend
-        await UserService().registerFcmToken(newToken);
+        await _sendFcmTokenToServer(newToken);
       });
     } catch (e) {
       print('Error getting FCM token: $e');
@@ -206,30 +133,90 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       final userProfileJson = prefs.getString('user_profile');
       
+      print('DEBUG: Attempting to send FCM token to server: $token');
+      print('DEBUG: User profile JSON: ${userProfileJson?.substring(0, math.min(100, userProfileJson?.length ?? 0))}...');
+      
       if (userProfileJson == null || userProfileJson.isEmpty) {
-        print('User not logged in, skipping token registration');
+        print('DEBUG: User not logged in, skipping token registration');
         return;
       }
       
       final userProfile = json.decode(userProfileJson);
-      final userId = userProfile['UserID'] ?? '';
+      
+      // First try to get email as the primary identifier (based on your DynamoDB structure)
+      String? userId = userProfile['Email'] ?? '';
+      
+      // If email not found, fall back to UserID
+      if (userId.isEmpty) {
+        userId = userProfile['UserID'] ?? 
+                userProfile['userId'] ?? 
+                userProfile['user_id'] ?? 
+                userProfile['id'] ?? 
+                '';
+        
+        // Check if the ID has a USER# prefix and remove it for the API call
+        if (userId.startsWith('USER#')) {
+          userId = userId.substring(5); // Remove 'USER#' prefix
+        }
+      }
+      
+      print('DEBUG: User identifier for FCM registration: $userId');
       
       if (userId.isEmpty) {
-        print('User ID not found, skipping token registration');
+        print('DEBUG: No valid user identifier found, skipping token registration');
         return;
       }
       
+      // Send the FCM token to the server
       final url = Uri.parse('${ApiConfig.baseUrl}/users/$userId/fcm-token');
+      print('DEBUG: Sending FCM token to URL: $url');
+      
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'token': token}),
+        body: json.encode({
+          'token': token,
+          // Include additional info to help with debugging
+          'device_info': {
+            'platform': kIsWeb ? 'web' : io.Platform.operatingSystem,
+            'app_version': '1.0.0',
+            'timestamp': DateTime.now().toIso8601String(),
+          }
+        }),
       );
+      
+      print('DEBUG: FCM token registration response status: ${response.statusCode}');
+      print('DEBUG: FCM token registration response body: ${response.body}');
       
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('FCM token registered successfully');
+        // Save that we've successfully registered the token
+        await prefs.setBool('fcm_token_registered', true);
+        await prefs.setString('registered_fcm_token', token);
       } else {
         print('Failed to register FCM token: ${response.statusCode}');
+        // Store the token locally so we can retry registration later
+        await prefs.setString('pending_fcm_token', token);
+        
+        // Try with UUID as fallback if we used email first
+        if (userId != userProfile['UserID'] && userProfile['UserID'] != null) {
+          print('DEBUG: Trying fallback with UserID instead of Email');
+          final fallbackUrl = Uri.parse('${ApiConfig.baseUrl}/users/${userProfile['UserID']}/fcm-token');
+          
+          final fallbackResponse = await http.post(
+            fallbackUrl,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'token': token}),
+          );
+          
+          print('DEBUG: Fallback FCM registration response: ${fallbackResponse.statusCode}');
+          
+          if (fallbackResponse.statusCode == 200 || fallbackResponse.statusCode == 201) {
+            print('FCM token registered successfully with fallback ID');
+            await prefs.setBool('fcm_token_registered', true);
+            await prefs.setString('registered_fcm_token', token);
+          }
+        }
       }
     } catch (e) {
       print('Error sending FCM token to server: $e');
@@ -242,11 +229,16 @@ class NotificationService {
     required String body,
     Map<String, dynamic>? data,
   }) async {
-    await _showLocalNotification(
-      title: title,
-      body: body,
-      payload: data != null ? json.encode(data) : null,
-    );
+    if (kIsWeb) return; // Skip on web platform
+    
+    // We can't directly show notifications without flutter_local_notifications
+    // Instead, we'll add to the stream for UI components to handle
+    final Map<String, dynamic> notificationData = data ?? {};
+    notificationData['title'] = title;
+    notificationData['message'] = body;
+    
+    _notificationStreamController.add(notificationData);
+    print('Notification added to stream: $title - $body');
   }
 
   // Dispose resources

@@ -55,17 +55,47 @@ async def register_fcm_token(user_id: str, token: str) -> bool:
     Register or update a user's FCM token for push notifications
     
     Args:
-        user_id: The user ID
+        user_id: The user ID (could be UUID or email)
         token: The FCM token to register
         
     Returns:
         bool: True if successful, False otherwise
     """
     try:
+        # First, try to find the user to get the correct PK
+        try:
+            # Try direct lookup with USER# prefix
+            get_response = users_table.get_item(
+                Key={
+                    'PK': f"USER#{user_id}",
+                    'SK': "PROFILE"
+                }
+            )
+            
+            user_pk = f"USER#{user_id}"
+            
+            # If not found, try scan by UserID
+            if 'Item' not in get_response:
+                logger.info(f"User not found with direct key USER#{user_id}, trying scan by UserID")
+                scan_response = users_table.scan(
+                    FilterExpression="UserID = :userid",
+                    ExpressionAttributeValues={
+                        ':userid': user_id
+                    },
+                    Limit=1
+                )
+                
+                if 'Items' in scan_response and len(scan_response['Items']) > 0:
+                    user_pk = scan_response['Items'][0]['PK']
+                    logger.info(f"Found user via UserID scan: {user_pk}")
+        except Exception as e:
+            logger.error(f"Error finding user for FCM token registration: {str(e)}")
+            return False
+        
         # Update the user item with the FCM token
         response = users_table.update_item(
             Key={
-                'PK': f"USER#{user_id}",
+                'PK': user_pk,
                 'SK': "PROFILE"
             },
             UpdateExpression="SET fcm_tokens = list_append(if_not_exists(fcm_tokens, :empty_list), :token), updated_at = :updated_at",
@@ -77,7 +107,7 @@ async def register_fcm_token(user_id: str, token: str) -> bool:
             ReturnValues="UPDATED_NEW"
         )
         
-        logger.info(f"Registered FCM token for user {user_id}")
+        logger.info(f"Registered FCM token for user with PK {user_pk}")
         return True
     except Exception as e:
         logger.error(f"Error registering FCM token for user {user_id}: {str(e)}")

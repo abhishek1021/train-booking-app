@@ -60,17 +60,31 @@ flutter pub get
   - `notification_service_web.dart`: Web-specific notification service
 
 ### Android Platform
-- Added Firebase configuration in `android/app/build.gradle`:
-```gradle
-apply plugin: 'com.google.gms.google-services'
+- Added Firebase configuration in `android/app/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
 ```
 
-- Added classpath in `android/build.gradle`:
-```gradle
-buildscript {
-  dependencies {
-    classpath 'com.google.gms:google-services:4.3.15'
-  }
+- Enabled Java 8+ features (required for flutter_local_notifications):
+```kotlin
+android {
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        // Enable core library desugaring for java.time and other Java 8+ APIs
+        isCoreLibraryDesugaringEnabled = true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
 ```
 
