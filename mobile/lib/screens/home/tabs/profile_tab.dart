@@ -9,6 +9,7 @@ import '../../help_center_screen.dart';
 import '../../privacy_policy_screen.dart';
 import '../../about_tatkal_pro_screen.dart';
 import '../../terms_of_service_screen.dart';
+import '../../language_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -243,7 +244,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 _menuItem(Icons.notifications, 'Notification', onTap: () {
                   Navigator.of(context).pushNamed('/notifications');
                 }),
-                _menuItem(Icons.security, 'Security', onTap: () {}),
                 _menuItem(Icons.language, 'Language',
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -252,7 +252,15 @@ class _ProfileTabState extends State<ProfileTab> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text('English (US)', style: _trailingStyle),
-                    )),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LanguageScreen(),
+                        ),
+                      );
+                    }),
                 const SizedBox(height: 12),
                 _sectionHeader('About'),
                 _menuItem(Icons.help_outline, 'Help Center', onTap: () {

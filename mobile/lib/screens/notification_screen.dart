@@ -255,17 +255,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   // Format the date for display
   String _formatDate(String dateString) {
     try {
-      // Parse the UTC date from the string
-      final dateUtc = DateTime.parse(dateString);
+      // Parse the date from the string (already in IST from backend)
+      final dateIst = DateTime.parse(dateString);
       
-      // Convert to IST (UTC+5:30)
-      final dateIst = dateUtc.add(const Duration(hours: 5, minutes: 30));
-      
-      // Get current time in IST
+      // Get current time
       final now = DateTime.now();
-      final nowIst = now.add(const Duration(hours: 5, minutes: 30));
       
-      final difference = nowIst.difference(dateIst);
+      final difference = now.difference(dateIst);
       
       if (difference.inMinutes < 1) {
         return 'Just now';

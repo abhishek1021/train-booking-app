@@ -437,31 +437,31 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => TicketFailureDialog(
-                    onRetry: () {
-                      Navigator.of(context).pop();
-                    },
-                    onBackToHome: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    },
-                  ),
-                );
-              },
-              child: const Text(
-                'Simulate Failure Popup',
-                style: TextStyle(
-                  color: Color(0xFFB91C1C),
-                  decoration: TextDecoration.underline,
-                  fontFamily: 'ProductSans',
-                  fontSize: 14,
-                ),
-              ),
-            ),
+            // TextButton(
+            //   onPressed: () {
+            //     showDialog(
+            //       context: context,
+            //       barrierDismissible: false,
+            //       builder: (context) => TicketFailureDialog(
+            //         onRetry: () {
+            //           Navigator.of(context).pop();
+            //         },
+            //         onBackToHome: () {
+            //           Navigator.of(context).popUntil((route) => route.isFirst);
+            //         },
+            //       ),
+            //     );
+            //   },
+            //   child: const Text(
+            //     'Simulate Failure Popup',
+            //     style: TextStyle(
+            //       color: Color(0xFFB91C1C),
+            //       decoration: TextDecoration.underline,
+            //       fontFamily: 'ProductSans',
+            //       fontSize: 14,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

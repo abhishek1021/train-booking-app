@@ -13,6 +13,7 @@ import jinja2
 import pathlib
 import asyncio
 from typing import List, Dict, Any
+from decimal import Decimal
 
 # Import notification utilities
 from app.api.v1.utils.notification_utils import create_notification
@@ -54,6 +55,7 @@ def generate_seat_numbers(train_number: str, travel_class: str, passenger_count:
         'SL': {'prefix': 'S', 'rows': range(1, 26), 'seats': range(1, 9)},  # Sleeper
         'CC': {'prefix': 'D', 'rows': range(1, 16), 'seats': range(1, 6)},  # Chair Car
         '2S': {'prefix': 'E', 'rows': range(1, 31), 'seats': range(1, 9)},  # 2nd Seater
+        '3E': {'prefix': 'F', 'rows': range(1, 31), 'seats': range(1, 9)},  # 2nd Seater
     }
     
     # Get the pattern for the requested class, default to SL if not found

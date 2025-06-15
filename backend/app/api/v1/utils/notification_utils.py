@@ -3,7 +3,7 @@ import os
 import uuid
 import logging
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Import schemas
 from app.schemas.notification import NotificationType, NotificationStatus
@@ -45,7 +45,10 @@ async def create_notification(
         notification_id: ID of the created notification
     """
     notification_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    # Convert UTC to IST (UTC+5:30)
+    now_utc = datetime.utcnow()
+    now_ist = now_utc + timedelta(hours=5, minutes=30)
+    now = now_ist.isoformat()
     
     # Create notification item
     notification_item = {
