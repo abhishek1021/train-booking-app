@@ -90,25 +90,56 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     _isCancelled = widget.status.toLowerCase() == 'cancelled';
   }
   
-  // Helper to build the QR data as JSON
+  // Helper to build the QR data for visual ticket display
   String _buildQrData() {
-    // Use a compact, flat string for QR code reliability
-    final passengerNames = widget.passengers
-        .map((p) => p.fullName.isNotEmpty ? p.fullName : 'Passenger')
-        .join('|');
-    final passengerSeats =
-        widget.passengers.map((p) => p.seat.isNotEmpty ? p.seat : 'B2-34').join('|');
-    // Compose a compact string (pipe-separated)
-    return [
-      widget.bookingId,
-      widget.trainName,
-      widget.trainClass,
-      widget.departureStation,
-      widget.arrivalStation,
-      widget.departureDate,
-      passengerNames,
-      passengerSeats
-    ].join(';');
+    // Create a comprehensive JSON object with all booking details
+    final Map<String, dynamic> bookingData = {
+      'booking_id': widget.bookingId,
+      'pnr': widget.barcodeData,
+      'status': widget.status,
+      'train': {
+        'name': widget.trainName,
+        'class': widget.trainClass,
+      },
+      'journey': {
+        'from': widget.departureStation,
+        'to': widget.arrivalStation,
+        'departure_date': widget.departureDate,
+        'departure_time': widget.departureTime,
+        'arrival_date': widget.arrivalDate,
+        'arrival_time': widget.arrivalTime,
+        'duration': widget.duration,
+      },
+      'payment': {
+        'transaction_id': widget.transactionId,
+        'merchant_id': widget.merchantId,
+        'method': widget.paymentMethod,
+        'base_fare': widget.price,
+        'tax': widget.tax,
+        'total': widget.totalPrice,
+      },
+      'passengers': widget.passengers.map((p) => {
+        'name': p.fullName,
+        'age': p.age,
+        'gender': p.gender,
+        'seat': p.seat,
+        'type': p.passengerType,
+      }).toList(),
+    };
+    
+    // Convert to base64 encoded JSON
+    final jsonString = jsonEncode(bookingData);
+    final base64Data = base64Encode(utf8.encode(jsonString));
+    
+    // Create a URL that will display the ticket visually when scanned
+    // This URL points to a hypothetical ticket viewer service
+    // Replace with your actual ticket viewer URL in production
+    return 'https://s3.us-east-1.amazonaws.com/www.tatkalpro.in/ticket-viewer.html?data=$base64Data';
+    
+    // Note: You'll need to implement a web page at this URL that can:
+    // 1. Parse the base64 data from the URL parameter
+    // 2. Decode it back to JSON
+    // 3. Render a visual ticket with the booking information
   }
   
   @override

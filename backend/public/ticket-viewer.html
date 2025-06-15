@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TatkalPro E-Ticket</title>
+    <style>
+        :root {
+            --primary-color: #7C3AED;
+            --primary-light: #9F7AEA;
+            --background-color: #F7F7FA;
+            --card-background: #FFFFFF;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --border-radius: 12px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-dark);
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .header .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ticket-body {
+            background-color: var(--card-background);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .ticket-section {
+            padding: 20px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        .ticket-section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+        }
+        
+        .train-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .train-icon {
+            background-color: rgba(124, 58, 237, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .train-details h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+        }
+        
+        .train-details p {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .journey-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .station {
+            flex: 1;
+        }
+        
+        .station h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        
+        .station .time {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0 0 5px 0;
+        }
+        
+        .station .date {
+            font-size: 12px;
+            color: var(--text-light);
+            margin: 0;
+        }
+        
+        .journey-line {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+        }
+        
+        .journey-line .line {
+            flex: 1;
+            height: 2px;
+            background-color: var(--primary-color);
+            position: relative;
+        }
+        
+        .journey-line .line::before,
+        .journey-line .line::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            top: -3px;
+        }
+        
+        .journey-line .line::before {
+            left: 0;
+        }
+        
+        .journey-line .line::after {
+            right: 0;
+        }
+        
+        .journey-line .duration {
+            font-size: 12px;
+            color: var(--text-light);
+            background-color: var(--card-background);
+            padding: 2px 8px;
+            border-radius: 12px;
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .info-row .label {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .info-row .value {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .passenger-card {
+            background-color: rgba(124, 58, 237, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .passenger-card:last-child {
+            margin-bottom: 0;
+        }
+        
+        .passenger-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .passenger-details {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .passenger-detail {
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        
+        .passenger-detail span {
+            color: var(--text-light);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-confirmed {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+        
+        .status-cancelled {
+            background-color: #FEE2E2;
+            color: #B91C1C;
+        }
+        
+        .status-waiting {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .qr-code {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .qr-code img {
+            max-width: 150px;
+            height: auto;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            
+            .print-button {
+                display: none;
+            }
+        }
+        
+        .print-button {
+            display: block;
+            margin: 20px auto;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .print-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="ticket-container">
+            <div class="header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <h1>TatkalPro E-Ticket</h1>
+            </div>
+            <div class="ticket-body">
+                <div class="ticket-section">
+                    <div id="booking-id" class="info-row">
+                        <div class="label">Booking ID:</div>
+                        <div class="value" id="booking-id-value"></div>
+                    </div>
+                    <div id="pnr" class="info-row">
+                        <div class="label">PNR:</div>
+                        <div class="value" id="pnr-value"></div>
+                    </div>
+                    <div id="status" class="info-row">
+                        <div class="label">Status:</div>
+                        <div id="status-badge"></div>
+                    </div>
+                </div>
+                
+                <div class="ticket-section">
+                    <div class="section-title">Train Details</div>
+                    <div class="train-info">
+                        <div class="train-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                <path d="M4 12h16"></path>
+                                <path d="M12 4v16"></path>
+                            </svg>
+                        </div>
+                        <div class="train-details">
+                            <h3 id="train-name"></h3>
+                            <p id="train-class"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="journey-info">
+                        <div class="station departure">
+                            <h4>DEPARTURE</h4>
+                            <p class="time" id="departure-time"></p>
+                            <p class="date" id="departure-date"></p>
+                            <h4 id="departure-station"></h4>
+                        </div>
+                        
+                        <div class="journey-line">
+                            <div class="line">
+                                <span class="duration" id="duration"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="station arrival">
+                            <h4>ARRIVAL</h4>
+                            <p class="time" id="arrival-time"></p>
+                            <p class="date" id="arrival-date"></p>
+                            <h4 id="arrival-station"></h4>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ticket-section">
+                    <div class="section-title">Passenger Details</div>
+                    <div id="passengers-container">
+                        <!-- Passenger cards will be inserted here -->
+                    </div>
+                </div>
+                
+                <div class="ticket-section">
+                    <div class="section-title">Payment Details</div>
+                    <div class="info-row">
+                        <div class="label">Transaction ID:</div>
+                        <div class="value" id="transaction-id"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="label">Payment Method:</div>
+                        <div class="value" id="payment-method"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="label">Base Fare:</div>
+                        <div class="value" id="base-fare"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="label">Tax:</div>
+                        <div class="value" id="tax"></div>
+                    </div>
+                    <div class="info-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                        <div class="label" style="font-weight: bold;">Total Amount:</div>
+                        <div class="value" style="font-weight: bold; color: var(--primary-color);" id="total"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="print-button" onclick="window.print()">Print Ticket</button>
+        
+        <div class="footer">
+            <p>This is an electronic ticket. Please carry a valid ID proof during your journey.</p>
+            <p>© 2025 TatkalPro. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the data parameter from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const base64Data = urlParams.get('data');
+            
+            if (!base64Data) {
+                document.body.innerHTML = '<div style="text-align: center; padding: 50px; color: #B91C1C;">Error: No ticket data found</div>';
+                return;
+            }
+            
+            try {
+                // Decode the base64 data
+                const jsonString = atob(base64Data);
+                const ticketData = JSON.parse(jsonString);
+                
+                // Populate the ticket with data
+                document.getElementById('booking-id-value').textContent = ticketData.booking_id;
+                document.getElementById('pnr-value').textContent = ticketData.pnr;
+                
+                // Set status badge
+                const statusBadge = document.getElementById('status-badge');
+                statusBadge.textContent = ticketData.status;
+                if (ticketData.status.toLowerCase() === 'confirmed') {
+                    statusBadge.className = 'status-badge status-confirmed';
+                } else if (ticketData.status.toLowerCase() === 'cancelled') {
+                    statusBadge.className = 'status-badge status-cancelled';
+                } else {
+                    statusBadge.className = 'status-badge status-waiting';
+                }
+                
+                // Train details
+                document.getElementById('train-name').textContent = ticketData.train.name;
+                document.getElementById('train-class').textContent = `Class: ${ticketData.train.class}`;
+                
+                // Journey details
+                document.getElementById('departure-station').textContent = ticketData.journey.from;
+                document.getElementById('departure-time').textContent = ticketData.journey.departure_time;
+                document.getElementById('departure-date').textContent = ticketData.journey.departure_date;
+                
+                document.getElementById('arrival-station').textContent = ticketData.journey.to;
+                document.getElementById('arrival-time').textContent = ticketData.journey.arrival_time;
+                document.getElementById('arrival-date').textContent = ticketData.journey.arrival_date;
+                
+                document.getElementById('duration').textContent = ticketData.journey.duration;
+                
+                // Payment details
+                document.getElementById('transaction-id').textContent = ticketData.payment.transaction_id;
+                document.getElementById('payment-method').textContent = ticketData.payment.method;
+                document.getElementById('base-fare').textContent = `₹${ticketData.payment.base_fare.toFixed(2)}`;
+                document.getElementById('tax').textContent = `₹${ticketData.payment.tax.toFixed(2)}`;
+                document.getElementById('total').textContent = `₹${ticketData.payment.total.toFixed(2)}`;
+                
+                // Passengers
+                const passengersContainer = document.getElementById('passengers-container');
+                ticketData.passengers.forEach(passenger => {
+                    const passengerCard = document.createElement('div');
+                    passengerCard.className = 'passenger-card';
+                    
+                    const passengerName = document.createElement('div');
+                    passengerName.className = 'passenger-name';
+                    passengerName.textContent = passenger.name;
+                    
+                    const passengerDetails = document.createElement('div');
+                    passengerDetails.className = 'passenger-details';
+                    
+                    const age = document.createElement('div');
+                    age.className = 'passenger-detail';
+                    age.innerHTML = `<span>Age:</span> ${passenger.age}`;
+                    
+                    const gender = document.createElement('div');
+                    gender.className = 'passenger-detail';
+                    gender.innerHTML = `<span>Gender:</span> ${passenger.gender}`;
+                    
+                    const seat = document.createElement('div');
+                    seat.className = 'passenger-detail';
+                    seat.innerHTML = `<span>Seat:</span> ${passenger.seat}`;
+                    
+                    const type = document.createElement('div');
+                    type.className = 'passenger-detail';
+                    type.innerHTML = `<span>Type:</span> ${passenger.type || 'Adult'}`;
+                    
+                    passengerDetails.appendChild(age);
+                    passengerDetails.appendChild(gender);
+                    passengerDetails.appendChild(seat);
+                    passengerDetails.appendChild(type);
+                    
+                    passengerCard.appendChild(passengerName);
+                    passengerCard.appendChild(passengerDetails);
+                    
+                    passengersContainer.appendChild(passengerCard);
+                });
+                
+            } catch (error) {
+                console.error('Error parsing ticket data:', error);
+                document.body.innerHTML = '<div style="text-align: center; padding: 50px; color: #B91C1C;">Error: Invalid ticket data</div>';
+            }
+        });
+    </script>
+</body>
+</html>

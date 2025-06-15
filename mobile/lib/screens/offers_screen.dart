@@ -36,27 +36,7 @@ class OffersScreen extends StatelessWidget {
         'validTill': 'December 31, 2025',
         'image': 'assets/images/offer3.png',
         'color': const Color(0xFF5B21B6),
-      },
-      {
-        'title': 'Family Package',
-        'code': 'FAMILY20',
-        'discount': '20% OFF',
-        'description':
-            'Get 20% off when booking for 4 or more passengers in the same booking.',
-        'validTill': 'August 31, 2025',
-        'image': 'assets/images/offer4.png',
-        'color': const Color(0xFF8B5CF6),
-      },
-      {
-        'title': 'Monsoon Special',
-        'code': 'MONSOON30',
-        'discount': '30% OFF',
-        'description':
-            'Get 30% off on all bookings during monsoon season. Valid for travel between July and September.',
-        'validTill': 'September 30, 2025',
-        'image': 'assets/images/offer5.png',
-        'color': const Color(0xFF7C3AED),
-      },
+      }
     ];
 
     return Scaffold(
