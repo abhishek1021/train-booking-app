@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'dart:math' show max;
+import 'package:intl/intl.dart';
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
 import '../models/passenger.dart';
+import '../services/offer_service.dart';
 
 class ReviewSummaryScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -47,11 +49,90 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   late List<Map<String, dynamic>> _passengers;
   bool _useCoins = false;
   final int _coinValue = 100; // Default coin value
+  
+  // Voucher related variables
+  final TextEditingController _voucherController = TextEditingController();
+  String? _offerErrorMessage;
+  Map<String, dynamic>? _appliedOffer;
+  double _discountAmount = 0.0;
+  final OfferService _offerService = OfferService();
 
   @override
   void initState() {
     super.initState();
     _passengers = List.from(widget.passengers);
+  }
+
+  @override
+  void dispose() {
+    _voucherController.dispose();
+    super.dispose();
+  }
+  
+  // Apply voucher code and calculate discount
+  void _applyVoucher() {
+    final code = _voucherController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _offerErrorMessage = 'Please enter a voucher code';
+      });
+      return;
+    }
+
+    // Find the offer by code
+    final offer = _offerService.getOfferByCode(code);
+    if (offer == null) {
+      setState(() {
+        _offerErrorMessage = 'Invalid voucher code';
+      });
+      return;
+    }
+
+    // Prepare booking details for validation
+    final bookingDetails = {
+      'departureDate': DateFormat('yyyy-MM-dd').parse(widget.date),
+      'passengers': widget.passengers,
+      'isFirstBooking': false, // TODO: Get this from user profile
+    };
+
+    // Validate the offer
+    if (!_offerService.isOfferValid(offer, bookingDetails)) {
+      setState(() {
+        _offerErrorMessage = 'This offer is not applicable to your booking';
+      });
+      return;
+    }
+
+    // Calculate discount amount
+    final baseAmount = _getBaseFareForClass() * _passengers.length;
+    _discountAmount = _offerService.calculateDiscount(offer, baseAmount);
+
+    // Update state
+    setState(() {
+      _appliedOffer = offer;
+      _offerErrorMessage = null;
+    });
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Offer applied successfully!',
+          style: TextStyle(fontFamily: 'ProductSans'),
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  // Remove applied voucher
+  void _removeVoucher() {
+    setState(() {
+      _appliedOffer = null;
+      _discountAmount = 0.0;
+      _voucherController.clear();
+      _offerErrorMessage = null;
+    });
   }
 
   // Remove passenger at the specified index
@@ -127,7 +208,6 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
           fadingEdgeEndFraction: 0.1,
           showFadingOnlyWhenScrolling: false,
           crossAxisAlignment: CrossAxisAlignment.start,
-          textDirection: TextDirection.ltr,
         ),
       );
     } else {
@@ -145,7 +225,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
     }
   }
 
-  // Calculate total price with coin discount if applicable
+  // Calculate total price with coin and voucher discounts if applicable
   double _calculateTotalPrice() {
     // Get base fare for the selected class
     double baseFare = _getBaseFareForClass();
@@ -173,6 +253,11 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
 
     // Add tax
     double totalPrice = totalBaseFare + widget.tax;
+    
+    // Apply voucher discount if available
+    if (_discountAmount > 0) {
+      totalPrice = max(0, totalPrice - _discountAmount);
+    }
 
     // Apply coin discount if toggle is on
     if (_useCoins) {
@@ -845,8 +930,7 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0, vertical: 18.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -867,19 +951,21 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                         children: [
                           Expanded(
                             child: TextField(
+                              controller: _voucherController,
+                              enabled: _appliedOffer == null,
                               decoration: InputDecoration(
                                 hintText: 'Enter Code',
-                                hintStyle: TextStyle(
-                                    fontFamily: 'ProductSans',
-                                    color: Colors.black38),
+                                errorText: _offerErrorMessage,
                                 filled: true,
-                                fillColor: Color(0xFFF7F7FA),
+                                fillColor: _appliedOffer == null
+                                    ? Color(0xFFF7F7FA)
+                                    : Colors.grey.shade200,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
                                 contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 16),
+                                    horizontal: 16, vertical: 14),
                               ),
                               style: TextStyle(
                                   fontFamily: 'ProductSans', fontSize: 15),
@@ -889,132 +975,112 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                           SizedBox(
                             height: 42,
                             child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        SelectPaymentMethodScreen(
-                                      walletBalance:
-                                          946.50, // TODO: Replace with actual wallet balance from user profile/state
-                                      bookingId:
-                                          'PNR${DateTime.now().millisecondsSinceEpoch}',
-                                      trainName:
-                                          widget.train['train_name'] ?? '',
-                                      trainNumber:
-                                          widget.train['train_number'] ??
-                                              widget.train['train_id'] ??
-                                              '',
-                                      trainClass: widget.selectedClass,
-                                      departureStation: widget.originName,
-                                      arrivalStation: widget.destinationName,
-                                      departureTime: widget.depTime,
-                                      arrivalTime: widget.arrTime,
-                                      departureDate: widget.date,
-                                      arrivalDate: widget.date,
-                                      duration: _calculateDuration(
-                                          widget.depTime, widget.arrTime),
-                                      price: widget.price.toDouble(),
-                                      tax: widget.tax,
-                                      totalPrice: _calculateTotalPrice(),
-                                      status: 'Paid',
-                                      transactionId:
-                                          'TXN${DateTime.now().millisecondsSinceEpoch}',
-                                      merchantId: 'MERCHANT123',
-                                      paymentMethod: 'Wallet',
-                                      email: widget.email,
-                                      phone: widget.phone,
-                                      passengers: widget.passengers
-                                          .map((p) => Passenger(
-                                                fullName: p['fullName'] ?? '',
-                                                idType: p['idType'] ?? '',
-                                                idNumber: p['idNumber'] ?? '',
-                                                passengerType:
-                                                    p['passengerType'] ??
-                                                        'Adult',
-                                                seat: p['seat'] ?? 'B2-34',
-                                                age: p['age'] is int
-                                                    ? p['age']
-                                                    : int.tryParse(p['age']
-                                                                ?.toString() ??
-                                                            '30') ??
-                                                        30,
-                                                gender: p['gender'] ?? 'male',
-                                                isSenior:
-                                                    p['isSenior'] ?? false,
-                                              ))
-                                          .toList(),
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: ButtonStyle(
-                                shape: MaterialStateProperty.all(
-                                    RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                )),
-                                padding:
-                                    MaterialStateProperty.all(EdgeInsets.zero),
-                                elevation: MaterialStateProperty.all(0),
-                                backgroundColor: MaterialStateProperty.all(
-                                    Colors.transparent),
-                                overlayColor: MaterialStateProperty.all(
-                                    Color(0xFF9F7AEA).withOpacity(0.08)),
+                              onPressed:
+                                  _appliedOffer == null ? _applyVoucher : _removeVoucher,
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                backgroundColor: _appliedOffer == null
+                                    ? Color(0xFF7C3AED)
+                                    : Colors.red.shade50,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                               ),
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFF7C3AED),
-                                      Color(0xFF9F7AEA)
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  constraints: BoxConstraints(
-                                      minWidth: 90, minHeight: 42),
-                                  child: Text(
-                                    'Redeem',
-                                    style: TextStyle(
-                                      fontFamily: 'ProductSans',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                              child: Text(
+                                _appliedOffer == null ? 'Apply' : 'Remove',
+                                style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: _appliedOffer == null
+                                      ? Colors.white
+                                      : Colors.red,
                                 ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 18),
+                      if (_appliedOffer != null) ...[
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.green.shade100),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _appliedOffer!['title'] ?? 'Offer Applied',
+                                      style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.green.shade800),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'You saved ₹${_discountAmount.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                          fontFamily: 'ProductSans',
+                                          fontSize: 13,
+                                          color: Colors.green.shade700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              // Coin Usage Card
+              Card(
+                color: Colors.white,
+                margin: EdgeInsets.only(bottom: 22),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
                         children: [
                           Icon(Icons.attach_money, color: Color(0xFF7C3AED)),
                           SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'You have ${widget.coins} coins',
+                          Text('Use Coins',
                               style: TextStyle(
-                                fontFamily: 'ProductSans',
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.black87)),
+                        ],
+                      ),
+                      SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Text('You have ${widget.coins} coins',
+                              style: TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15)),
+                          Spacer(),
                           Switch(
                             value: _useCoins,
-                            onChanged: (v) {
-                              setState(() {
-                                _useCoins = v;
-                              });
-                            },
+                            onChanged: (v) => setState(() => _useCoins = v),
                             activeColor: Color(0xFF7C3AED),
                           ),
                         ],
@@ -1070,6 +1136,10 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                         }
                       }),
                       _priceRow('Tax', widget.tax),
+                      _discountAmount > 0
+                          ? _priceRow('Voucher Discount', -_discountAmount,
+                              color: Colors.green)
+                          : SizedBox(),
                       _useCoins
                           ? _priceRow('Coin Discount', -widget.coins,
                               color: Colors.green)

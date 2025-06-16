@@ -54,9 +54,8 @@ async def create_payment(payment: PaymentCreate):
             payment_method_display = {
                 PaymentMethod.WALLET.value: "Wallet",
                 PaymentMethod.UPI.value: "UPI",
-                PaymentMethod.CREDIT_CARD.value: "Credit Card",
-                PaymentMethod.DEBIT_CARD.value: "Debit Card",
-                PaymentMethod.NET_BANKING.value: "Net Banking"
+                PaymentMethod.CARD.value: "Card",
+                PaymentMethod.NETBANKING.value: "Net Banking"
             }.get(payment.payment_method.value, "Online Payment")
             
             # Create notification message

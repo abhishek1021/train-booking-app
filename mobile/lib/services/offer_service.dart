@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../models/passenger.dart';
 
 class OfferService {
   // Singleton pattern
@@ -101,7 +102,20 @@ class OfferService {
     // Senior passenger check
     if (conditions['hasSeniorPassenger'] == true) {
       final passengers = bookingDetails['passengers'] as List<dynamic>;
-      final hasSenior = passengers.any((p) => p['isSenior'] == true);
+      final hasSenior = passengers.any((p) {
+        if (p == null) return false;
+        if (p is Map<String, dynamic>) {
+          if (p['isSenior'] == true || p['is_senior'] == true) return true;
+          final age = p['age'] ?? p['Age'];
+          if (age != null && (age is int ? age : int.tryParse('$age')) != null) {
+            final intAge = age is int ? age : int.parse('$age');
+            if (intAge >= 60) return true;
+          }
+        } else if (p is Passenger) {
+          return p.isSenior;
+        }
+        return false;
+      });
       if (!hasSenior) {
         return false;
       }

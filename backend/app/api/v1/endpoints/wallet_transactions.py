@@ -196,8 +196,9 @@ async def create_transaction(transaction: WalletTransactionCreate):
             transaction_source_display = {
                 TransactionSource.BOOKING.value: "Booking Payment",
                 TransactionSource.REFUND.value: "Refund",
-                TransactionSource.WALLET_TOPUP.value: "Wallet Top-up",
-                TransactionSource.ADMIN.value: "Admin Adjustment"
+                TransactionSource.TOPUP.value: "Wallet Top-up",
+                TransactionSource.WITHDRAWAL.value: "Withdrawal",
+                TransactionSource.PROMO.value: "Promotional Credit"
             }.get(transaction.source.value, "Transaction")
             
             # Format amount with currency symbol

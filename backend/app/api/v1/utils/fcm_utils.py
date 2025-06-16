@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Key
 import os
 import json
 import logging
@@ -115,26 +116,37 @@ async def register_fcm_token(user_id: str, token: str) -> bool:
 
 async def get_user_fcm_tokens(user_id: str) -> List[str]:
     """
-    Get all FCM tokens for a user
-    
-    Args:
-        user_id: The user ID
-        
-    Returns:
-        List[str]: List of FCM tokens
+    Retrieve all FCM tokens stored for a user. The caller may pass either the
+    primary key identifier (e.g. e-mail in the form USER#<email>) **or** the
+    internal UUID (`UserID` attribute). We therefore:
+        1. Try direct key lookup with `PK = USER#{user_id}`.
+        2. If not found, fallback to a scan (or GSI query if available) using
+           the `UserID` attribute to locate the actual PK.
     """
     try:
-        response = users_table.get_item(
-            Key={
-                'PK': f"USER#{user_id}",
-                'SK': "PROFILE"
-            }
+        # Attempt direct lookup first (works when the caller passed e-mail-as-PK)
+        get_resp = users_table.get_item(
+            Key={'PK': f"USER#{user_id}", 'SK': 'PROFILE'}
         )
-        
-        if 'Item' in response and 'fcm_tokens' in response['Item']:
-            # Return unique tokens only
-            return list(set(response['Item']['fcm_tokens']))
-        
+        item = get_resp.get('Item')
+
+        # Fallback: scan by UserID attribute when direct lookup misses
+        if item is None:
+            logger.info(
+                f"FCM token lookup: USER#{user_id} not found, scanning by UserID")
+            scan_resp = users_table.scan(
+                FilterExpression="UserID = :uid",
+                ExpressionAttributeValues={':uid': user_id},
+                Limit=1
+            )
+            items = scan_resp.get('Items', [])
+            if items:
+                item = items[0]
+
+        # Extract tokens if present
+        if item and 'fcm_tokens' in item and isinstance(item['fcm_tokens'], list):
+            return list(set(item['fcm_tokens']))
+
         return []
     except Exception as e:
         logger.error(f"Error getting FCM tokens for user {user_id}: {str(e)}")

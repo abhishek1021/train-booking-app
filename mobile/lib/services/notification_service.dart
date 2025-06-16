@@ -77,12 +77,7 @@ class NotificationService {
     // Register FCM token
     await _registerToken();
     
-    // Show a test notification after a short delay in debug mode
-    if (kDebugMode) {
-      Future.delayed(const Duration(seconds: 3), () {
-        showTestNotification();
-      });
-    }
+
   }
 
 
