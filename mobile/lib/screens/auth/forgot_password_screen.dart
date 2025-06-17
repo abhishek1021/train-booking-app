@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../api_constants.dart';
-import 'dialogs_error.dart';
+import 'dialogs_error.dart'; // Contains SignInFailedDialog and WrongOtpDialog
 import 'package:tatkalpro/widgets/success_animation_dialog.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -63,11 +63,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SnackBar(content: Text('OTP sent to your email')),
         );
       } else {
-        final errorMsg = jsonDecode(response.body)['detail'] ?? 'Failed to send OTP';
-        showDialog(
-          context: context,
-          builder: (context) => SignInFailedDialog(error: errorMsg),
-        );
+        String errorMsg;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMsg = errorData['detail'] ?? 'Failed to send OTP';
+        } catch (e) {
+          // If response body isn't valid JSON
+          errorMsg = 'Failed to send OTP: Server error';
+        }
+        
+        // Show appropriate error dialog based on error type
+        if (errorMsg.toLowerCase().contains('user not found')) {
+          showDialog(
+            context: context,
+            builder: (context) => SignInFailedDialog(
+              error: 'No account found with this email address. Please check the email or create a new account.',
+            ),
+          );
+        } else if (errorMsg.toLowerCase().contains('resource') ||
+                 errorMsg.toLowerCase().contains('database')) {
+          // Database related errors
+          showDialog(
+            context: context,
+            builder: (context) => SignInFailedDialog(
+              error: 'Server error: Unable to process your request. Please try again later or contact support.',
+            ),
+          );
+        } else {
+          // All other errors
+          showDialog(
+            context: context,
+            builder: (context) => SignInFailedDialog(error: errorMsg),
+          );
+        }
       }
     } catch (e) {
       setState(() {
@@ -75,7 +103,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
       showDialog(
         context: context,
-        builder: (context) => SignInFailedDialog(error: e.toString()),
+        builder: (context) => SignInFailedDialog(
+          error: 'Unable to connect to the server. Please check your internet connection and try again.',
+        ),
       );
     }
   }
@@ -121,19 +151,53 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         );
       } else {
-        final errorMsg = jsonDecode(response.body)['detail'] ?? 'Failed to reset password';
-        showDialog(
-          context: context,
-          builder: (context) => SignInFailedDialog(error: errorMsg),
-        );
+        String errorMsg;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMsg = errorData['detail'] ?? 'Failed to reset password';
+        } catch (e) {
+          // If response body isn't valid JSON
+          errorMsg = 'Failed to reset password: Server error';
+        }
+        
+        // Show appropriate error dialog based on error type
+        if (errorMsg.toLowerCase().contains('otp') || 
+            errorMsg.toLowerCase().contains('verification') ||
+            errorMsg.toLowerCase().contains('expired') ||
+            errorMsg.toLowerCase().contains('invalid')) {
+          // OTP related errors use the WrongOtpDialog
+          showDialog(
+            context: context,
+            builder: (context) => WrongOtpDialog(error: errorMsg),
+          );
+        } else if (errorMsg.toLowerCase().contains('resource') ||
+                 errorMsg.toLowerCase().contains('database')) {
+          // Database related errors
+          showDialog(
+            context: context,
+            builder: (context) => SignInFailedDialog(
+              error: 'Server error: Unable to process your request. Please try again later or contact support.',
+            ),
+          );
+        } else {
+          // All other errors
+          showDialog(
+            context: context,
+            builder: (context) => SignInFailedDialog(error: errorMsg),
+          );
+        }
       }
     } catch (e) {
       setState(() {
         _isVerifying = false;
       });
+      
+      // Show error dialog with more user-friendly message
       showDialog(
         context: context,
-        builder: (context) => SignInFailedDialog(error: e.toString()),
+        builder: (context) => SignInFailedDialog(
+          error: 'Error resetting password: Unable to connect to the server. Please check your internet connection and try again.',
+        ),
       );
     }
   }

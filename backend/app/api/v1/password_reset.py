@@ -60,46 +60,76 @@ async def verify_reset_and_update_password(request: PasswordResetVerifyRequest):
     """
     try:
         # Check if user exists
-        user_response = users_table.get_item(
-            Key={"PK": f"USER#{request.email}", "SK": "PROFILE"}
-        )
-        user = user_response.get("Item")
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        try:
+            user_response = users_table.get_item(
+                Key={"PK": f"USER#{request.email}", "SK": "PROFILE"}
+            )
+            user = user_response.get("Item")
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+        except Exception as e:
+            # Handle DynamoDB exceptions for user lookup
+            error_msg = str(e)
+            if "ResourceNotFoundException" in error_msg:
+                raise HTTPException(status_code=404, detail="User database not found. Please contact support.")
+            else:
+                raise HTTPException(status_code=500, detail=f"Error checking user: {error_msg}")
         
         # Check OTP
-        otp_response = otp_table.get_item(
-            Key={"Email": request.email}
-        )
-        otp_item = otp_response.get("Item")
+        try:
+            otp_response = otp_table.get_item(
+                Key={"Email": request.email}
+            )
+            otp_item = otp_response.get("Item")
+        except Exception as e:
+            # Handle DynamoDB exceptions for OTP lookup
+            error_msg = str(e)
+            if "ResourceNotFoundException" in error_msg:
+                raise HTTPException(status_code=400, detail="OTP verification failed. The OTP database could not be accessed.")
+            else:
+                raise HTTPException(status_code=500, detail=f"Error verifying OTP: {error_msg}")
         
         if not otp_item:
-            raise HTTPException(status_code=400, detail="No OTP found for this email")
+            raise HTTPException(status_code=400, detail="No OTP found for this email. Please request a new OTP.")
         
         stored_otp = otp_item.get("OTP")
         expiry = otp_item.get("Expiry", 0)
         current_time = int(time.time())
         
         if current_time > expiry:
-            raise HTTPException(status_code=400, detail="OTP has expired")
+            # Delete expired OTP to prevent further attempts with it
+            otp_table.delete_item(Key={"Email": request.email})
+            raise HTTPException(status_code=400, detail="OTP has expired. Please request a new OTP.")
         
         if request.otp != stored_otp:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+            raise HTTPException(status_code=400, detail="Invalid OTP. Please check and try again.")
         
         # Hash the new password
         hashed_password = bcrypt.hashpw(request.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         
         # Update the user's password
-        users_table.update_item(
-            Key={"PK": f"USER#{request.email}", "SK": "PROFILE"},
-            UpdateExpression="SET PasswordHash = :password",
-            ExpressionAttributeValues={":password": hashed_password}
-        )
+        try:
+            users_table.update_item(
+                Key={"PK": f"USER#{request.email}", "SK": "PROFILE"},
+                UpdateExpression="SET PasswordHash = :password",
+                ExpressionAttributeValues={":password": hashed_password}
+            )
+        except Exception as e:
+            # Handle DynamoDB exceptions for password update
+            error_msg = str(e)
+            if "ResourceNotFoundException" in error_msg:
+                raise HTTPException(status_code=500, detail="Failed to update password. User database not found.")
+            else:
+                raise HTTPException(status_code=500, detail=f"Error updating password: {error_msg}")
         
         # Delete the used OTP
-        otp_table.delete_item(
-            Key={"Email": request.email}
-        )
+        try:
+            otp_table.delete_item(
+                Key={"Email": request.email}
+            )
+        except Exception as e:
+            # Log the error but don't fail the request if OTP deletion fails
+            print(f"Error deleting used OTP: {str(e)}")
         
         return {"message": "Password has been reset successfully"}
     except HTTPException:
