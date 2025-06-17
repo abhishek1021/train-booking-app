@@ -108,8 +108,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'mobile':
-              '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}'
+          'mobile': '+${_selectedCountry.phoneCode}${_phoneController.text.trim()}',
+          'flow': _fromLogin ? 'login' : 'signup'
         }),
       );
       Navigator.of(context).pop(); // Remove loading

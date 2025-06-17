@@ -20,6 +20,7 @@ class OtpRequest(BaseModel):
 
 class MobileOtpRequest(BaseModel):
     mobile: str  # E.164 format, e.g., '+919999999999'
+    flow: str = 'signup'  # Can be 'signup' or 'login'
 
 class OtpResponse(BaseModel):
     message: str
@@ -50,14 +51,104 @@ twilio_client = None
 if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
     twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
+# DynamoDB users table for checking user existence
+users_table = dynamodb.Table('users')
+
+def check_phone_exists_in_twilio(phone_number: str) -> bool:
+    """
+    Check if a phone number exists in Twilio and in our user database
+    
+    Args:
+        phone_number: E.164 formatted phone number (e.g., '+919999999999')
+        
+    Returns:
+        bool: True if the phone number exists, False otherwise
+    """
+    if not twilio_client:
+        raise HTTPException(status_code=500, detail="Twilio client not initialized")
+    
+    try:
+        # First check in our users table
+        # Scan for users with this phone number
+        response = users_table.scan(
+            FilterExpression="Phone = :mobile",
+            ExpressionAttributeValues={
+                ':mobile': phone_number
+            },
+            Limit=1
+        )
+        
+        # If found in our database, it exists
+        if response.get('Items') and len(response['Items']) > 0:
+            return True
+        
+        # Check in Twilio Verify service
+        # Note: Twilio Verify doesn't have a direct API to check if a number exists
+        # We'll use a workaround by checking recent verification attempts
+        
+        # This is a best-effort check - in a production system you might want
+        # to implement a more robust solution with a dedicated user database
+        verifications = twilio_client.verify.v2.services(TWILIO_VERIFY_SERVICE_SID) \
+            .verification_checks \
+            .list(to=phone_number, limit=1)
+            
+        return len(verifications) > 0
+    
+    except Exception as e:
+        print(f"Error checking phone number existence: {e}")
+        # In case of error, default to not existing
+        return False
+
+def create_phone_in_twilio_if_needed(phone_number: str) -> bool:
+    """
+    Create a phone number in Twilio if it doesn't exist
+    
+    Args:
+        phone_number: E.164 formatted phone number
+        
+    Returns:
+        bool: True if created or already exists, False on error
+    """
+    # For Twilio Verify service, there's no explicit "create" action needed
+    # The number is automatically registered when first verification is sent
+    # This function is included for future extensibility
+    return True
+
 @router.post("/mobile/send-otp")
 def send_mobile_otp(request: MobileOtpRequest):
     if not twilio_client or not TWILIO_VERIFY_SERVICE_SID:
         raise HTTPException(status_code=500, detail="Twilio credentials not set.")
+    
     try:
+        # Check if the phone number exists in Twilio
+        phone_exists = check_phone_exists_in_twilio(request.mobile)
+        
+        # Handle different flows
+        if request.flow == 'login':
+            # For login flow: Phone must exist
+            if not phone_exists:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="This phone number is not registered. Please sign up first."
+                )
+        else:  # signup flow
+            # For signup flow: Phone must not exist
+            if phone_exists:
+                raise HTTPException(
+                    status_code=409, 
+                    detail="This phone number is already registered. Please login instead."
+                )
+            # For signup, create the phone number in Twilio if it doesn't exist
+            create_phone_in_twilio_if_needed(request.mobile)
+        
+        # Send verification code
         verification = twilio_client.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
         verification.verifications.create(to=request.mobile, channel="sms")
-        return {"message": f"OTP sent to {request.mobile}"}
+        
+        return {"message": f"OTP sent to {request.mobile}", "flow": request.flow}
+    except HTTPException as he:
+        # Re-raise HTTP exceptions as-is
+        raise he
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
