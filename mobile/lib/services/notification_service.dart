@@ -91,12 +91,9 @@ class NotificationService {
     if (message.notification != null) {
       print('Message also contained a notification: ${message.notification}');
       
-      // Add to stream for UI updates
-      final Map<String, dynamic> notificationData = Map<String, dynamic>.from(message.data);
-      notificationData['title'] = message.notification!.title;
-      notificationData['message'] = message.notification!.body;
-      
-      _notificationStreamController.add(notificationData);
+      // We no longer push foreground notifications into the in-app overlay.
+      // The local notification below will place it in the system tray so the
+      // user can view it later from the notification drawer.
       
       // Display notification using our custom method
       if (!kIsWeb) {
