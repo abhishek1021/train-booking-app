@@ -12,10 +12,12 @@ from app.api.v1.endpoints import notifications
 from app.api.v1.endpoints import users
 from app.api.v1 import dynamodb_user
 from app.api.v1 import ses_otp
+from app.api.v1 import password_reset
 
 api_router = APIRouter()
 
 api_router.include_router(ses_otp.router)
+api_router.include_router(password_reset.router)
 api_router.include_router(trains.router, prefix="/trains", tags=["trains"])
 api_router.include_router(cities.router, prefix="/cities", tags=["cities"])
 api_router.include_router(passengers.router, prefix="/passengers", tags=["passengers"])

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_constants.dart';
 import 'dialogs_error.dart';
+import 'forgot_password_screen.dart';
 import 'package:tatkalpro/widgets/success_animation_dialog.dart';
 
 class LoginWithEmailScreen extends StatefulWidget {
@@ -345,7 +346,12 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
                                 Center(
                                   child: TextButton(
                                     onPressed: () {
-                                      // TODO: Implement forgot password
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const ForgotPasswordScreen(),
+                                        ),
+                                      );
                                     },
                                     child: const Text(
                                       'Forgot password?',
