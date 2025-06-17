@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 
 class UserService {
-  // Base URL for API calls
-  final String baseUrl = 'http://localhost:8000/api/v1';
+  // Base URL for API calls from ApiConfig
+  final String baseUrl = ApiConfig.baseUrl;
   
   // Get user profile from local storage
   Future<Map<String, dynamic>> getUserProfile() async {
@@ -23,13 +24,20 @@ class UserService {
   // Fetch user profile from API
   Future<Map<String, dynamic>> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email');
+    final userProfileJson = prefs.getString('user_profile');
     
-    if (email == null) {
+    if (userProfileJson == null) {
       throw Exception('User not logged in');
     }
     
     try {
+      final userProfile = jsonDecode(userProfileJson);
+      final email = userProfile['Email'] ?? '';
+      
+      if (email.isEmpty) {
+        throw Exception('User email not found in profile');
+      }
+      
       final response = await http.get(
         Uri.parse('$baseUrl/dynamodb/users/profile/$email'),
         headers: {
@@ -60,13 +68,20 @@ class UserService {
     String? username,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email');
+    final userProfileJson = prefs.getString('user_profile');
     
-    if (email == null) {
+    if (userProfileJson == null) {
       throw Exception('User not logged in');
     }
     
     try {
+      final userProfile = jsonDecode(userProfileJson);
+      final email = userProfile['Email'] ?? '';
+      
+      if (email.isEmpty) {
+        throw Exception('User email not found in profile');
+      }
+      
       // Create the request body with only non-null fields
       final Map<String, dynamic> requestBody = {};
       if (fullName != null) requestBody['FullName'] = fullName;
@@ -88,16 +103,25 @@ class UserService {
         // Update local storage
         await prefs.setString('user_profile', jsonEncode(updatedUser));
         
+        print('Profile updated successfully: $updatedUser');
         return {
           'success': true,
-          'data': updatedUser,
-          'message': 'Profile updated successfully'
+          'message': 'Profile updated successfully',
+          'user': updatedUser
         };
       } else {
-        print('Failed to update profile: ${response.statusCode} - ${response.body}');
+        // Detailed error logging
+        print('===== PROFILE UPDATE ERROR =====');
+        print('Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        print('Request URL: ${Uri.parse('$baseUrl/dynamodb/users/update/$email')}');
+        print('Request body: $requestBody');
+        print('User email: $email');
+        print('===============================');
+        
         return {
           'success': false,
-          'message': 'Failed to update profile: ${response.statusCode}'
+          'message': 'Failed to update profile: ${response.statusCode} - ${response.body}'
         };
       }
     } catch (e) {

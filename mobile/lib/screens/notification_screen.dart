@@ -238,14 +238,18 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           _unreadCount = 0;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All notifications marked as read'),
-            backgroundColor: Color(0xFF7C3AED),
-          ),
+        _showCustomSnackBar(
+          message: 'All notifications marked as read',
+          icon: Icons.done_all,
+          backgroundColor: const Color(0xFF7C3AED),
         );
       } else {
         print('Error marking all notifications as read: ${response.statusCode}');
+        _showCustomSnackBar(
+          message: 'Failed to mark notifications as read',
+          icon: Icons.error_outline,
+          backgroundColor: Colors.red,
+        );
       }
     } catch (e) {
       print('Exception marking all notifications as read: $e');
@@ -316,6 +320,45 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       default:
         return const Color(0xFF7C3AED); // Purple
     }
+  }
+  
+  // Show a custom snackbar with icon
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    if (!mounted) return;
+    
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(10),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override

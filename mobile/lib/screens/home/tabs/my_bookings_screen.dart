@@ -46,6 +46,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
 
   // Load user data from SharedPreferences
   Future<void> _loadUserData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -58,6 +59,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
         final userProfile = jsonDecode(userProfileJson);
         final userId = userProfile['UserID'] ?? '';
 
+        if (!mounted) return;
         setState(() {
           _userId = userId;
         });
@@ -69,6 +71,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     } catch (e) {
       print('Error loading user data: $e');
     } finally {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

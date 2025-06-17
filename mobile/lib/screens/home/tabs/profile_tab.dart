@@ -18,13 +18,27 @@ class ProfileTab extends StatefulWidget {
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
-class _ProfileTabState extends State<ProfileTab> {
+class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
   Map<String, dynamic>? userProfile;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadProfile();
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadProfile();
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -223,7 +237,10 @@ class _ProfileTabState extends State<ProfileTab> {
                     MaterialPageRoute(
                       builder: (context) => const ProfileScreen(),
                     ),
-                  );
+                  ).then((_) {
+                    // Reload profile when returning from profile screen
+                    _loadProfile();
+                  });
                 }),
                 _menuItem(Icons.groups, 'Passengers List', onTap: () {
                   Navigator.push(

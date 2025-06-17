@@ -84,6 +84,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             fontFamily: 'ProductSans',
             fontWeight: FontWeight.bold,
             fontSize: 20,
+            color:Colors.white,
           ),
         ),
         leading: IconButton(

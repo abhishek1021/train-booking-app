@@ -17,6 +17,7 @@ import 'package:tatkalpro/screens/tatkal_jobs_screen.dart';
 import 'search_tab/search_header.dart';
 import 'search_tab/search_card.dart';
 import 'search_tab/quick_actions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SearchTab extends StatefulWidget {
   const SearchTab({Key? key}) : super(key: key);
@@ -699,7 +700,7 @@ class _SearchTabState extends State<SearchTab> {
 
                   // Featured Trains Section
                   const SizedBox(height: 24),
-                  _buildSectionHeader('Featured Trains'),
+                  _buildSectionHeader('Latest News'),
                   const SizedBox(height: 12),
                   _buildFeaturedTrainsSection(),
 
@@ -1072,286 +1073,409 @@ class _SearchTabState extends State<SearchTab> {
 
   // Featured Trains Section
   Widget _buildFeaturedTrainsSection() {
-    final List<Map<String, dynamic>> featuredTrains = [
+    // Deprecated. Redirecting to new News section for offers & updates.
+    return _buildNewsSection();
+    // final List<Map<String, dynamic>> featuredTrains = [
+    //   {
+    //     'name': 'Rajdhani Express',
+    //     'number': '12301',
+    //     'from': 'NDLS',
+    //     'to': 'HWH',
+    //     'departure': '16:55',
+    //     'arrival': '10:10',
+    //     'duration': '17h 15m',
+    //     'rating': 4.7,
+    //   },
+    //   {
+    //     'name': 'Shatabdi Express',
+    //     'number': '12002',
+    //     'from': 'NDLS',
+    //     'to': 'LKO',
+    //     'departure': '06:15',
+    //     'arrival': '12:40',
+    //     'duration': '6h 25m',
+    //     'rating': 4.5,
+    //   },
+    //   {
+    //     'name': 'Duronto Express',
+    //     'number': '12213',
+    //     'from': 'CSTM',
+    //     'to': 'NDLS',
+    //     'departure': '11:05',
+    //     'arrival': '04:00',
+    //     'duration': '16h 55m',
+    //     'rating': 4.3,
+    //   },
+    //   {
+    //     'name': 'Vande Bharat',
+    //     'number': '22435',
+    //     'from': 'NDLS',
+    //     'to': 'BKN',
+    //     'departure': '06:00',
+    //     'arrival': '13:45',
+    //     'duration': '7h 45m',
+    //     'rating': 4.8,
+    //   },
+    //   {
+    //     'name': 'Tejas Express',
+    //     'number': '22119',
+    //     'from': 'CSTM',
+    //     'to': 'MAO',
+    //     'departure': '05:50',
+    //     'arrival': '16:00',
+    //     'duration': '10h 10m',
+    //     'rating': 4.6,
+    //   },
+    // ];
+
+    // return SizedBox(
+    //   height: 175,
+    //   child: ListView.builder(
+    //     padding: const EdgeInsets.symmetric(horizontal: 8),
+    //     scrollDirection: Axis.horizontal,
+    //     itemCount: featuredTrains.length,
+    //     itemBuilder: (context, index) {
+    //       final train = featuredTrains[index];
+    //       return Padding(
+    //         padding: const EdgeInsets.symmetric(horizontal: 8),
+    //         child: ClipRect(
+    //           child: Container(
+    //             width: 260,
+    //             decoration: BoxDecoration(
+    //               color: Colors.white,
+    //               borderRadius: BorderRadius.circular(16),
+    //               boxShadow: [
+    //                 BoxShadow(
+    //                   color: Colors.black.withOpacity(0.05),
+    //                   blurRadius: 10,
+    //                   spreadRadius: 1,
+    //                 ),
+    //               ],
+    //             ),
+    //             child: Column(
+    //               crossAxisAlignment: CrossAxisAlignment.start,
+    //               children: [
+    //                 // Train header with gradient
+    //                 Container(
+    //                   height: 65,
+    //                   decoration: BoxDecoration(
+    //                     gradient: const LinearGradient(
+    //                       colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+    //                       begin: Alignment.topLeft,
+    //                       end: Alignment.bottomRight,
+    //                     ),
+    //                     borderRadius: const BorderRadius.only(
+    //                       topLeft: Radius.circular(16),
+    //                       topRight: Radius.circular(16),
+    //                     ),
+    //                   ),
+    //                   padding: const EdgeInsets.symmetric(
+    //                       horizontal: 16, vertical: 8),
+    //                   child: Row(
+    //                     children: [
+    //                       Expanded(
+    //                         child: Column(
+    //                           crossAxisAlignment: CrossAxisAlignment.start,
+    //                           children: [
+    //                             Text(
+    //                               train['name'],
+    //                               style: const TextStyle(
+    //                                 fontFamily: 'ProductSans',
+    //                                 fontWeight: FontWeight.bold,
+    //                                 fontSize: 16,
+    //                                 color: Colors.white,
+    //                               ),
+    //                               maxLines: 1,
+    //                               overflow: TextOverflow.ellipsis,
+    //                             ),
+    //                             const SizedBox(height: 2),
+    //                             Text(
+    //                               train['number'],
+    //                               style: const TextStyle(
+    //                                 fontFamily: 'ProductSans',
+    //                                 fontSize: 14,
+    //                                 color: Colors.white70,
+    //                               ),
+    //                             ),
+    //                           ],
+    //                         ),
+    //                       ),
+    //                       Row(
+    //                         mainAxisSize: MainAxisSize.min,
+    //                         children: [
+    //                           const Icon(
+    //                             Icons.star,
+    //                             color: Colors.amber,
+    //                             size: 18,
+    //                           ),
+    //                           const SizedBox(width: 4),
+    //                           Text(
+    //                             '${train['rating']}',
+    //                             style: const TextStyle(
+    //                               fontFamily: 'ProductSans',
+    //                               fontWeight: FontWeight.bold,
+    //                               fontSize: 14,
+    //                               color: Colors.white,
+    //                             ),
+    //                           ),
+    //                         ],
+    //                       ),
+    //                     ],
+    //                   ),
+    //                 ),
+    //                 // Train details
+    //                 Padding(
+    //                   padding: const EdgeInsets.symmetric(
+    //                       horizontal: 10, vertical: 6),
+    //                   child: Column(
+    //                     mainAxisSize: MainAxisSize.min,
+    //                     mainAxisAlignment: MainAxisAlignment.start,
+    //                     children: [
+    //                       SizedBox(
+    //                         height: 50,
+    //                         child: Row(
+    //                           crossAxisAlignment: CrossAxisAlignment.start,
+    //                           children: [
+    //                             // From station
+    //                             Expanded(
+    //                               flex: 2,
+    //                               child: Column(
+    //                                 mainAxisSize: MainAxisSize.min,
+    //                                 crossAxisAlignment:
+    //                                     CrossAxisAlignment.start,
+    //                                 children: [
+    //                                   Text(
+    //                                     train['from'],
+    //                                     style: const TextStyle(
+    //                                       fontFamily: 'ProductSans',
+    //                                       fontWeight: FontWeight.bold,
+    //                                       fontSize: 15,
+    //                                       color: Color(0xFF7C3AED),
+    //                                     ),
+    //                                     maxLines: 1,
+    //                                     overflow: TextOverflow.ellipsis,
+    //                                   ),
+    //                                   const SizedBox(height: 2),
+    //                                   Text(
+    //                                     train['departure'],
+    //                                     style: const TextStyle(
+    //                                       fontFamily: 'ProductSans',
+    //                                       fontSize: 12,
+    //                                       color: Colors.black87,
+    //                                     ),
+    //                                   ),
+    //                                 ],
+    //                               ),
+    //                             ),
+    //                             // Duration
+    //                             Expanded(
+    //                               flex: 1,
+    //                               child: Column(
+    //                                 mainAxisSize: MainAxisSize.min,
+    //                                 children: [
+    //                                   const Icon(
+    //                                     Icons.arrow_forward,
+    //                                     color: Color(0xFF7C3AED),
+    //                                     size: 16,
+    //                                   ),
+    //                                   const SizedBox(height: 2),
+    //                                   Text(
+    //                                     train['duration'],
+    //                                     style: const TextStyle(
+    //                                       fontFamily: 'ProductSans',
+    //                                       fontSize: 11,
+    //                                       color: Colors.black54,
+    //                                     ),
+    //                                     textAlign: TextAlign.center,
+    //                                   ),
+    //                                 ],
+    //                               ),
+    //                             ),
+    //                             // To station
+    //                             Expanded(
+    //                               flex: 2,
+    //                               child: Column(
+    //                                 mainAxisSize: MainAxisSize.min,
+    //                                 crossAxisAlignment: CrossAxisAlignment.end,
+    //                                 children: [
+    //                                   Text(
+    //                                     train['to'],
+    //                                     style: const TextStyle(
+    //                                       fontFamily: 'ProductSans',
+    //                                       fontWeight: FontWeight.bold,
+    //                                       fontSize: 15,
+    //                                       color: Color(0xFF7C3AED),
+    //                                     ),
+    //                                     maxLines: 1,
+    //                                     overflow: TextOverflow.ellipsis,
+    //                                   ),
+    //                                   const SizedBox(height: 2),
+    //                                   Text(
+    //                                     train['arrival'],
+    //                                     style: const TextStyle(
+    //                                       fontFamily: 'ProductSans',
+    //                                       fontSize: 12,
+    //                                       color: Colors.black87,
+    //                                     ),
+    //                                   ),
+    //                                 ],
+    //                               ),
+    //                             ),
+    //                           ],
+    //                         ),
+    //                       ),
+    //                       const SizedBox(height: 4),
+    //                       SizedBox(
+    //                         width: double.infinity,
+    //                         height: 32,
+    //                         child: ElevatedButton(
+    //                           onPressed: () {},
+    //                           style: ElevatedButton.styleFrom(
+    //                             backgroundColor: const Color(0xFF7C3AED),
+    //                             shape: RoundedRectangleBorder(
+    //                               borderRadius: BorderRadius.circular(14),
+    //                             ),
+    //                             padding: EdgeInsets.zero,
+    //                             minimumSize: Size.zero,
+    //                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    //                           ),
+    //                           child: const Text(
+    //                             'View Details',
+    //                             style: TextStyle(
+    //                               fontFamily: 'ProductSans',
+    //                               fontWeight: FontWeight.bold,
+    //                               fontSize: 12,
+    //                               color: Colors.white,
+    //                             ),
+    //                           ),
+    //                         ),
+    //                       ),
+    //                     ],
+    //                   ),
+    //                 ),
+    //               ],
+    //             ),
+    //           ),
+    //         ),
+    //       );
+    //     },
+    //   ),
+    // );
+  }
+
+  // News & Offers Section
+  Widget _buildNewsSection() {
+    final List<Map<String, String>> newsItems = [
       {
-        'name': 'Rajdhani Express',
-        'number': '12301',
-        'from': 'NDLS',
-        'to': 'HWH',
-        'departure': '16:55',
-        'arrival': '10:10',
-        'duration': '17h 15m',
-        'rating': 4.7,
+        'title': 'IRCTC Introduces Flexible Fares',
+        'subtitle': 'Save more on early bookings',
+        'date': '17 Jun 2025',
+        'url': 'https://www.businesstoday.in/personal-finance/news/story/new-railway-ticket-rules-irctc-floats-new-tatkal-ticket-rules-with-aadhaar-verification-479758-2025-06-10',
       },
       {
-        'name': 'Shatabdi Express',
-        'number': '12002',
-        'from': 'NDLS',
-        'to': 'LKO',
-        'departure': '06:15',
-        'arrival': '12:40',
-        'duration': '6h 25m',
-        'rating': 4.5,
+        'title': 'New Vande Bharat Routes Launched',
+        'subtitle': 'Experience faster journeys',
+        'date': '15 Jun 2025',
+        'url': 'https://economictimes.indiatimes.com/wealth/save/irctcs-new-tatkal-rules-you-must-know-before-your-next-confirmed-train-ticket-booking-know-all-faqs/articleshow/121729492.cms',
       },
       {
-        'name': 'Duronto Express',
-        'number': '12213',
-        'from': 'CSTM',
-        'to': 'NDLS',
-        'departure': '11:05',
-        'arrival': '04:00',
-        'duration': '16h 55m',
-        'rating': 4.3,
-      },
-      {
-        'name': 'Vande Bharat',
-        'number': '22435',
-        'from': 'NDLS',
-        'to': 'BKN',
-        'departure': '06:00',
-        'arrival': '13:45',
-        'duration': '7h 45m',
-        'rating': 4.8,
-      },
-      {
-        'name': 'Tejas Express',
-        'number': '22119',
-        'from': 'CSTM',
-        'to': 'MAO',
-        'departure': '05:50',
-        'arrival': '16:00',
-        'duration': '10h 10m',
-        'rating': 4.6,
+        'title': 'Monsoon Safety Guidelines',
+        'subtitle': 'Travel safe during rains',
+        'date': '12 Jun 2025',
+        'url': 'https://indianexpress.com/article/business/from-july-no-tatkal-railway-ticket-booking-without-aadhaar-authentication-10060727/',
       },
     ];
 
     return SizedBox(
-      height: 175,
+      height: 150,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         scrollDirection: Axis.horizontal,
-        itemCount: featuredTrains.length,
+        itemCount: newsItems.length,
         itemBuilder: (context, index) {
-          final train = featuredTrains[index];
+          final news = newsItems[index];
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: ClipRect(
+            child: InkWell(
+              onTap: () async {
+                final uri = Uri.parse(news['url']!);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
               child: Container(
-                width: 260,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      spreadRadius: 1,
+              width: 240,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Train header with gradient
-                    Container(
-                      height: 65,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    padding: const EdgeInsets.all(12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        news['date']!,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontFamily: 'ProductSans',
+                          fontSize: 12,
                         ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          news['title']!,
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF7C3AED),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  train['name'],
-                                  style: const TextStyle(
-                                    fontFamily: 'ProductSans',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  train['number'],
-                                  style: const TextStyle(
-                                    fontFamily: 'ProductSans',
-                                    fontSize: 14,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        SizedBox(height: 4),
+                        Text(
+                          news['subtitle']!,
+                          style: const TextStyle(
+                            fontFamily: 'ProductSans',
+                            fontSize: 12,
+                            color: Colors.black54,
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${train['rating']}',
-                                style: const TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                          maxLines: 2,
+                        ),
+                      ],
                     ),
-                    // Train details
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height: 50,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // From station
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        train['from'],
-                                        style: const TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                          color: Color(0xFF7C3AED),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        train['departure'],
-                                        style: const TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontSize: 12,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Duration
-                                Expanded(
-                                  flex: 1,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.arrow_forward,
-                                        color: Color(0xFF7C3AED),
-                                        size: 16,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        train['duration'],
-                                        style: const TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontSize: 11,
-                                          color: Colors.black54,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // To station
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        train['to'],
-                                        style: const TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                          color: Color(0xFF7C3AED),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        train['arrival'],
-                                        style: const TextStyle(
-                                          fontFamily: 'ProductSans',
-                                          fontSize: 12,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 32,
-                            child: ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF7C3AED),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text(
-                                'View Details',
-                                style: TextStyle(
-                                  fontFamily: 'ProductSans',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
               ),
             ),
           );
@@ -1608,7 +1732,14 @@ class _SearchTabState extends State<SearchTab> {
 
   // Footer Section
   Widget _buildFooterSection() {
+    // Get device dimensions to ensure footer extends to bottom
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Container(
+      width: screenWidth,
+      // Set a minimum height to ensure medium size footer
+      constraints: BoxConstraints(minHeight: 180),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1623,8 +1754,16 @@ class _SearchTabState extends State<SearchTab> {
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
+        // Add box shadow to emphasize the footer
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.only(top: 24, bottom: 50, left: 16, right: 16),
       child: Column(
         children: [
           Row(
