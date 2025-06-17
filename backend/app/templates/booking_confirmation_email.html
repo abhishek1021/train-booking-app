@@ -373,15 +373,15 @@
             
             <div class="passenger-details">
                 <h2>Passenger Details</h2>
-                {{#each passengers}}
+                {% for passenger in passengers %}
                 <div class="passenger">
-                    <div class="passenger-name">{{name}}</div>
+                    <div class="passenger-name">{{ passenger.name }}</div>
                     <div class="passenger-info">
-                        <span>Age: {{age}} | Gender: {{gender}}</span>
-                        <span>Seat: {{seat}}</span>
+                        <span>Age: {{ passenger.age }} | Gender: {{ passenger.gender }}</span>
+                        <span>Seat: {{ passenger.seat }}</span>
                     </div>
                 </div>
-                {{/each}}
+                {% endfor %}
             </div>
             
             <div class="qr-section">

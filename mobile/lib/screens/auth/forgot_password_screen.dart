@@ -24,6 +24,69 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _otpSent = false;
   bool _isVerifying = false;
 
+  // --- Custom SnackBar for consistent user feedback ---
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      margin: const EdgeInsets.all(16),
+      duration: duration,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  // --- Validators ---
+  String? _validateOtp(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter the OTP';
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+      return 'OTP must be 6 digits';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a new password';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@\$!%*?&])[A-Za-z\d@\$!%*?&]{8,}$').hasMatch(value)) {
+      return 'Password must include uppercase, lowercase, number & special character';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+    if (value != _newPasswordController.text) {
+      return 'Passwords do not match';
+    }
+    return null;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -59,8 +122,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         setState(() {
           _otpSent = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP sent to your email')),
+        _showCustomSnackBar(
+          message: 'OTP sent to your email',
+          icon: Icons.check_circle,
+          backgroundColor: Colors.green[700]!,
         );
       } else {
         String errorMsg;
@@ -390,6 +455,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     height: 72,
                                     child: TextFormField(
                                       controller: _otpController,
+                                      validator: _validateOtp,
                                       keyboardType: TextInputType.number,
                                       style: const TextStyle(
                                         fontFamily: 'ProductSans',
@@ -427,16 +493,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                           fontSize: 13,
                                           height: 1.2,
                                         ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                        ),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter the OTP';
-                                        }
-                                        if (value.length != 6) {
-                                          return 'OTP must be 6 digits';
-                                        }
-                                        return null;
-                                      },
                                     ),
                                   ),
                                   
@@ -455,6 +520,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     height: 72,
                                     child: TextFormField(
                                       controller: _newPasswordController,
+                                      validator: _validatePassword,
                                       obscureText: _obscurePassword,
                                       style: const TextStyle(
                                         fontFamily: 'ProductSans',
@@ -501,15 +567,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                           height: 1.2,
                                         ),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter a new password';
-                                        }
-                                        if (value.length < 6) {
-                                          return 'Password must be at least 6 characters';
-                                        }
-                                        return null;
-                                      },
                                     ),
                                   ),
                                   
@@ -528,6 +585,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     height: 72,
                                     child: TextFormField(
                                       controller: _confirmPasswordController,
+                                      validator: _validateConfirmPassword,
                                       obscureText: _obscureConfirmPassword,
                                       style: const TextStyle(
                                         fontFamily: 'ProductSans',
@@ -574,15 +632,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                           height: 1.2,
                                         ),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please confirm your password';
-                                        }
-                                        if (value != _newPasswordController.text) {
-                                          return 'Passwords do not match';
-                                        }
-                                        return null;
-                                      },
                                     ),
                                   ),
                                   
