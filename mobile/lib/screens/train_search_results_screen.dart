@@ -127,19 +127,28 @@ class _TrainSearchResultsScreenState extends State<TrainSearchResultsScreen> {
   }
 
   DateTime _parseDate(String dateStr) {
-    if (dateStr.contains('-')) {
-      // yyyy-MM-dd or yyyy/MM/dd
-      return DateTime.parse(dateStr.replaceAll('/', '-'));
-    } else if (dateStr.contains('/')) {
-      // dd/MM/yyyy
-      final parts = dateStr.split('/');
-      return DateTime(
-        int.parse(parts[2]),
-        int.parse(parts[1]),
-        int.parse(parts[0]),
-      );
-    } else {
-      throw FormatException('Unknown date format: $dateStr');
+    try {
+      if (dateStr.contains('-')) {
+        // yyyy-MM-dd format
+        return DateTime.parse(dateStr);
+      } else if (dateStr.contains('/')) {
+        // dd/MM/yyyy format
+        final parts = dateStr.split('/');
+        if (parts.length == 3) {
+          return DateTime(
+            int.parse(parts[2]), // year
+            int.parse(parts[1]), // month
+            int.parse(parts[0]), // day
+          );
+        }
+      }
+      
+      // If we can't parse it with the above methods, try standard DateTime.parse
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      // If all parsing attempts fail, use current date as fallback
+      print('Date parsing error: $e for date string: $dateStr');
+      return DateTime.now();
     }
   }
 

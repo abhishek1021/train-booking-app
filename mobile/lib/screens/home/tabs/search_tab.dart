@@ -48,6 +48,7 @@ class _SearchTabState extends State<SearchTab> {
 
   String? selectedClass;
   bool _isSearching = false; // Track when a search is in progress
+  Map<int, bool> _routeLoadingState = {}; // Track loading state for each popular route
 
   final String citiesEndpoint = "${ApiConstants.baseUrl}/api/v1/cities";
 
@@ -148,11 +149,23 @@ class _SearchTabState extends State<SearchTab> {
   @override
   void initState() {
     super.initState();
+    _fetchCities();
     _loadUsername();
     _loadUserId();
-    _fetchCities();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _updateSearchCardHeight());
+    
+    // Initialize with today's date
+    selectedDate = DateTime.now();
+    
+    // Initialize loading states for popular routes
+    final routes = _getPopularRoutes();
+    for (int i = 0; i < routes.length; i++) {
+      _routeLoadingState[i] = false;
+    }
+    
+    // Measure search card height after layout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateSearchCardHeight();
+    });
   }
 
   // Load user ID from SharedPreferences
@@ -936,6 +949,93 @@ class _SearchTabState extends State<SearchTab> {
     );
   }
 
+  // Helper method to perform search operation
+  Future<void> _performSearch(String origin, String destination, String originName, String destinationName, [int? routeIndex]) async {
+    if (origin.isEmpty || destination.isEmpty) {
+      // Reset loading state if this was called from a route card
+      if (routeIndex != null) {
+        setState(() {
+          _routeLoadingState[routeIndex] = false;
+        });
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select origin and destination.')),
+      );
+      return;
+    }
+
+    // Use current date if not selected
+    if (selectedDate == null) {
+      setState(() {
+        selectedDate = DateTime.now();
+      });
+    }
+
+    final date = '${selectedDate!.year.toString().padLeft(4, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}';
+
+    // Set loading state to true before API call
+    setState(() {
+      // If this is from the main search, set the main loading state
+      if (routeIndex == null) {
+        _isSearching = true;
+      }
+      // Route-specific loading state is already set before calling this method
+    });
+
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        '${ApiConstants.baseUrl}/api/v1/trains/search'
+            .replaceAll(RegExp(r'\/$'), ''),
+        queryParameters: {
+          'origin': origin,
+          'destination': destination,
+          'date': date,
+        },
+      );
+
+      // Set loading state to false after API call
+      setState(() {
+        if (routeIndex != null) {
+          _routeLoadingState[routeIndex] = false;
+        } else {
+          _isSearching = false;
+        }
+      });
+
+      final List<dynamic> trains = response.data;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TrainSearchResultsScreen(
+            trains: trains,
+            origin: origin, // always station code
+            destination: destination, // always station code
+            originName: originName,
+            destinationName: destinationName,
+            date: formatDate(selectedDate),
+            passengers: passengers,
+            selectedClass: selectedClass ?? '',
+          ),
+        ),
+      );
+    } catch (e) {
+      // Reset loading state on error
+      setState(() {
+        if (routeIndex != null) {
+          _routeLoadingState[routeIndex] = false;
+        } else {
+          _isSearching = false;
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch trains: $e')),
+      );
+    }
+  }
+
   // Helper method to build gradient container for route cards
   Widget _buildGradientContainer(int index) {
     // Create different gradient colors based on the index
@@ -969,8 +1069,8 @@ class _SearchTabState extends State<SearchTab> {
       {
         'from': 'Delhi',
         'to': 'Mumbai',
-        'fromCode': 'NDLS',
-        'toCode': 'CSTM',
+        'fromCode': 'DLI',
+        'toCode': 'CSMT',
         'trains': 42,
         'duration': '16h 35m',
         'image': 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?q=80&w=1536&auto=format&fit=crop',
@@ -978,7 +1078,7 @@ class _SearchTabState extends State<SearchTab> {
       {
         'from': 'Bangalore',
         'to': 'Chennai',
-        'fromCode': 'SBC',
+        'fromCode': 'BNC',
         'toCode': 'MAS',
         'trains': 23,
         'duration': '5h 15m',
@@ -1195,21 +1295,51 @@ class _SearchTabState extends State<SearchTab> {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF7C3AED),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Book Now',
-                              style: TextStyle(
-                                fontFamily: 'ProductSans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                          GestureDetector(
+                            onTap: _routeLoadingState[index] == true ? null : () {
+                              // Set the origin and destination
+                              setState(() {
+                                selectedOrigin = route['fromCode'];
+                                selectedDestination = route['toCode'];
+                                selectedOriginName = route['from'];
+                                selectedDestinationName = route['to'];
+                                originController.text = route['from'];
+                                destinationController.text = route['to'];
+                                _routeLoadingState[index] = true; // Set loading state
+                              });
+                              
+                              // Perform search operation
+                              _performSearch(route['fromCode'], route['toCode'], route['from'], route['to'], index);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
                               ),
+                              child: _routeLoadingState[index] == true
+                                ? const SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      strokeWidth: 2.0,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Book Now',
+                                    style: TextStyle(
+                                      fontFamily: 'ProductSans',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],
