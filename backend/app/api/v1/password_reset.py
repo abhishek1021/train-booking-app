@@ -13,7 +13,9 @@ from app.api.v1.ses_otp import send_otp, OtpRequest, OtpVerifyRequest
 region_name = os.getenv("AWS_REGION", "ap-south-1")
 dynamodb = boto3.resource("dynamodb", region_name=region_name)
 users_table = dynamodb.Table("users")
-otp_table = dynamodb.Table("otp")
+
+# Make sure we're using the same OTP table as in ses_otp.py
+otp_table = dynamodb.Table("otp_codes")
 
 router = APIRouter()
 
@@ -104,7 +106,9 @@ async def verify_reset_and_update_password(request: PasswordResetVerifyRequest):
         if request.otp != stored_otp:
             raise HTTPException(status_code=400, detail="Invalid OTP. Please check and try again.")
         
-        # Hash the new password
+        # Hash the new password - ensure consistent with login_user function
+        # The login_user function expects the password hash to be stored as a string
+        # that can be encoded to utf-8 when checking the password
         hashed_password = bcrypt.hashpw(request.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         
         # Update the user's password
