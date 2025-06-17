@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../screens/pnr_search_screen.dart';
-import '../../../screens/history_screen.dart';
-import '../../../screens/offers_screen.dart';
-import '../../../screens/support_screen.dart';
-import '../../../screens/info_screen.dart';
-import '../../../screens/language_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../info_screen.dart';
+import '../../language_screen.dart';
+import '../../offers_screen.dart';
+import '../../pnr_search_screen.dart';
+import '../../popular_routes_screen.dart';
+import '../../support_screen.dart';
+import '../../history_screen.dart';
 import 'package:tatkalpro/api_constants.dart';
 import 'package:tatkalpro/screens/city_search_screen.dart';
 import 'package:tatkalpro/screens/train_search_results_screen.dart';
@@ -694,7 +697,32 @@ class _SearchTabState extends State<SearchTab> {
 
                   // Popular Routes Section
                   const SizedBox(height: 24),
-                  _buildSectionHeader('Popular Routes'),
+                  _buildSectionHeader(
+                    'Popular Routes',
+                    onSeeAllPressed: () {
+                      // Navigate to the Popular Routes Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PopularRoutesScreen(
+                            popularRoutes: _getPopularRoutes(),
+                          ),
+                        ),
+                      ).then((selectedRoute) {
+                        // Handle the selected route if returned
+                        if (selectedRoute != null) {
+                          setState(() {
+                            selectedOrigin = selectedRoute['fromCode'];
+                            selectedDestination = selectedRoute['toCode'];
+                            selectedOriginName = selectedRoute['from'];
+                            selectedDestinationName = selectedRoute['to'];
+                            originController.text = selectedRoute['from'];
+                            destinationController.text = selectedRoute['to'];
+                          });
+                        }
+                      });
+                    },
+                  ),
                   const SizedBox(height: 12),
                   _buildPopularRoutesSection(),
 
@@ -869,9 +897,9 @@ class _SearchTabState extends State<SearchTab> {
   }
 
   // Section Header Widget
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, {VoidCallback? onSeeAllPressed}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -884,26 +912,60 @@ class _SearchTabState extends State<SearchTab> {
               color: Color(0xFF7C3AED),
             ),
           ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'See All',
-              style: TextStyle(
-                fontFamily: 'ProductSans',
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Color(0xFF7C3AED),
+          if (onSeeAllPressed != null)
+            TextButton(
+              onPressed: onSeeAllPressed,
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF7C3AED),
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-            ),
+              child: const Text(
+                'See All',
+                style: TextStyle(
+                  fontFamily: 'ProductSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF7C3AED),
+                ),
+              ),
           ),
         ],
       ),
     );
   }
 
-  // Popular Routes Section
-  Widget _buildPopularRoutesSection() {
-    final List<Map<String, dynamic>> popularRoutes = [
+  // Helper method to build gradient container for route cards
+  Widget _buildGradientContainer(int index) {
+    // Create different gradient colors based on the index
+    List<List<Color>> gradients = [
+      [const Color(0xFF5D50FE), const Color(0xFF9F7AEA)],
+      [const Color(0xFF009688), const Color(0xFF4DB6AC)],
+      [const Color(0xFFE91E63), const Color(0xFFF48FB1)],
+      [const Color(0xFF2196F3), const Color(0xFF90CAF9)],
+      [const Color(0xFFFF9800), const Color(0xFFFFCC80)],
+    ];
+    
+    // Use modulo to cycle through gradients if there are more routes than gradients
+    final colorIndex = index % gradients.length;
+    
+    return Container(
+      height: 100,
+      width: 180,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradients[colorIndex],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+    );
+  }
+
+  // Helper method to get popular routes data
+  List<Map<String, dynamic>> _getPopularRoutes() {
+    return [
       {
         'from': 'Delhi',
         'to': 'Mumbai',
@@ -911,7 +973,7 @@ class _SearchTabState extends State<SearchTab> {
         'toCode': 'CSTM',
         'trains': 42,
         'duration': '16h 35m',
-        'image': 'assets/images/delhi_mumbai.jpg',
+        'image': 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?q=80&w=1536&auto=format&fit=crop',
       },
       {
         'from': 'Bangalore',
@@ -920,7 +982,7 @@ class _SearchTabState extends State<SearchTab> {
         'toCode': 'MAS',
         'trains': 23,
         'duration': '5h 15m',
-        'image': 'assets/images/bangalore_chennai.jpg',
+        'image': 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1544&auto=format&fit=crop',
       },
       {
         'from': 'Kolkata',
@@ -929,7 +991,7 @@ class _SearchTabState extends State<SearchTab> {
         'toCode': 'NDLS',
         'trains': 35,
         'duration': '17h 20m',
-        'image': 'assets/images/kolkata_delhi.jpg',
+        'image': 'https://images.unsplash.com/photo-1488747279002-c8523379faaa?q=80&w=1470&auto=format&fit=crop',
       },
       {
         'from': 'Mumbai',
@@ -938,7 +1000,7 @@ class _SearchTabState extends State<SearchTab> {
         'toCode': 'MAO',
         'trains': 18,
         'duration': '8h 40m',
-        'image': 'assets/images/mumbai_goa.jpg',
+        'image': 'https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       },
       {
         'from': 'Hyderabad',
@@ -947,20 +1009,25 @@ class _SearchTabState extends State<SearchTab> {
         'toCode': 'SBC',
         'trains': 15,
         'duration': '10h 30m',
-        'image': 'assets/images/hyderabad_bangalore.jpg',
+        'image': 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?q=80&w=1470&auto=format&fit=crop',
       },
     ];
+  }
+
+  // Popular Routes Section
+  Widget _buildPopularRoutesSection() {
+    final popularRoutes = _getPopularRoutes();
 
     return SizedBox(
-      height: 175,
+      height: 210,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: popularRoutes.length,
         itemBuilder: (context, index) {
           final route = popularRoutes[index];
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: () {
                 // Pre-fill search with this route
@@ -977,42 +1044,101 @@ class _SearchTabState extends State<SearchTab> {
                 // This would require a ScrollController
               },
               child: Container(
-                width: 160,
+                width: 180,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 10,
-                      spreadRadius: 1,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Route image or gradient
-                    Container(
-                      height: 75,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFF9F7AEA)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    // Route image with gradient overlay
+                    Stack(
+                      children: [
+                        // Image or Gradient Background
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          child: route['image'] != null 
+                            ? Image.network(
+                                route['image'] as String,
+                                height: 100,
+                                width: 180,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Fallback to gradient if image fails to load
+                                  return _buildGradientContainer(index);
+                                },
+                              )
+                            : _buildGradientContainer(index),
                         ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                        // Gradient overlay
+                        Container(
+                          height: 100,
+                          width: 180,
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                            ),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withOpacity(0.6),
+                                Colors.transparent,
+                              ],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.train,
-                          color: Colors.white,
-                          size: 36,
+                        // Route codes
+                        Positioned(
+                          bottom: 10,
+                          left: 10,
+                          right: 10,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                route['fromCode'] as String,
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8),
+                                child: Icon(
+                                  Icons.arrow_forward,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                              Text(
+                                route['toCode'] as String,
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                     // Route details
                     Padding(
@@ -1032,21 +1158,49 @@ class _SearchTabState extends State<SearchTab> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            '${route['trains']} Trains • ${route['duration']}',
-                            style: const TextStyle(
-                              fontFamily: 'ProductSans',
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.black54,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                route['duration'] as String,
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 3,
+                                height: 3,
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${route['trains']} Trains',
+                                style: const TextStyle(
+                                  fontFamily: 'ProductSans',
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF7C3AED).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFF7C3AED),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
                               'Book Now',
@@ -1054,7 +1208,7 @@ class _SearchTabState extends State<SearchTab> {
                                 fontFamily: 'ProductSans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF7C3AED),
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -1733,96 +1887,145 @@ class _SearchTabState extends State<SearchTab> {
   // Footer Section
   Widget _buildFooterSection() {
     // Get device dimensions to ensure footer extends to bottom
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final screenWidth = mediaQuery.size.width;
+    final bottomPadding = mediaQuery.padding.bottom;
+    final isTablet = screenWidth > 600;
+    final isLargeScreen = screenWidth > 900;
     
-    return Container(
-      width: screenWidth,
-      // Set a minimum height to ensure medium size footer
-      constraints: BoxConstraints(minHeight: 180),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.grey[300]!,
-            Colors.grey[200]!,
-            Colors.grey[100]!,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-        // Add box shadow to emphasize the footer
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, -2),
+    // Calculate adaptive padding based on device size
+    final horizontalPadding = isTablet ? 32.0 : 16.0;
+    final bottomSafePadding = bottomPadding > 0 ? bottomPadding + 16.0 : 50.0;
+    
+    // Ensure the footer extends to fill available space when content is short
+    // by calculating remaining space in the parent ScrollView
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          width: screenWidth,
+          // Set a minimum height to ensure medium size footer that adapts to device size
+          constraints: BoxConstraints(
+            minHeight: isTablet ? 220.0 : 180.0,
+            minWidth: double.infinity,
           ),
-        ],
-      ),
-      padding: const EdgeInsets.only(top: 24, bottom: 50, left: 16, right: 16),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.favorite,
-                color: Color(0xFF7C3AED),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Made with love in India',
-                style: TextStyle(
-                  fontFamily: 'ProductSans',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF7C3AED),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildFooterLink('Terms & Conditions'),
-              _buildFooterDot(),
-              _buildFooterLink('Privacy Policy'),
-              _buildFooterDot(),
-              _buildFooterLink('Help'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '© 2025 TatkalPro. All rights reserved.',
-            style: TextStyle(
-              fontFamily: 'ProductSans',
-              fontSize: 12,
-              color: Colors.black54,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.grey[300]!,
+                Colors.grey[200]!,
+                Colors.grey[100]!,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildSocialIcon(Icons.facebook),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.telegram),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.chat),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.email),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(isTablet ? 40.0 : 30.0),
+              topRight: Radius.circular(isTablet ? 40.0 : 30.0),
+            ),
+            // Add box shadow to emphasize the footer
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
+          padding: EdgeInsets.only(
+            top: 24, 
+            bottom: bottomSafePadding, 
+            left: horizontalPadding, 
+            right: horizontalPadding
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmallScreen = constraints.maxWidth < 360;
+              final isTablet = constraints.maxWidth > 600;
+              
+              return Column(
+                children: [
+                  // Logo and tagline
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.favorite,
+                        color: const Color(0xFF7C3AED),
+                        size: isTablet ? 24 : 20,
+                      ),
+                      SizedBox(width: isTablet ? 12 : 8),
+                      Text(
+                        'Made with love in India',
+                        style: TextStyle(
+                          fontFamily: 'ProductSans',
+                          fontWeight: FontWeight.bold,
+                          fontSize: isTablet ? 18 : 16,
+                          color: const Color(0xFF7C3AED),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isTablet ? 24 : 16),
+                  
+                  // Links section - wrap for small screens
+                  isSmallScreen
+                    ? Column(
+                        children: [
+                          _buildFooterLink('Terms & Conditions'),
+                          SizedBox(height: 8),
+                          _buildFooterLink('Privacy Policy'),
+                          SizedBox(height: 8),
+                          _buildFooterLink('Help'),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildFooterLink('Terms & Conditions'),
+                          _buildFooterDot(),
+                          _buildFooterLink('Privacy Policy'),
+                          _buildFooterDot(),
+                          _buildFooterLink('Help'),
+                        ],
+                      ),
+                  
+                  SizedBox(height: isTablet ? 16 : 12),
+                  
+                  // Copyright text
+                  Text(
+                    '© 2025 TatkalPro. All rights reserved.',
+                    style: TextStyle(
+                      fontFamily: 'ProductSans',
+                      fontSize: isTablet ? 14 : 12,
+                      color: Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  SizedBox(height: isTablet ? 24 : 16),
+                  
+                  // Social icons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildSocialIcon(Icons.facebook, isTablet: isTablet),
+                      SizedBox(width: isTablet ? 24 : 16),
+                      _buildSocialIcon(Icons.telegram, isTablet: isTablet),
+                      SizedBox(width: isTablet ? 24 : 16),
+                      _buildSocialIcon(Icons.chat, isTablet: isTablet),
+                      SizedBox(width: isTablet ? 24 : 16),
+                      _buildSocialIcon(Icons.email, isTablet: isTablet),
+                    ],
+                  ),
+                  
+                  SizedBox(height: isTablet ? 24 : 16),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -1858,17 +2061,28 @@ class _SearchTabState extends State<SearchTab> {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon) {
+  Widget _buildSocialIcon(IconData icon, {bool isTablet = false}) {
+    final iconSize = isTablet ? 44.0 : 36.0;
+    final iconInnerSize = isTablet ? 22.0 : 18.0;
+    
     return Container(
-      padding: const EdgeInsets.all(8),
+      width: iconSize,
+      height: iconSize,
       decoration: BoxDecoration(
-        color: const Color(0xFF7C3AED).withOpacity(0.1),
+        color: Colors.white,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Icon(
         icon,
         color: const Color(0xFF7C3AED),
-        size: 18,
+        size: iconInnerSize,
       ),
     );
   }
