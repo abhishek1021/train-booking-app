@@ -96,10 +96,18 @@ class _SignupStep3PasswordScreenState extends State<SignupStep3PasswordScreen> {
       );
       Navigator.of(context).pop();
       if (response.statusCode == 201) {
+        // Parse response data
+        final responseData = jsonDecode(response.body);
+        
+        // Store JWT token and token type in SharedPreferences
+        if (responseData['token'] != null) {
+          await prefs.setString('auth_token', responseData['token']);
+          await prefs.setString('token_type', responseData['token_type'] ?? 'bearer');
+        }
+        
         // Store user info in prefs
-        final userInfo = jsonDecode(response.body);
         await prefs.setString(
-            'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+            'user_profile', jsonEncode(responseData['user'] ?? responseData));
         await showDialog(
           context: context,
           barrierDismissible: false,

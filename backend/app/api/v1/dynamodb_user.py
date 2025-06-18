@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -8,6 +8,9 @@ import os
 import bcrypt
 import uuid
 import asyncio
+
+# Import JWT utilities
+from app.core.jwt import create_jwt_token, jwt_auth
 
 # Import wallet schema and functions
 from app.schemas.wallet import WalletCreate, WalletStatus
@@ -312,7 +315,23 @@ def create_user(user: UserCreateRequest):
             # Don't fail user creation if notification fails
         # --- End Send Welcome Notification ---
         
-        return {"message": "User created", "user": item}
+        # Generate JWT token
+        from app.core.jwt import create_jwt_token
+        
+        token_data = {
+            "user_id": item.get("UserID"),
+            "email": item.get("Email"),
+            "username": item.get("Username"),
+            "role": item.get("OtherAttributes", {}).get("Role", "user")
+        }
+        token = create_jwt_token(token_data)
+        
+        return {
+            "message": "User created", 
+            "user": item,
+            "token": token,
+            "token_type": "bearer"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -366,7 +385,22 @@ def login_user(login: UserLoginRequest):
         )
         # Remove sensitive info before returning
         user.pop("PasswordHash", None)
-        return {"message": "Login successful", "user": user}
+        
+        # Generate JWT token
+        token_data = {
+            "user_id": user.get("UserID"),
+            "email": login.email,
+            "username": user.get("Username"),
+            "role": user.get("OtherAttributes", {}).get("Role", "user")
+        }
+        token = create_jwt_token(token_data)
+        
+        return {
+            "message": "Login successful", 
+            "user": user,
+            "token": token,
+            "token_type": "bearer"
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -403,21 +437,38 @@ def mobile_login(login: MobileLoginRequest):
             UpdateExpression="SET LastLoginAt = :now",
             ExpressionAttributeValues={
                 ":now": datetime.utcnow().isoformat()
-            },
+            }
         )
         
         # Remove sensitive info before returning
         user.pop("PasswordHash", None)
         
-        return {"message": "Login successful", "user": user}
+        # Extract email from PK (format is USER#email)
+        email = user["PK"].split("#")[1] if "#" in user["PK"] else ""
+        
+        # Generate JWT token
+        token_data = {
+            "user_id": user.get("UserID"),
+            "email": email,
+            "username": user.get("Username"),
+            "role": user.get("OtherAttributes", {}).get("Role", "user")
+        }
+        token = create_jwt_token(token_data)
+        
+        return {
+            "message": "Login successful", 
+            "user": user,
+            "token": token,
+            "token_type": "bearer"
+        }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/dynamodb/users/update/{email}")
-def update_user_profile(email: str, user_update: UserUpdateRequest):
+@router.put("/dynamodb/users/{email}/update")
+def update_user_profile(email: str, user_update: UserUpdateRequest, user_payload: dict = Depends(jwt_auth)):
     """Update user profile information"""
     try:
         # Check if user exists

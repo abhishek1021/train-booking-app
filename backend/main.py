@@ -15,6 +15,7 @@ try:
     # from app.core.config import settings
     from app.api.v1.api import api_router
     from app.api.v1.dynamodb_user import router as user_router
+    from app.middleware.jwt_middleware import JWTAuthMiddleware
     # from app.db.session import engine
     # from app.db.base import Base
     print(">>> All imports in main.py succeeded")
@@ -43,6 +44,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add JWT authentication middleware
+app.add_middleware(JWTAuthMiddleware)
 
 # Include API routers
 app.include_router(api_router, prefix="/api/v1")

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/job_service.dart';
@@ -12,6 +10,7 @@ import '../config/api_config.dart';
 import '../widgets/success_animation_dialog.dart';
 import '../widgets/train_selection_popup.dart';
 import 'city_search_screen.dart';
+import '../widgets/tatkal_guide_modal.dart';
 
 class TatkalModeScreen extends StatefulWidget {
   const TatkalModeScreen({Key? key}) : super(key: key);
@@ -21,6 +20,38 @@ class TatkalModeScreen extends StatefulWidget {
 }
 
 class _TatkalModeScreenState extends State<TatkalModeScreen> {
+  bool _showGuide = false;
+  bool _guideChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndShowGuide();
+    // _initializeServices will be called after guide check in _checkAndShowGuide
+  }
+
+  Future<void> _checkAndShowGuide() async {
+    final prefs = await SharedPreferences.getInstance();
+    final guideSeen = prefs.getBool('tatkal_guide_seen') ?? false;
+    if (!guideSeen) {
+      setState(() {
+        _showGuide = true;
+        _guideChecked = true;
+      });
+      await prefs.setBool('tatkal_guide_seen', true);
+    } else {
+      setState(() {
+        _guideChecked = true;
+      });
+    }
+    // Always initialize services after checking guide
+    await _initializeServices();
+    final now = DateTime.now();
+    _selectedJobDate = now;
+    _jobDateController.text = _formatDate(now);
+    _selectedJobTime = TimeOfDay.now();
+    _jobTimeController.text = _formatTime(_selectedJobTime!);
+  }
   // Services
   final JobService _jobService = JobService();
   PassengerService? _passengerService;
@@ -107,16 +138,16 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
   ];
   final List<String> _paymentMethods = ['wallet', 'upi', 'card'];
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeServices();
-    final now = DateTime.now();
-    _selectedJobDate = now;
-    _jobDateController.text = _formatDate(now);
-    _selectedJobTime = TimeOfDay.now();
-    _jobTimeController.text = _formatTime(_selectedJobTime!);
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _initializeServices();
+  //   final now = DateTime.now();
+  //   _selectedJobDate = now;
+  //   _jobDateController.text = _formatDate(now);
+  //   _selectedJobTime = TimeOfDay.now();
+  //   _jobTimeController.text = _formatTime(_selectedJobTime!);
+  // }
 
   // Initialize services
   Future<void> _initializeServices() async {
@@ -1046,8 +1077,31 @@ class _TatkalModeScreenState extends State<TatkalModeScreen> {
         backgroundColor: const Color(0xFF7C3AED),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            tooltip: 'How Tatkal Mode Works',
+            onPressed: () {
+              setState(() {
+                _showGuide = true;
+              });
+            },
+          ),
+        ],
       ),
-      body: _isJobCreated ? _buildSuccessView() : _buildStepperView(),
+      body: Stack(
+        children: [
+          _isJobCreated ? _buildSuccessView() : _buildStepperView(),
+          if (_showGuide && _guideChecked)
+            TatkalGuideModal(
+              onClose: () {
+                setState(() {
+                  _showGuide = false;
+                });
+              },
+            ),
+        ],
+      ),
     );
   }
 

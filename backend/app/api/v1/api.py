@@ -10,6 +10,7 @@ from app.api.v1.endpoints import jobs
 from app.api.v1.endpoints import job_logs
 from app.api.v1.endpoints import notifications
 from app.api.v1.endpoints import users
+from app.api.v1.endpoints import auth_test
 from app.api.v1 import dynamodb_user
 from app.api.v1 import ses_otp
 from app.api.v1 import password_reset
@@ -29,4 +30,5 @@ api_router.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
 api_router.include_router(job_logs.router, prefix="/job-logs", tags=["job-logs"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(auth_test.router, prefix="/auth", tags=["auth"])
 api_router.include_router(dynamodb_user.router)

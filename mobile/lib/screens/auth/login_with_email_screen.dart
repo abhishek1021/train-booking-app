@@ -46,11 +46,21 @@ class _LoginWithEmailScreenState extends State<LoginWithEmailScreen> {
         }),
       );
       if (response.statusCode == 200) {
-        // Store user info in prefs
-        final userInfo = jsonDecode(response.body);
+        // Parse response data
+        final responseData = jsonDecode(response.body);
+        final userInfo = responseData['user'] ?? responseData;
+        final token = responseData['token'];
+        final tokenType = responseData['token_type'];
+        
+        // Store user info and token in prefs
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-            'user_profile', jsonEncode(userInfo['user'] ?? userInfo));
+        await prefs.setString('user_profile', jsonEncode(userInfo));
+        
+        // Store JWT token
+        if (token != null) {
+          await prefs.setString('auth_token', token);
+          await prefs.setString('token_type', tokenType ?? 'bearer');
+        }
 
         // Show success animation before navigating
         showDialog(

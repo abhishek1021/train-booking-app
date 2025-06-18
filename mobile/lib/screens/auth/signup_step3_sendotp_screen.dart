@@ -197,6 +197,29 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
             Navigator.of(context).pop();
 
             if (created) {
+              // After account creation, login to get JWT token
+              final loginUrl = Uri.parse('${ApiConstants.baseUrl}/api/v1/dynamodb/users/login');
+              final loginResponse = await http.post(
+                loginUrl,
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({
+                  'email': email,
+                  'password': password,
+                }),
+              );
+              
+              if (loginResponse.statusCode == 200) {
+                // Store JWT token
+                final loginData = jsonDecode(loginResponse.body);
+                final token = loginData['token'];
+                final tokenType = loginData['token_type'];
+                
+                if (token != null) {
+                  await prefs.setString('auth_token', token);
+                  await prefs.setString('token_type', tokenType ?? 'bearer');
+                }
+              }
+              
               // Show account created dialog
               await showDialog(
                 context: context,
@@ -255,8 +278,11 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
               // Store user profile and token in SharedPreferences
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('user_profile', jsonEncode(responseData['user']));
+              
+              // Store JWT token and token type
               if (responseData['token'] != null) {
                 await prefs.setString('auth_token', responseData['token']);
+                await prefs.setString('token_type', responseData['token_type'] ?? 'bearer');
               }
               
               // Show success animation before navigating
@@ -281,7 +307,7 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
             }
           } catch (e) {
             showDialog(
-              context: context,
+              context: context,              
               builder: (context) => SignInFailedDialog(error: 'Login error: ${e.toString()}'),
             );
           }

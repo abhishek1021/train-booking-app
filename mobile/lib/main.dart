@@ -17,6 +17,8 @@ import 'package:tatkalpro/screens/notification_screen.dart';
 // Import appropriate notification service based on platform
 import 'package:tatkalpro/services/notification_service.dart' if (dart.library.html) 'package:tatkalpro/services/notification_service_web.dart';
 import 'package:tatkalpro/widgets/notification_overlay.dart';
+// Import global auth interceptor
+import 'package:tatkalpro/services/global_auth_interceptor.dart';
 
 // Import Firebase packages
 import 'package:firebase_core/firebase_core.dart';
@@ -36,6 +38,9 @@ void main() async {
     
     // Initialize notification service only on mobile platforms
     await NotificationService().initialize();
+    
+    // Initialize global auth interceptor
+    await GlobalAuthInterceptor.initialize();
   } else {
     print('Running on web platform - Firebase initialization skipped');
   }
