@@ -2209,7 +2209,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
 
                               for (var passenger in passengersToSave) {
                                 final response = await http.post(
-                                  Uri.parse('$baseUrl/api/v1/passengers'),
+                                  Uri.parse('$baseUrl/api/v1/passengers/'),
                                   headers: {
                                     'Content-Type': 'application/json',
                                   },

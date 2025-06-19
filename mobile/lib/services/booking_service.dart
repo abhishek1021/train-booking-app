@@ -474,6 +474,26 @@ class BookingService {
         print('Train ID: $formattedTrainId');
         print('Train Name: $formattedTrainName');
         print('Train Number: $formattedTrainNumber');
+        print('Payment Method: $paymentMethod');
+        print('Total Amount: $totalAmount');
+      }
+      
+      // For wallet payments, check balance first before creating booking
+      if (paymentMethod.toLowerCase() == 'wallet') {
+        // Get the user's wallet first
+        final walletResponse = await getWalletByUserId(userId);
+        final String walletId = walletResponse['wallet_id'];
+        final double walletBalance = double.tryParse(walletResponse['balance'].toString()) ?? 0.0;
+        
+        if (kDebugMode) {
+          print('Wallet Balance: $walletBalance');
+          print('Required Amount: $totalAmount');
+        }
+        
+        // Check if wallet has sufficient balance
+        if (walletBalance < totalAmount) {
+          throw Exception('Insufficient balance in wallet: $walletBalance < $totalAmount');
+        }
       }
       
       // Calculate price details including breakdown by passenger type
@@ -502,8 +522,9 @@ class BookingService {
       final String bookingId = bookingResponse['booking_id'];
       final String pnr = bookingResponse['pnr'];
 
-      // Step 2: Get the user's wallet
-      final walletResponse = await getWalletByUserId(userId);
+      // Step 2: Get the user's wallet (we may have already done this for wallet payments)
+      final walletResponse = paymentMethod.toLowerCase() == 'wallet' ? 
+          await getWalletByUserId(userId) : await getWalletByUserId(userId);
       final String walletId = walletResponse['wallet_id'];
 
       // Step 3: Create the payment

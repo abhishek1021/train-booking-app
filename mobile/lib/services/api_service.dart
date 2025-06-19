@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../api_constants.dart';
-import 'http_client.dart';
+import 'global_auth_interceptor.dart';
 
 /// Service class for making authenticated API calls
 class ApiService {
@@ -11,7 +11,7 @@ class ApiService {
   /// Get user profile data
   Future<Map<String, dynamic>> getUserProfile(String email) async {
     try {
-      final response = await authClient.get(
+      final response = await GlobalAuthInterceptor.get(
         Uri.parse('$baseUrl/api/v1/dynamodb/users/$email'),
       );
       
@@ -28,7 +28,7 @@ class ApiService {
   /// Update user profile
   Future<Map<String, dynamic>> updateUserProfile(String email, Map<String, dynamic> data) async {
     try {
-      final response = await authClient.put(
+      final response = await GlobalAuthInterceptor.put(
         Uri.parse('$baseUrl/api/v1/dynamodb/users/$email/update'),
         body: jsonEncode(data),
       );
@@ -46,7 +46,7 @@ class ApiService {
   /// Example of a protected API call that requires authentication
   Future<List<dynamic>> getBookingHistory() async {
     try {
-      final response = await authClient.get(
+      final response = await GlobalAuthInterceptor.get(
         Uri.parse('$baseUrl/api/v1/bookings/history'),
       );
       

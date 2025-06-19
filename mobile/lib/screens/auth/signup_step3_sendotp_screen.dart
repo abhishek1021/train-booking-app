@@ -204,7 +204,8 @@ class _SignupStep3SendOtpScreenState extends State<SignupStep3SendOtpScreen> {
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode({
                   'email': email,
-                  'password': password,
+                  // We don't have a password here, this is mobile login
+                  'mobile': verifiedMobile,
                 }),
               );
               

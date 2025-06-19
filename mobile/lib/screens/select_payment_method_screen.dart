@@ -109,6 +109,43 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
     }
   }
 
+    // Custom SnackBar for better user feedback
+  void _showCustomSnackBar({
+    required String message,
+    required IconData icon,
+    required Color backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'ProductSans',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor,
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: EdgeInsets.all(10),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   // Fetch wallet balance from API
   Future<void> _fetchWalletBalance(String userId) async {
     try {
@@ -371,24 +408,32 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                             ),
                           );
                         } catch (e) {
-                          // Show error dialog on failure
                           setState(() {
                             _isProcessing = false;
                           });
-
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => TicketFailureDialog(
-                              onRetry: () {
-                                Navigator.of(context).pop();
-                              },
-                              onBackToHome: () {
-                                Navigator.of(context)
-                                    .popUntil((route) => route.isFirst);
-                              },
-                            ),
-                          );
+                          final errorMsg = e.toString();
+                          if (errorMsg.contains('Insufficient balance in wallet')) {
+                            _showCustomSnackBar(
+                              message: errorMsg.replaceFirst('Exception: ', ''),
+                              icon: Icons.error_outline,
+                              backgroundColor: const Color(0xFFB91C1C),
+                            );
+                          } else {
+                            // Show error dialog on failure
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => TicketFailureDialog(
+                                onRetry: () {
+                                  Navigator.of(context).pop();
+                                },
+                                onBackToHome: () {
+                                  Navigator.of(context)
+                                      .popUntil((route) => route.isFirst);
+                                },
+                              ),
+                            );
+                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(

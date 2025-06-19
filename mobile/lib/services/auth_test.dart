@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api_constants.dart';
-import 'http_client.dart';
+import 'global_auth_interceptor.dart';
 
 /// A utility class to test JWT authentication
 class AuthTest {
@@ -21,7 +21,7 @@ class AuthTest {
       }
       
       // Make a request to the auth-test endpoint
-      final response = await authClient.get(
+      final response = await GlobalAuthInterceptor.get(
         Uri.parse('${ApiConstants.baseUrl}/api/v1/auth/auth-test'),
       );
       

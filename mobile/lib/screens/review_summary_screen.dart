@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'dart:math' show max;
+import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'select_payment_method_screen.dart';
 import 'transaction_details_screen.dart';
 import '../models/passenger.dart';
 import '../services/offer_service.dart';
+import '../services/passenger_service.dart';
 
 class ReviewSummaryScreen extends StatefulWidget {
   final Map<String, dynamic> train;
@@ -56,11 +59,57 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
   Map<String, dynamic>? _appliedOffer;
   double _discountAmount = 0.0;
   final OfferService _offerService = OfferService();
+  
+  // Passenger service for saving and loading passengers
+  PassengerService? _passengerService;
+  List<Map<String, dynamic>> _savedPassengers = [];
+  bool _isLoadingSavedPassengers = false;
+  // Map to track which saved passengers have been used
+  final Map<String, bool> _usedSavedPassengers = {};
 
   @override
   void initState() {
     super.initState();
     _passengers = List.from(widget.passengers);
+    _initPassengerService();
+  }
+  
+  // Initialize passenger service and load saved passengers
+  Future<void> _initPassengerService() async {
+    final prefs = await SharedPreferences.getInstance();
+    _passengerService = PassengerService(prefs);
+    _loadSavedPassengers();
+  }
+  
+  // Load saved passengers from the backend
+  Future<void> _loadSavedPassengers() async {
+    if (_passengerService == null) return;
+
+    setState(() {
+      _isLoadingSavedPassengers = true;
+    });
+
+    try {
+      final passengers = await _passengerService!.getFavoritePassengers();
+      print('Loaded ${passengers.length} saved passengers');
+
+      if (mounted) {
+        setState(() {
+          // Cast the List<dynamic> to List<Map<String, dynamic>> using map function
+          _savedPassengers = passengers
+              .map((passenger) => Map<String, dynamic>.from(passenger as Map))
+              .toList();
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading saved passengers: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingSavedPassengers = false;
+        });
+      }
+    }
   }
 
   @override
@@ -135,14 +184,112 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
     });
   }
 
-  // Remove passenger at the specified index
+  // Remove a passenger from the list
   void _removePassenger(int index) {
-    // Only allow removal if there's more than one passenger
-    if (_passengers.length > 1) {
-      setState(() {
-        _passengers.removeAt(index);
-      });
+    setState(() {
+      _passengers.removeAt(index);
+    });
+  }
+  
+  // Save passengers to backend
+  Future<void> _savePassengers() async {
+    print('Starting _savePassengers method');
+    if (_passengerService == null) {
+      print('Error: _passengerService is null');
+      return;
     }
+    
+    try {
+      print('Total passengers to process: ${_passengers.length}');
+      // Process each passenger
+      for (var passenger in _passengers) {
+        print('Processing passenger: ${passenger['name']}');
+        // Check if this passenger has the required fields for saving
+        if (passenger.containsKey('name') && 
+            passenger.containsKey('age') && 
+            passenger.containsKey('gender') && 
+            passenger.containsKey('id_type') && 
+            passenger.containsKey('id_number')) {
+          print('Passenger has all required fields');
+          
+          // Extract passenger data
+          final name = passenger['name'] is TextEditingController 
+              ? passenger['name'].text 
+              : passenger['name']?.toString() ?? '';
+              
+          final age = passenger['age'] is TextEditingController 
+              ? passenger['age'].text 
+              : passenger['age']?.toString() ?? '';
+              
+          final gender = passenger['gender']?.toString() ?? 'Male';
+          final idType = passenger['id_type']?.toString() ?? 'Aadhar';
+          
+          final idNumber = passenger['id_number'] is TextEditingController 
+              ? passenger['id_number'].text 
+              : passenger['id_number']?.toString() ?? '';
+              
+          // Skip if any essential field is empty
+          if (name.isEmpty || age.isEmpty || idNumber.isEmpty) {
+            print('Skipping passenger due to empty fields: name=$name, age=$age, idNumber=$idNumber');
+            continue;
+          }
+          print('Processing passenger: name=$name, age=$age, gender=$gender, idType=$idType, idNumber=$idNumber');
+          
+          // Determine if this is a senior citizen
+          final isSenior = (int.tryParse(age) ?? 0) >= 60;
+          
+          // Check if this passenger already exists in saved passengers
+          bool passengerExists = false;
+          String? existingId;
+          
+          for (var savedPassenger in _savedPassengers) {
+            // Match based on ID number as it should be unique
+            if (savedPassenger['id_number'] == idNumber) {
+              passengerExists = true;
+              existingId = savedPassenger['id']?.toString();
+              break;
+            }
+          }
+          
+          try {
+            if (passengerExists && existingId != null) {
+              // Update existing passenger
+              print('Updating existing passenger with ID: $existingId');
+              final response = await _passengerService!.updateFavoritePassenger(
+                existingId,
+                {
+                  'name': name,
+                  'age': int.tryParse(age) ?? 0,
+                  'gender': gender,
+                  'id_type': idType,
+                  'id_number': idNumber,
+                  'is_senior': isSenior,
+                }
+              );
+              print('Updated passenger response: $response');
+            } else {
+              // Add new passenger
+              print('Adding new passenger: $name');
+              final response = await _passengerService!.saveAsFavorite(
+                name: name,
+                age: age,
+                gender: gender,
+                idType: idType,
+                idNumber: idNumber,
+                isSenior: isSenior,
+              );
+              print('Saved new passenger response: $response');
+            }
+          } catch (e) {
+            print('Error saving/updating passenger $name: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error in _savePassengers: $e');
+      print('Stack trace: ${StackTrace.current}');
+    }
+    print('Finished _savePassengers method');
   }
 
   String _calculateDuration(String dep, String arr) {
@@ -1167,7 +1314,11 @@ class _ReviewSummaryScreenState extends State<ReviewSummaryScreen> {
                     overlayColor: MaterialStateProperty.all(
                         Color(0xFF9F7AEA).withOpacity(0.08)),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    // print('Confirm Booking button pressed - saving passengers');
+                    // await _savePassengers();
+                    // print('Passenger saving completed');
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(

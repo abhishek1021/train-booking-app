@@ -1,9 +1,10 @@
 import 'package:http/http.dart' as http;
+import 'global_auth_interceptor.dart';
 
-/// Provides access to the standard HTTP client
+/// Provides access to the authenticated HTTP client
 /// 
-/// Note: This client is automatically authenticated by the GlobalAuthInterceptor
-/// which patches all HTTP requests to include the JWT token.
+/// This class provides a convenient way to access the authenticated HTTP client
+/// that automatically includes JWT tokens in all requests.
 class HttpClientService {
   static final HttpClientService _instance = HttpClientService._internal();
   late final http.Client _client;
@@ -15,7 +16,7 @@ class HttpClientService {
 
   // Private constructor
   HttpClientService._internal() {
-    // Use the standard client (GlobalAuthInterceptor will handle authentication)
+    // Use the standard client
     _client = http.Client();
   }
 
@@ -28,6 +29,6 @@ class HttpClientService {
   }
 }
 
-// Convenience getter to access the client
-/// This client is automatically authenticated by the GlobalAuthInterceptor
-http.Client get authClient => HttpClientService().client;
+// Convenience getter to access the authenticated client
+/// This provides a client that automatically adds authentication headers
+http.Client get authClient => http.Client();

@@ -1,14 +1,20 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:dio/dio.dart' as dio;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Global authentication interceptor that patches HTTP and Dio libraries
-/// to automatically attach JWT tokens to all outgoing requests
+/// Global authentication interceptor for HTTP requests
+/// This provides authenticated HTTP clients that automatically attach JWT tokens
 class GlobalAuthInterceptor {
   static bool _initialized = false;
   static String? _cachedToken;
   static String? _cachedTokenType;
+  
+  // Singleton instance of the HTTP client
+  static final http.Client _httpClient = http.Client();
+  
+  // Singleton instance of the Dio client
+  static final Dio _dioClient = Dio();
   
   /// Initialize the global interceptor
   static Future<void> initialize() async {
@@ -17,11 +23,8 @@ class GlobalAuthInterceptor {
     // Cache the token for better performance
     await _refreshTokenCache();
     
-    // Patch the HTTP library
-    _patchHttpLibrary();
-    
-    // Patch the Dio library
-    _patchDioLibrary();
+    // Setup Dio interceptor
+    _setupDioInterceptor();
     
     _initialized = true;
   }
@@ -37,78 +40,84 @@ class GlobalAuthInterceptor {
     }
   }
   
-  /// Patch the HTTP library to intercept all requests
-  static void _patchHttpLibrary() {
-    // Save the original HTTP methods
-    final originalGet = http.get;
-    final originalPost = http.post;
-    final originalPut = http.put;
-    final originalDelete = http.delete;
-    final originalPatch = http.patch;
-    
-    // Override HTTP GET
-    http.get = (Uri url, {Map<String, String>? headers}) async {
-      await _refreshTokenCache();
-      final newHeaders = _addAuthHeader(headers);
-      return await originalGet(url, headers: newHeaders);
-    };
-    
-    // Override HTTP POST
-    http.post = (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
-      await _refreshTokenCache();
-      final newHeaders = _addAuthHeader(headers);
-      return await originalPost(url, headers: newHeaders, body: body, encoding: encoding);
-    };
-    
-    // Override HTTP PUT
-    http.put = (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
-      await _refreshTokenCache();
-      final newHeaders = _addAuthHeader(headers);
-      return await originalPut(url, headers: newHeaders, body: body, encoding: encoding);
-    };
-    
-    // Override HTTP DELETE
-    http.delete = (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
-      await _refreshTokenCache();
-      final newHeaders = _addAuthHeader(headers);
-      return await originalDelete(url, headers: newHeaders, body: body, encoding: encoding);
-    };
-    
-    // Override HTTP PATCH
-    http.patch = (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
-      await _refreshTokenCache();
-      final newHeaders = _addAuthHeader(headers);
-      return await originalPatch(url, headers: newHeaders, body: body, encoding: encoding);
-    };
-  }
-  
-  /// Patch the Dio library to intercept all requests
-  static void _patchDioLibrary() {
-    // Create a Dio interceptor
-    final dioInterceptor = dio.InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        await _refreshTokenCache();
-        if (_cachedToken != null && _cachedToken!.isNotEmpty) {
-          options.headers['Authorization'] = '${_cachedTokenType} ${_cachedToken}';
-        }
-        return handler.next(options);
-      },
+  /// Setup Dio interceptor
+  static void _setupDioInterceptor() {
+    _dioClient.interceptors.clear();
+    _dioClient.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          await _refreshTokenCache();
+          if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+            options.headers['Authorization'] = '${_cachedTokenType} ${_cachedToken}';
+          }
+          return handler.next(options);
+        },
+      ),
     );
-    
-    // Add the interceptor to the default Dio instance
-    dio.Dio().interceptors.add(dioInterceptor);
   }
   
-  /// Add authentication header to existing headers
-  static Map<String, String> _addAuthHeader(Map<String, String>? headers) {
-    final newHeaders = headers != null ? Map<String, String>.from(headers) : <String, String>{};
+  /// Get authentication headers
+  static Future<Map<String, String>> getAuthHeaders() async {
+    await _refreshTokenCache();
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
     
     if (_cachedToken != null && _cachedToken!.isNotEmpty) {
-      newHeaders['Authorization'] = '${_cachedTokenType} ${_cachedToken}';
+      headers['Authorization'] = '${_cachedTokenType} ${_cachedToken}';
     }
     
-    return newHeaders;
+    return headers;
   }
+  
+  /// Make an authenticated GET request
+  static Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final authHeaders = await getAuthHeaders();
+    if (headers != null) {
+      authHeaders.addAll(headers);
+    }
+    return await _httpClient.get(url, headers: authHeaders);
+  }
+  
+  /// Make an authenticated POST request
+  static Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    final authHeaders = await getAuthHeaders();
+    if (headers != null) {
+      authHeaders.addAll(headers);
+    }
+    return await _httpClient.post(url, headers: authHeaders, body: body, encoding: encoding);
+  }
+  
+  /// Make an authenticated PUT request
+  static Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    final authHeaders = await getAuthHeaders();
+    if (headers != null) {
+      authHeaders.addAll(headers);
+    }
+    return await _httpClient.put(url, headers: authHeaders, body: body, encoding: encoding);
+  }
+  
+  /// Make an authenticated DELETE request
+  static Future<http.Response> delete(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    final authHeaders = await getAuthHeaders();
+    if (headers != null) {
+      authHeaders.addAll(headers);
+    }
+    return await _httpClient.delete(url, headers: authHeaders, body: body, encoding: encoding);
+  }
+  
+  /// Make an authenticated PATCH request
+  static Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    final authHeaders = await getAuthHeaders();
+    if (headers != null) {
+      authHeaders.addAll(headers);
+    }
+    return await _httpClient.patch(url, headers: authHeaders, body: body, encoding: encoding);
+  }
+  
+  /// Get the Dio client with authentication
+  static Dio get dio => _dioClient;
   
   /// Clear the token cache (useful after logout)
   static void clearTokenCache() {

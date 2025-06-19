@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api_constants.dart';
+import 'global_auth_interceptor.dart';
 
 class PassengerService {
   final String _baseUrl = '${ApiConstants.baseUrl}/api/v1';
@@ -32,11 +33,23 @@ class PassengerService {
         print('No user ID found');
         return [];
       }
+      
+      print('Getting passengers for user ID: $userId');
+      print('API URL: $_baseUrl/passengers?user_id=$userId');
+      
+      // Initialize GlobalAuthInterceptor if needed
+      await GlobalAuthInterceptor.initialize();
+      
+      // Get auth token directly from SharedPreferences for debugging
+      final token = _prefs.getString('auth_token');
+      print('Auth token available: ${token != null && token.isNotEmpty}');
 
+      // Use direct http client with manual auth header for testing
       final response = await http.get(
         Uri.parse('$_baseUrl/passengers?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_prefs.getString('auth_token') ?? ''}',
         },
       ).timeout(const Duration(seconds: 15));
 
@@ -79,21 +92,41 @@ class PassengerService {
         final userId = _userId;
         if (userId != null && userId.isNotEmpty) {
           passenger['user_id'] = userId;
+        } else {
+          print('Error: No user_id available for passenger');
+          throw Exception('User ID not found');
         }
       }
+      
+      print('Adding passenger: ${jsonEncode(passenger)}');
+      print('API URL: $_baseUrl/passengers/');
+      
+      // Initialize GlobalAuthInterceptor if needed
+      await GlobalAuthInterceptor.initialize();
+      
+      // Get auth token directly from SharedPreferences for debugging
+      final token = _prefs.getString('auth_token');
+      print('Auth token available: ${token != null && token.isNotEmpty}');
 
+      // Use direct http client with manual auth header for testing
       final response = await http.post(
         Uri.parse('$_baseUrl/passengers/'),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_prefs.getString('auth_token') ?? ''}',
         },
         body: jsonEncode(passenger),
       );
 
-      if (response.statusCode == 201) {
-        return jsonDecode(utf8.decode(response.bodyBytes));
+      print('Add passenger response: ${response.statusCode} - ${response.body}');
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+        print('Successfully added passenger: $responseData');
+        return responseData;
       } else {
-        throw Exception('Failed to add favorite passenger');
+        print('Failed to add passenger: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to add favorite passenger: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error: $e');
@@ -109,7 +142,8 @@ class PassengerService {
         throw Exception('User ID not found');
       }
       
-      final response = await http.delete(
+      // Use GlobalAuthInterceptor static methods for authenticated requests
+      final response = await GlobalAuthInterceptor.delete(
         Uri.parse('$_baseUrl/passengers/$passengerId?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
@@ -182,20 +216,40 @@ class PassengerService {
         final userId = _userId;
         if (userId != null && userId.isNotEmpty) {
           passenger['user_id'] = userId;
+        } else {
+          print('Error: No user_id available for passenger update');
+          throw Exception('User ID not found');
         }
       }
+      
+      print('Updating passenger $passengerId with data: ${jsonEncode(passenger)}');
+      print('API URL: $_baseUrl/passengers/?passenger_id=$passengerId');
+      
+      // Initialize GlobalAuthInterceptor if needed
+      await GlobalAuthInterceptor.initialize();
+      
+      // Get auth token directly from SharedPreferences for debugging
+      final token = _prefs.getString('auth_token');
+      print('Auth token available: ${token != null && token.isNotEmpty}');
 
+      // Use direct http client with manual auth header for testing
       final response = await http.post(
         Uri.parse('$_baseUrl/passengers/?passenger_id=$passengerId'),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_prefs.getString('auth_token') ?? ''}',
         },
         body: jsonEncode(passenger),
       );
 
+      print('Update passenger response: ${response.statusCode} - ${response.body}');
+      
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(utf8.decode(response.bodyBytes));
+        final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+        print('Successfully updated passenger: $responseData');
+        return responseData;
       } else {
+        print('Failed to update passenger: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to update favorite passenger: ${response.statusCode}');
       }
