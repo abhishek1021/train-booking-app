@@ -1,5 +1,5 @@
 name: tatkalpro
-version: 1.0.0+1
+version: 1.0.0-beta.1+1
 description: TatkalPro - Indian Railways ticket booking app (IRCTC integration)
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -39,6 +39,15 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+# Configuration for flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/tatkalpro-logo-icon.png"
+  adaptive_icon_background: "#FFFFFF" # Background color for adaptive icons
+  adaptive_icon_foreground: "assets/icons/tatkalpro-logo-icon.png"
 flutter:
   uses-material-design: true
   assets:
