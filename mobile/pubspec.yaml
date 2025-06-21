@@ -46,8 +46,10 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/tatkalpro-logo-icon.png"
-  adaptive_icon_background: "#FFFFFF" # Background color for adaptive icons
+  adaptive_icon_background: "#FFFFFF" # White background
   adaptive_icon_foreground: "assets/icons/tatkalpro-logo-icon.png"
+  # Remove scale factor as it's not working
+  # Instead, we'll manually modify the Android icon files after generation
 flutter:
   uses-material-design: true
   assets:
