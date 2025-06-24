@@ -10,6 +10,7 @@ import '../../privacy_policy_screen.dart';
 import '../../about_tatkal_pro_screen.dart';
 import '../../terms_of_service_screen.dart';
 import '../../language_screen.dart';
+import '../../ai_chat_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
@@ -280,6 +281,14 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
                     }),
                 const SizedBox(height: 12),
                 _sectionHeader('About'),
+                _menuItem(Icons.smart_toy, 'Train Assistant', onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AIChatScreen(),
+                    ),
+                  );
+                }),
                 _menuItem(Icons.help_outline, 'Help Center', onTap: () {
                   Navigator.push(
                     context,
