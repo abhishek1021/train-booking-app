@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/logger.dart';
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({Key? key}) : super(key: key);
@@ -14,6 +16,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+  Map<String, dynamic>? userProfile;
 
   @override
   void initState() {
@@ -55,21 +58,68 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
     _messageController.clear();
     _scrollToBottom();
+    
+    // Get user ID from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final user_body = prefs.getString('user_profile');
+    if (user_body != null && user_body.isNotEmpty) {
+      setState(() {
+        userProfile = jsonDecode(user_body);
+      });
+    }
+    
+    // Get user ID safely
+    String? userId;
+    if (userProfile != null && userProfile!.containsKey('UserID')) {
+      userId = userProfile!['UserID']?.toString();
+    }
+    
+    // Log for debugging
+    logInfo('Sending message to webhook with UserID: ${userId ?? 'not available'}', tag: 'AIChatScreen');
 
-    // Send message to webhook
+    // Send message to webhook with user ID
     try {
       final response = await http.post(
         Uri.parse('https://webhook-processor-production-2e11.up.railway.app/webhook/32655209-1252-422e-a8ed-a3438334a96b/chat'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'message': message}),
+        body: jsonEncode({
+          'message': message,
+          'user_id': userId ?? '',
+        }),
       );
 
       if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        if (jsonResponse is List && jsonResponse.isNotEmpty) {
-          final aiResponse = jsonResponse[0]['response']['body'];
-          _addAIMessage(aiResponse);
-        } else {
+        logDebug('Raw response: ${response.body}', tag: 'AIChatScreen');
+        try {
+          final jsonResponse = jsonDecode(response.body);
+          
+          // Handle multiple possible response formats
+          if (jsonResponse is List && jsonResponse.isNotEmpty) {
+            // Original list format
+            final aiResponse = jsonResponse[0]['response']['body'];
+            logInfo('AI response received (list format)', tag: 'AIChatScreen');
+            _addAIMessage(aiResponse);
+          } else if (jsonResponse is Map) {
+            if (jsonResponse.containsKey('response')) {
+              // Original map format
+              final aiResponse = jsonResponse['response']['body'];
+              logInfo('AI response received (response format)', tag: 'AIChatScreen');
+              _addAIMessage(aiResponse);
+            } else if (jsonResponse.containsKey('output')) {
+              // New format with output field
+              final aiResponse = jsonResponse['output'];
+              logInfo('AI response received (output format)', tag: 'AIChatScreen');
+              _addAIMessage(aiResponse);
+            } else {
+              logWarning('Unexpected response format: $jsonResponse', tag: 'AIChatScreen');
+              _addAIMessage("Sorry, I couldn't process your request. Please try again.");
+            }
+          } else {
+            logWarning('Unexpected response format: $jsonResponse', tag: 'AIChatScreen');
+            _addAIMessage("Sorry, I couldn't process your request. Please try again.");
+          }
+        } catch (e) {
+          logError('Error parsing response', tag: 'AIChatScreen', error: e);
           _addAIMessage("Sorry, I couldn't process your request. Please try again.");
         }
       } else {

@@ -59,15 +59,14 @@ FIELD_MAPPINGS = {
     "train_route_segments": {
         "origin_destination": "origin_destination",
         "train_id": "train_id",
-        "train_number": "train_number",
+        "train_number": "id",  # Map train_number to id field
         "train_name": "train_name",
         "origin": "origin",
         "destination": "destination",
-        "source_station": "source_station",
-        "destination_station": "destination_station",
         "days_of_run": "days_of_run",
         "classes_available": "classes_available",
         "class_prices": "class_prices"
+        # source_station and destination_station fields omitted as requested
     },
     "users": {
         "PK": "id",
