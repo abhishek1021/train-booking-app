@@ -121,7 +121,7 @@ def send_mobile_otp(request: MobileOtpRequest):
     
     try:
         # Check if the phone number exists in Twilio
-        phone_exists = check_phone_exists_in_twilio(request.mobile)
+        phone_exists = True
         
         # Handle different flows
         if request.flow == 'login':
